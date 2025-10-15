@@ -17,13 +17,63 @@ export const GET: APIRoute = async ({ locals }) => {
          SUM(estado = 'RESUELTA'AND (asignado_a = ?)) AS mine_resueltas,
          SUM(estado = 'NUEVA')                        AS all_nuevas,
          SUM(estado = 'ABIERTA')                      AS all_abiertas,
-         SUM(estado = 'RESUELTA')                     AS all_resueltas
+         SUM(estado = 'RESUELTA')                     AS all_resueltas,
+         COUNT(*)                                     AS total_conversaciones,
+         SUM(asignado_a IS NULL)                      AS sin_asignar,
+         SUM(DATE(creado_en) = CURDATE())             AS conversaciones_hoy
        FROM conversaciones`,
       [myId, myId, myId]
     );
 
-    const stats = (rows as any[])[0] || {};
-    return new Response(JSON.stringify({ ok:true, stats }), { headers: { 'Content-Type':'application/json' } });
+    const base = (rows as any[])[0] || {};
+
+    // Extra global metrics from other tables
+    const [rows2] = await pool.query<RowDataPacket[]>(
+      `SELECT 
+         COUNT(*)                                       AS mensajes_total,
+         SUM(DATE(COALESCE(creado_en, FROM_UNIXTIME(ts))) = CURDATE()) AS mensajes_hoy
+       FROM mensajes`
+    );
+
+    const [rows3] = await pool.query<RowDataPacket[]>(
+      `SELECT COUNT(*) AS agentes_activos 
+       FROM usuarios 
+       WHERE activo = 1 AND UPPER(rol) = 'AGENTE'`
+    );
+
+    // Base stats
+    const stats = {
+      ...base,
+      ...(rows2 as any[])[0],
+      ...(rows3 as any[])[0],
+    } as Record<string, number>;
+
+    // 30-day series for conversations and messages
+    const [convRows] = await pool.query<RowDataPacket[]>(
+      `SELECT DATE(creado_en) AS d, COUNT(*) AS c
+       FROM conversaciones
+       WHERE creado_en >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+       GROUP BY d
+       ORDER BY d`
+    );
+
+    const [msgRows] = await pool.query<RowDataPacket[]>(
+      `SELECT DATE(COALESCE(creado_en, FROM_UNIXTIME(ts))) AS d, COUNT(*) AS c
+       FROM mensajes
+       WHERE COALESCE(creado_en, FROM_UNIXTIME(ts)) >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+       GROUP BY d
+       ORDER BY d`
+    );
+
+    const payload = {
+      ok: true,
+      stats: {
+        ...stats,
+        conv_series: (convRows as any[]).map(r => ({ day: r.d, count: Number(r.c) })),
+        msg_series: (msgRows as any[]).map(r => ({ day: r.d, count: Number(r.c) })),
+      }
+    };
+    return new Response(JSON.stringify(payload), { headers: { 'Content-Type':'application/json' } });
   } catch (e:any) {
     return new Response(JSON.stringify({ ok:false, error: e?.message || 'Error' }), { status: 500 });
   }

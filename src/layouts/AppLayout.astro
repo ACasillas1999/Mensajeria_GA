@@ -52,6 +52,7 @@ const isAdmin = String(user?.rol || "").toLowerCase() === "admin";
     <aside class="fixed left-0 top-14 bottom-0 w-16 z-30 bg-slate-950 border-r border-slate-800">
       <nav class="h-full flex flex-col items-center py-4 gap-2">
         <a href="/"              class={`${linkBase} ${isActive("/")}`}><i data-feather="home"></i><span class="sr-only">Inicio</span></a>
+        <a href="/dashboard"     class={`${linkBase} ${isActive("/dashboard")}`}><i data-feather="bar-chart-2"></i><span class="sr-only">Dashboard</span></a>
         <a href="/mensajes"      class={`${linkBase} ${isActive("/mensajes")}`}><i data-feather="message-square"></i><span class="sr-only">Mensajes</span></a>
         <a href="/clientes"      class={`${linkBase} ${isActive("/clientes")}`}><i data-feather="users"></i><span class="sr-only">Clientes</span></a>
         {isAdmin && (

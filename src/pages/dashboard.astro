@@ -1,0 +1,14 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import Dashboard from "../components/Dashboard.jsx";
+---
+
+<AppLayout title="Dashboard">
+  <div class="mb-4">
+    <h2 class="text-2xl font-bold text-emerald-400">Dashboard</h2>
+    <p class="text-slate-300">Todas las estadísticas de conversaciones y mensajes.</p>
+  </div>
+
+  <Dashboard client:load />
+</AppLayout>
+
