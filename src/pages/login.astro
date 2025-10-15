@@ -1,0 +1,27 @@
+---
+import "../styles/global.css";
+import LoginForm from "../components/LoginForm.jsx";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Login — Mensajería Web GA</title>
+        <link rel="icon" type="image/png" href="/logo-gawhats.png" sizes="32x32" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body class="min-h-screen flex items-center justify-center bg-animated text-white">
+    <div id="login-wrap" class="p-6 text-center opacity-0 translate-y-2 transition-all duration-300">
+      <h1 class="text-3xl font-bold mb-6 text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.2)]">Mensajería Web GA</h1>
+      <LoginForm client:load />
+    </div>
+    <script is:inline>
+      window.addEventListener('DOMContentLoaded', () => {
+        const el = document.getElementById('login-wrap');
+        if (el) requestAnimationFrame(() => { el.classList.remove('opacity-0','translate-y-2'); });
+      });
+    </script>
+  </body>
+</html>
+

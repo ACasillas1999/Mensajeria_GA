@@ -1,0 +1,127 @@
+﻿---
+import "../styles/global.css";
+
+const { title = "Mensajería Web GA" } = Astro.props as { title?: string };
+const path = Astro.url.pathname;
+
+const linkBase = "group w-12 h-12 grid place-items-center rounded-xl transition";
+const idle = "text-slate-400 hover:text-white hover:bg-slate-800";
+const active = "text-white bg-slate-800";
+const isActive = (href: string) =>
+  (path === href || path.startsWith(href)) ? active : idle;
+
+// ⬇️ Añadimos sucursal y forzamos string donde hace falta
+type Usuario = { id: number; rol: string; nombre: string; sucursal?: string | null };
+
+const user = (Astro.locals as any).user as Usuario | undefined;
+const isAdmin = String(user?.rol || "").toLowerCase() === "admin";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>{title}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/logo-gawhats.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/logo-gawhats.png" />
+    <meta name="theme-color" content="#0f172a" />
+  </head>
+
+  <body class="min-h-screen bg-slate-900 text-slate-100">
+    <!-- Topbar -->
+    <header class="fixed top-0 inset-x-0 h-14 z-40 bg-slate-950/90 backdrop-blur border-b border-slate-800">
+      <div class="h-full max-w-7xl mx-auto px-4 flex items-center">
+        <h1 class="text-lg font-semibold text-emerald-400">{title}</h1>
+        <div class="ml-auto flex items-center gap-3">
+          {user && (
+            <div class="text-right leading-tight">
+              <div class="text-sm text-slate-200 truncate">{user.nombre}</div>
+              <div class="text-[11px] text-slate-400 truncate">
+                {user.rol}{user.sucursal ? ` · ${user.sucursal}` : ''}
+              </div>
+            </div>
+          )}
+          <div class="w-8 h-8 rounded-full bg-emerald-600/20 border border-emerald-700 grid place-items-center text-emerald-300 text-xs">
+            {(user?.nombre || 'U').slice(0,1).toUpperCase()}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-14 bottom-0 w-16 z-30 bg-slate-950 border-r border-slate-800">
+      <nav class="h-full flex flex-col items-center py-4 gap-2">
+        <a href="/"              class={`${linkBase} ${isActive("/")}`}><i data-feather="home"></i><span class="sr-only">Inicio</span></a>
+        <a href="/mensajes"      class={`${linkBase} ${isActive("/mensajes")}`}><i data-feather="message-square"></i><span class="sr-only">Mensajes</span></a>
+        <a href="/clientes"      class={`${linkBase} ${isActive("/clientes")}`}><i data-feather="users"></i><span class="sr-only">Clientes</span></a>
+        {isAdmin && (
+          <>
+            <a href="/admin/usuarios" class={`${linkBase} ${isActive("/admin/usuarios")}`}><i data-feather="user-check"></i><span class="sr-only">Usuarios</span></a>
+            <a href="/admin/asignacion" class={`${linkBase} ${isActive("/admin/asignacion")}`}>
+              <i data-feather="share-2"></i><span class="sr-only">Asignación</span>
+            </a>
+            <a href="/admin/diagrama" class={`${linkBase} ${isActive("/admin/diagrama")}`}>
+              <i data-feather="git-branch"></i><span class="sr-only">Diagrama</span>
+            </a>
+          </>
+        )}
+
+        <div class="mt-auto"></div>
+
+        <a href="/config" class={`${linkBase} ${isActive("/config")}`}><i data-feather="settings"></i><span class="sr-only">Config</span></a>
+
+        <button type="button" id="logoutBtn" class={`${linkBase} ${idle}`} title="Cerrar sesión">
+          <i data-feather="log-out"></i>
+          <span class="sr-only">Cerrar sesión</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Contenido -->
+    <main id="page-root" class="pt-14 pl-16 min-h-screen opacity-0 transition-opacity duration-300">
+      <div class="max-w-[1500px] mx-auto p-4">
+        <slot />
+      </div>
+    </main>
+
+    <script src="https://unpkg.com/feather-icons" defer></script>
+    <script is:inline>
+      // Icons + page transitions
+      window.addEventListener("DOMContentLoaded", () => {
+        window.feather?.replace();
+
+        const root = document.getElementById('page-root');
+        if (root) requestAnimationFrame(() => root.classList.remove('opacity-0'));
+
+        // Smooth cross-page fade using simple CSS
+        const isSameOrigin = (url) => {
+          try { const u = new URL(url, window.location.href); return u.origin === window.location.origin; } catch { return false; }
+        };
+
+        document.addEventListener('click', (e) => {
+          const a = e.target.closest('a');
+          if (!a) return;
+          const href = a.getAttribute('href');
+          const target = a.getAttribute('target');
+          const download = a.hasAttribute('download');
+          const modifier = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+          if (!href || target === '_blank' || download || modifier) return;
+          if (!isSameOrigin(href)) return;
+          e.preventDefault();
+          if (!root) { window.location.href = href; return; }
+          root.addEventListener('transitionend', () => { window.location.href = href; }, { once: true });
+          root.classList.add('opacity-0');
+        });
+
+        // Logout handler
+        const btn = document.getElementById('logoutBtn');
+        if (btn) {
+          btn.addEventListener('click', async () => {
+            try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+            window.location.href = '/login';
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,166 @@
+import type { APIRoute } from 'astro';
+import 'dotenv/config';
+import { pool } from '../../lib/db';
+
+/** VERIFICACIÓN (GET) */
+export const GET: APIRoute = async ({ request }) => {
+  const u = new URL(request.url);
+  const mode = u.searchParams.get('hub.mode') ?? '';
+  const token = (u.searchParams.get('hub.verify_token') ?? '').trim();
+  const challenge = u.searchParams.get('hub.challenge') ?? '';
+  const expected = (process.env.WABA_VERIFY_TOKEN ?? '').trim();
+
+  console.log('WEBHOOK VERIFY', { mode, match: token === expected });
+  if (mode === 'subscribe' && token && token === expected) {
+    return new Response(challenge, { status: 200, headers: { 'Content-Type': 'text/plain' } });
+  }
+  return new Response('Forbidden', { status: 403 });
+};
+
+/** EVENTOS (POST) */
+/** EVENTOS (POST) */
+export const POST: APIRoute = async ({ request }) => {
+  try {
+    const data = await request.json();
+    console.log('WEBHOOK EVENT (raw):', JSON.stringify(data).slice(0, 400), '...');
+
+    const entries = data?.entry ?? [];
+    for (const e of entries) {
+      const changes = e?.changes ?? [];
+      for (const c of changes) {
+        // (opcional) ignorar otros campos
+        if (c.field && c.field !== 'messages') {
+          continue;
+        }
+
+        // 1) ESTADOS (✓/✓✓/✓✓ azul o errores)
+        const statuses = c?.value?.statuses;
+        if (Array.isArray(statuses) && statuses.length) {
+          for (const s of statuses) {
+            const wa_msg_id = s.id;
+            const st = s.status as 'sent' | 'delivered' | 'read' | 'failed';
+            const ts = Number(s.timestamp || Date.now() / 1000);
+            const err = s.errors?.[0];
+
+            await pool.query(
+              `UPDATE mensajes
+                 SET status=?, status_ts=?, error_code=?, error_title=?, error_message=?
+               WHERE wa_msg_id=?`,
+              [st, ts, err?.code ?? null, err?.title ?? null, err?.details ?? null, wa_msg_id]
+            );
+          }
+          continue; // listo con este change
+        }
+
+        // 2) MENSAJES ENTRANTES
+        const msgs = c?.value?.messages as any[] | undefined;
+        const contacts = c?.value?.contacts as any[] | undefined;
+        if (!msgs || !contacts) continue;
+
+        const from = msgs[0]?.from;
+        const profileName = contacts[0]?.profile?.name || null;
+
+        // upsert conversación del remitente (una vez por change)
+        let convId: number;
+        const [found] = await pool.query('SELECT id FROM conversaciones WHERE wa_user=? LIMIT 1', [from]);
+        if ((found as any[]).length) {
+          convId = (found as any[])[0].id;
+        } else {
+          const [ins] = await pool.query(
+            'INSERT INTO conversaciones (wa_user, wa_profile_name, estado) VALUES (?,?, "NUEVA")',
+            [from, profileName]
+          );
+          convId = (ins as any).insertId;
+        }
+
+        // guardar cada mensaje (idempotente por wa_msg_id)
+        for (const m of msgs) {
+          const ts = Number(m.timestamp || Date.now() / 1000);
+          const tipo = m.type as string;
+
+          let cuerpo = '';
+          let media_id: string | null = null;
+          let mime_type: string | null = null;
+
+          switch (tipo) {
+            case 'text':
+              cuerpo = m.text?.body || '';
+              break;
+
+            case 'audio':
+              media_id = m.audio?.id || null;
+              mime_type = m.audio?.mime_type || null;
+              cuerpo = '[Audio]';
+              break;
+
+            case 'image':
+              media_id = m.image?.id || null;
+              mime_type = m.image?.mime_type || null;
+              cuerpo = m.image?.caption || '[Imagen]';
+              break;
+
+            case 'video':
+              media_id = m.video?.id || null;
+              mime_type = m.video?.mime_type || null;
+              cuerpo = m.video?.caption || '[Video]';
+              break;
+
+            case 'document':
+              media_id = m.document?.id || null;
+              mime_type = m.document?.mime_type || null;
+              cuerpo = m.document?.filename || '[Documento]';
+              break;
+
+            case 'sticker':
+              media_id = m.sticker?.id || null;
+              mime_type = m.sticker?.mime_type || null;
+              cuerpo = '[Sticker]';
+              break;
+
+            case 'interactive': {
+              const ir = m.interactive;
+              if (ir?.type === 'button_reply') cuerpo = ir.button_reply?.title || '[Botón]';
+              else if (ir?.type === 'list_reply') cuerpo = ir.list_reply?.title || '[Lista]';
+              else cuerpo = '[Interacción]';
+              break;
+            }
+
+            case 'location':
+              cuerpo = `[Ubicación ${m.location?.latitude},${m.location?.longitude}]`;
+              break;
+
+            case 'contacts':
+              cuerpo = `[Contacto ${m.contacts?.[0]?.name?.formatted_name || ''}]`;
+              break;
+
+            default:
+              cuerpo = `[${tipo}]`;
+          }
+
+          await pool.query(
+            `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, media_id, mime_type)
+             VALUES (?,?,?,?,?,?,?,?)
+             ON DUPLICATE KEY UPDATE
+               ts=VALUES(ts),
+               cuerpo=VALUES(cuerpo),
+               media_id=VALUES(media_id),
+               mime_type=VALUES(mime_type)`,
+            [convId, 0, tipo, cuerpo, m.id, ts, media_id, mime_type]
+          );
+
+          await pool.query(
+            `UPDATE conversaciones
+               SET wa_profile_name=?, ultimo_msg=?, ultimo_ts=?, estado=IF(estado='NUEVA','ABIERTA',estado)
+             WHERE id=?`,
+            [profileName, cuerpo, ts, convId]
+          );
+        }
+      }
+    }
+
+    return new Response('EVENT_RECEIVED', { status: 200 });
+  } catch (err: any) {
+    console.error('WEBHOOK ERROR:', err?.message || err);
+    return new Response('BAD_REQUEST', { status: 400 });
+  }
+};

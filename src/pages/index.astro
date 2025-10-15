@@ -1,0 +1,18 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import Dashboard from "../components/Dashboard.jsx";
+import MagicBento from "../components/MagicBento.jsx";
+import LogoHero from "../components/LogoHero.jsx";
+const isAdmin = ((Astro.locals as any).user?.rol || '').toLowerCase() === 'admin';
+---
+
+<AppLayout title="Panel principal">
+  <div class="mb-4">
+    <h2 class="text-2xl font-bold text-emerald-400">Panel principal</h2>
+    <p class="text-slate-300">Resumen de tus conversaciones y estado global.</p>
+  </div>
+
+  <Dashboard client:load />
+  <MagicBento client:load isAdmin={isAdmin} />
+</AppLayout>
+

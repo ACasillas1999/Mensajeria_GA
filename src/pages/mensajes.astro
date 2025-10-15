@@ -1,0 +1,12 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import ChatWorkspace from "../components/ChatWorkspace.jsx";
+
+const qp = Astro.url.searchParams;
+const initialId = Number(qp.get('conversation_id') || 0) || null;
+---
+
+<AppLayout title="Mensajes">
+  <ChatWorkspace client:load initialId={initialId} />
+</AppLayout>
+

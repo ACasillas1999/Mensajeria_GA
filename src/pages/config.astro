@@ -1,0 +1,26 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+---
+
+<AppLayout title="Configuración">
+  <section class="grid grid-cols-12 gap-4">
+    <div class="col-span-12 lg:col-span-8">
+      <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/70">
+        <h2 class="text-lg font-semibold mb-2">Preferencias</h2>
+        <p class="text-sm text-slate-400">Próximamente: opciones de notificaciones, temas, y datos del usuario.</p>
+      </div>
+    </div>
+    <aside class="col-span-12 lg:col-span-4 space-y-3">
+      <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/70">
+        <h3 class="font-medium mb-2">Sesión</h3>
+        <form onsubmit="event.preventDefault(); fetch('/api/logout',{method:'POST'}).finally(()=>location.href='/login');">
+          <button class="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700">Cerrar sesión</button>
+        </form>
+      </div>
+      <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/70 text-sm text-slate-400">
+        <div>Entorno: {import.meta.env.MODE}</div>
+      </div>
+    </aside>
+  </section>
+</AppLayout>
+

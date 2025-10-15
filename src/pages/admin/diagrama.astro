@@ -1,0 +1,13 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+const isAdmin = ((Astro.locals as any).user?.rol || '').toLowerCase() === 'admin';
+if (!isAdmin) {
+  return Astro.redirect('/');
+}
+import UsersFlow from "../../components/UsersFlow.jsx";
+---
+
+<AppLayout title="Admin · Diagrama">
+  <h1 class="text-2xl font-semibold mb-4">Mapa de sucursales y agentes</h1>
+  <UsersFlow client:load />
+</AppLayout>

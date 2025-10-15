@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+input::placeholder {
+  color: #94a3b8;
+}
+/* Scroll fino */
+.thin-scroll::-webkit-scrollbar { width: 8px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 8px; }
+.thin-scroll { scrollbar-width: thin; scrollbar-color: #1f2937 transparent; }
+
+/* Suaviza tipografía y colores por defecto */
+:root { color-scheme: dark; }
+
+/* Animations */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes subtleGlow {
+  0%, 100% { box-shadow: 0 10px 30px rgba(16,185,129,0.08); }
+  50% { box-shadow: 0 12px 36px rgba(16,185,129,0.16); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.bg-animated {
+  background: linear-gradient(120deg, #0b1220, #0a1829, #0b1220);
+  background-size: 200% 200%;
+  animation: gradientShift 16s ease infinite;
+}
+
+.animate-shake { animation: shake 300ms ease; }

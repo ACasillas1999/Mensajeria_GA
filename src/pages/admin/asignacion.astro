@@ -1,0 +1,13 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import AssignPanel from "../../components/AssignPanel.jsx";
+const isAdmin = ((Astro.locals as any).user?.rol || '').toLowerCase() === 'admin';
+if (!isAdmin) {
+  return Astro.redirect('/');
+}
+---
+
+<AppLayout title="Admin · Asignación">
+  <h1 class="text-2xl font-semibold mb-4">Asignar conversaciones</h1>
+  <AssignPanel client:load />
+</AppLayout>
