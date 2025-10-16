@@ -1,4 +1,4 @@
-﻿---
+---
 import "../styles/global.css";
 
 const { title = "Mensajería Web GA" } = Astro.props as { title?: string };
@@ -7,14 +7,11 @@ const path = Astro.url.pathname;
 const linkBase = "group w-12 h-12 grid place-items-center rounded-xl transition";
 const idle = "text-slate-400 hover:text-white hover:bg-slate-800";
 const active = "text-white bg-slate-800";
-const isActive = (href: string) =>
-  (path === href || path.startsWith(href)) ? active : idle;
+const isActive = (href: string) => (path === href || path.startsWith(href)) ? active : idle;
 
-// ⬇️ Añadimos sucursal y forzamos string donde hace falta
-type Usuario = { id: number; rol: string; nombre: string; sucursal?: string | null };
-
-const user = (Astro.locals as any).user as Usuario | undefined;
-const isAdmin = String(user?.rol || "").toLowerCase() === "admin";
+const user: any = (Astro.locals as any).user;
+const isAdmin = ((user?.rol || '').toLowerCase() === 'admin');
+const initial = ((user?.nombre || 'U').toString().slice(0,1).toUpperCase());
 ---
 
 <html lang="es">
@@ -42,7 +39,7 @@ const isAdmin = String(user?.rol || "").toLowerCase() === "admin";
             </div>
           )}
           <div class="w-8 h-8 rounded-full bg-emerald-600/20 border border-emerald-700 grid place-items-center text-emerald-300 text-xs">
-            {(user?.nombre || 'U').slice(0,1).toUpperCase()}
+            {initial}
           </div>
         </div>
       </div>
@@ -126,3 +123,4 @@ const isAdmin = String(user?.rol || "").toLowerCase() === "admin";
     </script>
   </body>
 </html>
+
