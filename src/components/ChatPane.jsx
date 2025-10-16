@@ -73,6 +73,7 @@ function StatusBadge({ s }) {
 export default function ChatPane({ conversation }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchQ, setSearchQ] = useState("");
 
   // notificaciones
   const prevIncomingCountRef = useRef(0);
@@ -81,6 +82,7 @@ export default function ChatPane({ conversation }) {
   const [modal, setModal] = useState({ open: false, kind: null, src: null });
   const openMedia = (kind, src) => setModal({ open: true, kind, src });
   const closeMedia = () => setModal({ open: false, kind: null, src: null });
+  const [attach, setAttach] = useState({ open:false, items:[] });
 
   // composer
   const [text, setText] = useState("");
@@ -217,7 +219,9 @@ function pickMime() {
     if (!conversation) return;
     setLoading(true);
     try {
-      const r = await fetch(`/api/messages?conversation_id=${conversation.id}&limit=300`);
+      const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(300) });
+      if (searchQ.trim()) qs.set('q', searchQ.trim());
+      const r = await fetch(`/api/messages?${qs.toString()}`);
       const j = await r.json();
       if (j.ok) setItems(j.items || []);
     } finally {
@@ -225,6 +229,16 @@ function pickMime() {
       setTimeout(scrollToBottom, 0);
     }
   }
+  async function runSearch() { await load(); }
+  async function openAttachments() {
+    if (!conversation) return;
+    try {
+      const r = await fetch(`/api/conversation-attachments?conversation_id=${conversation.id}&limit=200`);
+      const j = await r.json();
+      if (j.ok) setAttach({ open:true, items: j.items || [] });
+    } catch {}
+  }
+  function closeAttachments() { setAttach({ open:false, items:[] }); }
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [conversation?.id]);
   useEffect(() => { scrollToBottom(); }, [items.length]); // autoscroll ante nuevos mensajes
@@ -407,6 +421,16 @@ function pickMime() {
             <option value="ABIERTA">ABIERTA</option>
             <option value="RESUELTA">RESUELTA</option>
           </select>
+          <input
+            value={searchQ}
+            onChange={(e)=>setSearchQ(e.target.value)}
+            onKeyDown={(e)=>{ if (e.key==='Enter') runSearch(); }}
+            placeholder="Buscar en chat..."
+            className="h-8 px-2 rounded bg-slate-900 border border-slate-700 text-xs outline-none focus:border-emerald-400"
+            style={{width:'160px'}}
+          />
+          <button type="button" onClick={runSearch} title="Buscar" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">🔎</button>
+          <button type="button" onClick={openAttachments} title="Ver adjuntos" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📎</button>
         </div>
       </div>
 
@@ -472,6 +496,43 @@ function pickMime() {
       </form>
 
       <MediaModal open={modal.open} kind={modal.kind} src={modal.src} onClose={closeMedia} />
+      {attach.open && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closeAttachments}>
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-auto p-4" onClick={(e)=>e.stopPropagation()}>
+            <div className="flex items-center mb-3">
+              <div className="font-medium">Adjuntos</div>
+              <button className="ml-auto px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm" onClick={closeAttachments}>Cerrar</button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {attach.items.map((a,i)=>{
+                const mt = (a.mime_type||'');
+                const isImg = (a.tipo==='image') || mt.startsWith('image/');
+                const isVideo = (a.tipo==='video') || mt.startsWith('video/');
+                const isAudio = (a.tipo==='audio') || mt.startsWith('audio/');
+                const url = a.url || (a.media_id ? `/api/media/${a.media_id}` : null);
+                if (isImg && url) return (
+                  <button key={i} className="group" onClick={()=>openMedia('image', url)}>
+                    <img src={url} alt="img" className="w-full h-28 object-cover rounded border border-slate-700" />
+                  </button>
+                );
+                if (isVideo && url) return (
+                  <button key={i} className="group" onClick={()=>openMedia('video', url)}>
+                    <div className="w-full h-28 bg-black/40 grid place-items-center rounded border border-slate-700">🎬</div>
+                  </button>
+                );
+                if (isAudio && url) return (
+                  <div key={i} className="p-2 rounded border border-slate-800 bg-slate-900 text-xs">
+                    <audio src={url} controls className="w-full" />
+                  </div>
+                );
+                return (
+                  <a key={i} href={url||'#'} target="_blank" rel="noreferrer" className="p-2 rounded border border-slate-800 bg-slate-900 text-xs truncate">Documento</a>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ export const GET: APIRoute = async ({ request }) => {
     const cid   = url.searchParams.get("conversation_id");
     const limit = Math.min(Number(url.searchParams.get("limit") || 150), 500);
     const before= url.searchParams.get("before");
+    const q     = (url.searchParams.get("q") || "").trim();
 
     if (!cid) {
       return new Response(JSON.stringify({ ok:false, error:"conversation_id requerido" }), { status: 400 });
@@ -19,6 +20,10 @@ export const GET: APIRoute = async ({ request }) => {
       const b = /^\d+$/.test(before) ? Number(before) : Math.floor(new Date(before).getTime()/1000);
       where += " AND COALESCE(UNIX_TIMESTAMP(creado_en), ts) < ?";
       params.push(b);
+    }
+    if (q) {
+      where += " AND cuerpo LIKE CONCAT('%', ?, '%')";
+      params.push(q);
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(

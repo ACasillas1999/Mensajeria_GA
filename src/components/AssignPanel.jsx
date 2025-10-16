@@ -92,7 +92,7 @@ export default function AssignPanel() {
               <option key={a.id} value={a.id}>{a.nombre}{a.sucursal ? (' - ' + a.sucursal) : ''}</option>
             ))}
           </select>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar�"
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar conversación..."
             className="px-3 py-2 rounded bg-slate-900 border border-slate-700 flex-1 min-w-[200px] outline-none focus:border-emerald-400" />
 
           <label className="ml-auto inline-flex items-center gap-2 text-sm text-slate-300">
