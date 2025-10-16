@@ -85,6 +85,117 @@ export default function ChatPane({ conversation }) {
   // composer
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+  // audio recorder
+  const [recState, setRecState] = useState({ recording:false, seconds:0, blob:null });
+  const mediaRef = useRef(null);
+  const recTimerRef = useRef(null);
+  const chunksRef = useRef([]);
+function pickMime() {
+  const cand = [
+    'audio/webm;codecs=opus', // Chrome/Edge
+    'audio/webm',
+    'audio/ogg;codecs=opus',  // Firefox
+    'audio/ogg',
+    'audio/mp4'               // Safari 17+
+  ];
+  for (const t of cand) {
+    if (window.MediaRecorder?.isTypeSupported?.(t)) return t;
+  }
+  return ''; // dejar que el navegador elija
+}
+
+  async function startRecording() {
+  try {
+    // 0) Requisito: HTTPS o localhost
+    const secure = location.protocol === 'https:' ||
+                   ['localhost','127.0.0.1'].includes(location.hostname);
+    if (!secure) {
+      alert('Activa HTTPS o usa localhost para permitir la grabación.');
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      alert('Grabación no soportada por el navegador.');
+      return;
+    }
+
+    // 1) Pide micrófono con constraints razonables
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        noiseSuppression: true,
+        echoCancellation: true,
+        sampleRate: 48000
+      }
+    });
+
+    if (!stream || stream.getAudioTracks().length === 0) {
+      alert('No hay pista de audio disponible.');
+      return;
+    }
+
+    // 2) Negocia MIME soportado
+    const mimeType = pickMime();
+    const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+
+    chunksRef.current = [];
+    mr.ondataavailable = (e) => { if (e.data?.size) chunksRef.current.push(e.data); };
+    mr.onerror = (ev) => {
+      console.error('MediaRecorder error:', ev.error || ev);
+      alert('Error del grabador: ' + (ev.error?.message || ev.message || ev));
+    };
+    mr.onstop = () => {
+      try { stream.getTracks().forEach(t => t.stop()); } catch {}
+      const typeOut = mr.mimeType || (mimeType || 'audio/webm');
+      const blob = new Blob(chunksRef.current, { type: typeOut });
+      setRecState(s => ({ ...s, recording:false, blob }));
+      clearInterval(recTimerRef.current);
+      recTimerRef.current = null;
+    };
+
+    mediaRef.current = mr;
+    mr.start(250); // timeslice para obtener chunks regulares
+    setRecState({ recording:true, seconds:0, blob:null });
+    recTimerRef.current = setInterval(
+      () => setRecState(s => ({ ...s, seconds: s.seconds + 1 })), 1000
+    );
+  } catch (e) {
+    console.error('No se pudo iniciar la grabación:', e);
+    alert('No se pudo iniciar la grabación: ' + (e?.message || e));
+  }
+}
+
+
+  function stopRecording() {
+    const mr = mediaRef.current;
+    if (mr && mr.state === 'recording') mr.stop();
+  }
+
+  async function sendRecorded() {
+    if (!recState.blob || !conversation) return;
+    try {
+      const fd = new FormData();
+      const ext = (recState.blob.type || '').includes('ogg') ? 'ogg' : 'webm';
+      const fileName = `audio-${Date.now()}.${ext}`;
+      fd.append('file', new File([recState.blob], fileName, { type: recState.blob.type || 'audio/webm' }));
+      const up = await fetch('/api/upload', { method: 'POST', body: fd });
+      const uj = await up.json();
+      if (!up.ok || !uj.ok) { alert(uj?.error || 'No se pudo subir el audio'); return; }
+
+      const tempId = `temp-a-${Date.now()}`;
+      setItems(prev => ([...prev, { id: tempId, sender:'me', tipo:'audio', media_url: uj.url, created_at: new Date().toISOString(), status:'sending' }]));
+
+      const res = await fetch('/api/send-media', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ conversacion_id: conversation.id, to: conversation.wa_user, kind:'audio', url: uj.url }) });
+      const j = await res.json();
+      if (j.ok) setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'sent' } : m));
+      else { setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'failed' } : m)); alert(j.error?.message || 'No se pudo enviar el audio'); }
+    } catch (e) {
+      alert('Error enviando audio');
+    } finally {
+      setRecState({ recording:false, seconds:0, blob:null });
+      setTimeout(scrollToBottom, 0);
+    }
+  }
 
   // scroll
   const endRef = useRef(null);
@@ -345,6 +456,15 @@ export default function ChatPane({ conversation }) {
           rows={1}
           className="resize-none flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 outline-none focus:border-emerald-400"
         />
+        <button type="button" onClick={() => recState.recording ? stopRecording() : startRecording()} className={`inline-flex items-center justify-center w-10 h-10 rounded ${recState.recording ? 'bg-red-600 hover:bg-red-500' : 'bg-slate-800 hover:bg-slate-700'} transition`} title={recState.recording ? 'Detener grabación' : 'Grabar audio'}>
+          {recState.recording ? '⏹️' : '🎤'}
+        </button>
+        {recState.recording && (
+          <span className="text-xs text-red-400">{String(Math.floor(recState.seconds/60)).padStart(2,'0')}:{String(recState.seconds%60).padStart(2,'0')}</span>
+        )}
+        {!!recState.blob && !recState.recording && (
+          <button type="button" onClick={sendRecorded} className="px-3 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Enviar audio</button>
+        )}
         {file && <span className="text-xs text-slate-300 truncate max-w-[200px]">{file.name}</span>}
         <button className="px-4 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400">
           Enviar
