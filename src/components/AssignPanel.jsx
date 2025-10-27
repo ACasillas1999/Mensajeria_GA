@@ -122,7 +122,7 @@ export default function AssignPanel() {
                   <div className="mt-2 flex gap-2">
                     <select className="bg-slate-900 border border-slate-700 rounded px-2 py-1"
                       onChange={(e)=>assign(c.id, Number(e.target.value))} defaultValue="">
-                      <option value="" disabled>Asignar a�</option>
+                      <option value="" disabled>Asignar a:</option>
                       {agents.map(a => (
                         <option key={a.id} value={a.id}>{a.nombre} ({a.sucursal || '-'})</option>
                       ))}
