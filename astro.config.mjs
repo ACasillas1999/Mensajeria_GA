@@ -7,5 +7,4 @@ export default defineConfig({
   adapter: node({ mode: "standalone" }),
   output: "server",
   integrations: [react(), tailwind()],
-  base: "/mensajeria",
 });
