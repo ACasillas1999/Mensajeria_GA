@@ -1,6 +1,12 @@
 import type { APIRoute } from 'astro'
-import fs from 'node:fs/promises'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import path from 'node:path'
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1'
+})
+
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'grupo-ascencio-messaging-app'
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -9,16 +15,9 @@ export const POST: APIRoute = async ({ request }) => {
     if (!file) return new Response(JSON.stringify({ ok:false, error:'file_required' }), { status:400 })
 
     const buf = Buffer.from(await file.arrayBuffer())
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
-    await fs.mkdir(uploadsDir, { recursive: true })
 
     const ext = path.extname(file.name || '')
-    let name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext || ''}`
-    const inputPath = path.join(uploadsDir, name)
-    await fs.writeFile(inputPath, buf)
-
-    const origin = new URL(request.url).origin // en dev: localhost o tu ngrok
-    let url = `${origin}/uploads/${name}`
+    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext || ''}`
 
     // Deducción simple del tipo para el backend
     const mime = (file.type || '').toLowerCase()
@@ -27,39 +26,20 @@ export const POST: APIRoute = async ({ request }) => {
                : mime.startsWith('video/') ? 'video'
                : 'document'
 
-    // Intentar convertir audio WEBM a OGG/OPUS para mejor compatibilidad con WhatsApp
-    if (kind === 'audio' && mime.includes('webm')) {
-  try {
-    const ffmpegPath = (await import('ffmpeg-static')).default as unknown as string
-    const ffmpeg = (await import('fluent-ffmpeg')).default
-    // @ts-ignore
-    ffmpeg.setFfmpegPath(ffmpegPath)
+    // Subir a S3
+    await s3Client.send(new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: name,
+      Body: buf,
+      ContentType: mime || 'application/octet-stream',
+    }))
 
-    const base = name.replace(/\.[^.]*$/, '')
-    const outName = `${base}.ogg`
-    const outPath = path.join(uploadsDir, outName)
-
-    await new Promise<void>((resolve, reject) => {
-      ffmpeg()
-        .input(inputPath)
-        .audioCodec('libopus')
-        .format('ogg')
-        .on('end', resolve)
-        .on('error', reject)
-        .save(outPath)
-    })
-
-    try { await fs.unlink(inputPath) } catch {}
-    name = outName
-    url = `${origin}/uploads/${name}`
-    kind = 'audio' // se mantiene
-  } catch (e) {
-    // Si falla la conversión, seguimos sirviendo el .webm original
-  }
-}
+    // URL pública del archivo en S3
+    const url = `https://${BUCKET_NAME}.s3.amazonaws.com/${name}`
 
     return new Response(JSON.stringify({ ok:true, url, kind, mime }), { status:200 })
   } catch (e:any) {
+    console.error('Upload error:', e)
     return new Response(JSON.stringify({ ok:false, error: e?.message || 'upload_error' }), { status:500 })
   }
 }
