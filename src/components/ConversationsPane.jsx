@@ -137,7 +137,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     const ua = isUnread(a);
     const ub = isUnread(b);
     if (ua !== ub) return ua ? -1 : 1; // no leídos primero
-    return Number((b as any).last_at || 0) - Number((a as any).last_at || 0);
+    return Number(b.last_at || 0) - Number(a.last_at || 0);
   });
 
   return (
