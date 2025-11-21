@@ -15,10 +15,14 @@ function parseCookies(header: string | null): Record<string, string> {
 
 // Solo login es público (y assets). Si usas webhooks externos,
 // considera agregar '/api/webhook' aquí también.
+const base = import.meta.env.BASE_URL || '/';
 const PUBLIC_SET = new Set([
   '/login',
   '/api/login',
   '/api/webhook',
+  `${base}/login`.replace(/\/\//g, '/'),
+  `${base}/api/login`.replace(/\/\//g, '/'),
+  `${base}/api/webhook`.replace(/\/\//g, '/'),
 ]);
 // Rutas que deben ser públicas por prefijo (coincide con startsWith)
 const PUBLIC_PREFIXES: string[] = [
