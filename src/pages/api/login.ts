@@ -45,10 +45,11 @@ export const POST: APIRoute = async ({ request }) => {
     );
 
     const isProd = (process.env.NODE_ENV || "").toLowerCase() === "production";
+    const base = import.meta.env.BASE_URL || "/";
     const cookie = [
       `auth=${token}`,
       "HttpOnly",
-      "Path=/",
+      `Path=${base}`,
       "SameSite=Lax",
       // 8h
       "Max-Age=28800",
