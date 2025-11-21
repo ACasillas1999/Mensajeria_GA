@@ -24,6 +24,22 @@ export default function ConversationsPane({ onSelect }) {
     }
   }
 
+  // refresco silencioso para el polling (no toca `loading`)
+  async function refresh(search = q, st = estado) {
+    try {
+      const qs = new URLSearchParams({
+        search,
+        limit: String(50),
+      });
+      if (st) qs.set('estado', st);
+      const r = await fetch(`${BASE}/api/conversations?${qs.toString()}`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) setItems(j.items || []);
+    } catch {
+      // ignorar errores puntuales
+    }
+  }
+
   // Carga inicial y cuando cambia el filtro de estado
   useEffect(() => {
     load("");
@@ -34,7 +50,7 @@ export default function ConversationsPane({ onSelect }) {
   useEffect(() => {
     const id = setInterval(() => {
       // reutiliza el último texto de búsqueda y estado seleccionados
-      load(q, estado);
+      refresh();
     }, 5000); // cada 5 segundos
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,11 +80,17 @@ export default function ConversationsPane({ onSelect }) {
         {loading && <div className="p-3 text-sm text-slate-400">Cargando…</div>}
         {!loading && items.length === 0 && <div className="p-3 text-sm text-slate-400">Sin resultados</div>}
 
-        {items.map((c) => (
+        {items.map((c) => {
+          const isRecent = Number(c.last_at || 0) * 1000 > Date.now() - 15000; // últimos 15s
+          const baseClasses = "w-full text-left px-4 py-3 border-b flex items-start gap-3";
+          const visual = isRecent
+            ? "bg-slate-900/80 border-slate-600"
+            : "hover:bg-slate-800/70 border-slate-800";
+          return (
           <button
             key={c.id}
             onClick={() => onSelect?.(c)}
-            className="w-full text-left px-4 py-3 hover:bg-slate-800/70 border-b border-slate-800 flex items-start gap-3"
+            className={`${baseClasses} ${visual}`}
           >
             <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 text-xs">
               {String((c.title || 'C')[0]).toUpperCase()}
@@ -81,9 +103,8 @@ export default function ConversationsPane({ onSelect }) {
               <div className="text-xs text-slate-400 truncate">{c.last_text || '-'}</div>
             </div>
           </button>
-        ))}
+        )})}
       </div>
     </div>
   );
 }
-

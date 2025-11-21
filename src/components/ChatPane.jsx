@@ -233,6 +233,20 @@ function pickMime() {
       setTimeout(scrollToBottom, 0);
     }
   }
+
+  // refresco silencioso para que el chat se actualice sin parpadeos
+  async function refreshMessages() {
+    if (!conversation) return;
+    try {
+      const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(300) });
+      if (searchQ.trim()) qs.set('q', searchQ.trim());
+      const r = await fetch(`${BASE}/api/messages?${qs.toString()}`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) setItems(j.items || []);
+    } catch {
+      // ignorar errores puntuales
+    }
+  }
   async function runSearch() { await load(); }
   async function openAttachments() {
     if (!conversation) return;
@@ -246,6 +260,15 @@ function pickMime() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [conversation?.id]);
   useEffect(() => { scrollToBottom(); }, [items.length]); // autoscroll ante nuevos mensajes
+
+  // Polling de mensajes completos para recibir nuevos sin recargar
+  useEffect(() => {
+    if (!conversation) return;
+    const id = setInterval(() => {
+      refreshMessages();
+    }, 5000); // cada 5 segundos
+    return () => clearInterval(id);
+  }, [conversation?.id, searchQ]);
 
   // Polling ligero SOLO de estados (cada 5s)
   useEffect(() => {
