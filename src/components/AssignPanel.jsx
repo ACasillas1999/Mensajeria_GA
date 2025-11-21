@@ -129,7 +129,10 @@ export default function AssignPanel() {
                         <option key={a.id} value={a.id}>{a.nombre} ({a.sucursal || '-'})</option>
                       ))}
                     </select>
-                    <a href={`/mensajes?conversation_id=${c.id}`} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm">
+                    <a
+                      href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
+                      className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm"
+                    >
                       Ver chat
                     </a>
                   </div>
@@ -169,7 +172,12 @@ export default function AssignPanel() {
                           ))}
                         </select>
                         <button onClick={()=>assign(c.id, null)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm">Quitar</button>
-                        <a href={`/mensajes?conversation_id=${c.id}`} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm">Ver chat</a>
+                      <a
+                        href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm"
+                      >
+                        Ver chat
+                      </a>
                       </div>
                     </div>
                   ))}
@@ -205,7 +213,12 @@ export default function AssignPanel() {
                               ))}
                             </select>
                             <button onClick={()=>assign(c.id, null)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm">Quitar</button>
-                            <a href={`/mensajes?conversation_id=${c.id}`} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm">Ver chat</a>
+                            <a
+                              href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
+                              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm"
+                            >
+                              Ver chat
+                            </a>
                           </div>
                         </div>
                       ))}
@@ -251,4 +264,3 @@ export default function AssignPanel() {
     </div>
   );
 }
-

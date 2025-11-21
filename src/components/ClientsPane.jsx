@@ -52,7 +52,12 @@ export default function ClientsPane() {
             </div>
             <div className="mt-2 text-xs text-slate-400 line-clamp-2">{c.last_text || '—'}</div>
             <div className="mt-3 flex gap-2">
-              <a href={`/mensajes?conversation_id=${c.id}`} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm">Abrir chat</a>
+              <a
+                href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
+                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm"
+              >
+                Abrir chat
+              </a>
             </div>
           </div>
         ))}
@@ -60,4 +65,3 @@ export default function ClientsPane() {
     </div>
   );
 }
-

@@ -3,8 +3,10 @@ import MediaModal from "./MediaModal.jsx";
 
 const BASE = import.meta.env.BASE_URL || '';
 
-// sonido (coloca public/ding.mp3)
-const ding = typeof Audio !== "undefined" ? new Audio("/ding.mp3") : null;
+// sonido (coloca public/ding.mp3) respetando el base path
+const ding = typeof Audio !== "undefined"
+  ? new Audio(`${BASE}/ding.mp3`.replace(/\/\//g, '/'))
+  : null;
 
 /* Muestra imágenes / videos / audios / docs */
 function MediaBubble({ m, onOpen }) {
@@ -15,7 +17,7 @@ function MediaBubble({ m, onOpen }) {
      mime.startsWith("video/") ? "video" :
      mime.startsWith("audio/") ? "audio" : "document");
 
-  const src = m.media_url || (m.media_id ? `/api/media/${m.media_id}` : null);
+  const src = m.media_url || (m.media_id ? `${BASE}/api/media/${m.media_id}`.replace(/\/\//g, '/') : null);
 
   if (kind === "image" && src) {
     return (
@@ -511,7 +513,7 @@ function pickMime() {
                 const isImg = (a.tipo==='image') || mt.startsWith('image/');
                 const isVideo = (a.tipo==='video') || mt.startsWith('video/');
                 const isAudio = (a.tipo==='audio') || mt.startsWith('audio/');
-                const url = a.url || (a.media_id ? `/api/media/${a.media_id}` : null);
+                const url = a.url || (a.media_id ? `${BASE}/api/media/${a.media_id}`.replace(/\/\//g, '/') : null);
                 if (isImg && url) return (
                   <button key={i} className="group" onClick={()=>openMedia('image', url)}>
                     <img src={url} alt="img" className="w-full h-28 object-cover rounded border border-slate-700" />

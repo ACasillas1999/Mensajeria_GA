@@ -226,7 +226,9 @@ export default function ChatView({ conversation }) {
       <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
         {msgs.map(m => {
           const common = `max-w-[70%] px-3 py-2 rounded-lg ${m.from_me ? 'ml-auto bg-green-100' : 'bg-white border'}`
-          const mediaSrc = m.media_id ? `/api/media/${m.media_id}` : m.media_url
+          const mediaSrc = m.media_id
+            ? `${BASE}/api/media/${m.media_id}`.replace(/\/\//g, '/')
+            : m.media_url
 
           if (m.tipo === 'audio' && mediaSrc) {
             return (

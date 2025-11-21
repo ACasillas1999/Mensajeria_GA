@@ -13,7 +13,7 @@ import AppLayout from "../layouts/AppLayout.astro";
     <aside class="col-span-12 lg:col-span-4 space-y-3">
       <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/70">
         <h3 class="font-medium mb-2">Sesión</h3>
-        <form onsubmit="event.preventDefault(); fetch('/api/logout',{method:'POST'}).finally(()=>location.href='/login');">
+        <form onsubmit={`event.preventDefault(); (function(){ const base='${import.meta.env.BASE_URL || '/'}'; fetch((base + '/api/logout').replace(/\\/\\/+/g,'/'), { method:'POST' }).finally(() => { location.href = (base + '/login').replace(/\\/\\/+/g,'/'); }); })();`}>
           <button class="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700">Cerrar sesión</button>
         </form>
       </div>
@@ -23,4 +23,3 @@ import AppLayout from "../layouts/AppLayout.astro";
     </aside>
   </section>
 </AppLayout>
-
