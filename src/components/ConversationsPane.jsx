@@ -9,7 +9,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState(""); // '', NUEVA, ABIERTA, RESUELTA
   const [loading, setLoading] = useState(false);
-  const [seen, setSeen] = useState<Record<number, number>>({});
+  const [seen, setSeen] = useState({});
 
   async function load(search = "", st = estado) {
     setLoading(true);
@@ -33,8 +33,8 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     try {
       const raw = window.localStorage.getItem(SEEN_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as Record<string, number>;
-        const norm: Record<number, number> = {};
+        const parsed = JSON.parse(raw);
+        const norm = {};
         for (const [k, v] of Object.entries(parsed)) {
           const id = Number(k);
           if (!Number.isNaN(id)) norm[id] = Number(v) || 0;
@@ -58,8 +58,8 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     });
   }, [currentId]);
 
-  const isUnread = (c: any) => {
-    const lastAt = Number((c as any).last_at || 0);
+  const isUnread = (c) => {
+    const lastAt = Number(c.last_at || 0);
     const seenAt = seen[c.id] || 0;
     return lastAt > seenAt;
   };
