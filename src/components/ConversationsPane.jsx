@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 
 const BASE = import.meta.env.BASE_URL || '';
 const SEEN_KEY = "mensajeria_seen_v1";
@@ -85,12 +86,49 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estado]);
 
-  // Refresco automático periódico de la bandeja (polling)
+  // SSE: Recibir actualizaciones de conversaciones en tiempo real
+  const handleRealtimeConversations = useCallback((updated) => {
+    if (!Array.isArray(updated)) return;
+    setItems((prev) => {
+      const map = new Map(prev.map(c => [c.id, c]));
+      for (const conv of updated) {
+        if (map.has(conv.id)) {
+          // Actualizar existente
+          map.set(conv.id, {
+            ...map.get(conv.id),
+            last_text: conv.ultimo_msg,
+            last_at: conv.ultimo_ts,
+            estado: conv.estado,
+            title: conv.wa_profile_name || conv.wa_user,
+          });
+        } else {
+          // Nueva conversación
+          map.set(conv.id, {
+            id: conv.id,
+            wa_user: conv.wa_user,
+            title: conv.wa_profile_name || conv.wa_user,
+            estado: conv.estado,
+            last_text: conv.ultimo_msg,
+            last_at: conv.ultimo_ts,
+          });
+        }
+      }
+      return Array.from(map.values());
+    });
+  }, []);
+
+  // Conectar SSE para lista de conversaciones
+  useRealtimeChat({
+    onConversations: handleRealtimeConversations,
+    enabled: true,
+  });
+
+  // Fallback: Polling cada 10s como respaldo si SSE falla
   useEffect(() => {
     const id = setInterval(() => {
       // reutiliza el último texto de búsqueda y estado seleccionados
       refresh();
-    }, 5000); // cada 5 segundos
+    }, 10000); // cada 10 segundos (reducido porque SSE es el principal)
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, estado]);

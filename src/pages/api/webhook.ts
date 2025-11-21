@@ -1,6 +1,35 @@
 import type { APIRoute } from 'astro';
 import 'dotenv/config';
 import { pool } from '../../lib/db';
+import crypto from 'crypto';
+
+/**
+ * Valida la firma X-Hub-Signature-256 de Meta/WhatsApp
+ * @see https://developers.facebook.com/docs/graph-api/webhooks/getting-started#verification-requests
+ */
+function verifyWebhookSignature(payload: string, signature: string | null): boolean {
+  if (!signature) return false;
+
+  const appSecret = process.env.WABA_APP_SECRET;
+  if (!appSecret) {
+    console.warn('WABA_APP_SECRET no configurado - saltando validación de firma');
+    return true; // En desarrollo permitir sin firma, pero loguear warning
+  }
+
+  const expectedSignature = 'sha256=' + crypto
+    .createHmac('sha256', appSecret)
+    .update(payload)
+    .digest('hex');
+
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
+  } catch {
+    return false;
+  }
+}
 
 /** VERIFICACIÓN (GET) */
 export const GET: APIRoute = async ({ request }) => {
@@ -18,10 +47,19 @@ export const GET: APIRoute = async ({ request }) => {
 };
 
 /** EVENTOS (POST) */
-/** EVENTOS (POST) */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const data = await request.json();
+    // Leer el body como texto para validar firma
+    const rawBody = await request.text();
+    const signature = request.headers.get('x-hub-signature-256');
+
+    // Validar firma de Meta
+    if (!verifyWebhookSignature(rawBody, signature)) {
+      console.error('WEBHOOK: Firma inválida');
+      return new Response('Invalid signature', { status: 401 });
+    }
+
+    const data = JSON.parse(rawBody);
     console.log('WEBHOOK EVENT (raw):', JSON.stringify(data).slice(0, 400), '...');
 
     const entries = data?.entry ?? [];

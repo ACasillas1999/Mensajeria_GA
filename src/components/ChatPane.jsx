@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import MediaModal from "./MediaModal.jsx";
+import QuickReplies from "./QuickReplies.jsx";
+import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -87,6 +89,9 @@ export default function ChatPane({ conversation }) {
   const openMedia = (kind, src) => setModal({ open: true, kind, src });
   const closeMedia = () => setModal({ open: false, kind: null, src: null });
   const [attach, setAttach] = useState({ open:false, items:[] });
+  const [showQuickReplies, setShowQuickReplies] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templates, setTemplates] = useState([]);
 
   // composer
   const [text, setText] = useState("");
@@ -258,34 +263,101 @@ function pickMime() {
   }
   function closeAttachments() { setAttach({ open:false, items:[] }); }
 
+  // Cargar plantillas disponibles
+  async function loadTemplates() {
+    try {
+      const r = await fetch(`${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) setTemplates(j.items || []);
+    } catch {}
+  }
+
+  // Enviar plantilla
+  async function sendTemplate(tpl) {
+    if (!conversation) return;
+    try {
+      const r = await fetch(`${BASE}/api/templates`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: conversation.wa_user,
+          template_name: tpl.nombre,
+          language_code: tpl.idioma || 'es',
+          conversacion_id: conversation.id,
+        }),
+      });
+      const j = await r.json();
+      if (j.ok) {
+        setShowTemplates(false);
+        refreshMessages();
+      } else {
+        alert(j.error || 'No se pudo enviar la plantilla');
+      }
+    } catch {
+      alert('Error de red');
+    }
+  }
+
+  // Insertar respuesta rápida en el texto
+  function handleQuickReplySelect(content) {
+    setText(prev => prev + content);
+    setShowQuickReplies(false);
+  }
+
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [conversation?.id]);
   useEffect(() => { scrollToBottom(); }, [items.length]); // autoscroll ante nuevos mensajes
 
-  // Polling de mensajes completos para recibir nuevos sin recargar
+  // SSE: Recibir mensajes en tiempo real
+  const handleRealtimeMessages = useCallback((newMessages) => {
+    if (!Array.isArray(newMessages)) return;
+    setItems((prev) => {
+      const existingIds = new Set(prev.map(m => m.wa_msg_id || m.id));
+      const toAdd = newMessages
+        .filter(m => !existingIds.has(m.wa_msg_id) && !existingIds.has(m.id))
+        .map(m => ({
+          id: m.id,
+          conversation_id: m.conversacion_id,
+          text: m.cuerpo,
+          created_at: new Date(m.ts * 1000).toISOString(),
+          sender: m.from_me ? 'me' : 'them',
+          tipo: m.tipo,
+          status: m.status,
+          media_id: m.media_id,
+          mime_type: m.mime_type,
+          wa_msg_id: m.wa_msg_id,
+        }));
+      if (toAdd.length === 0) return prev;
+      return [...prev, ...toAdd];
+    });
+  }, []);
+
+  // SSE: Actualizar estados de mensajes
+  const handleRealtimeStatus = useCallback((statuses) => {
+    if (!Array.isArray(statuses)) return;
+    setItems((prev) =>
+      prev.map(m => {
+        const update = statuses.find(s => s.id === m.id);
+        return update ? { ...m, status: update.status } : m;
+      })
+    );
+  }, []);
+
+  // Conectar SSE para esta conversación
+  useRealtimeChat({
+    conversationId: conversation?.id,
+    onMessage: handleRealtimeMessages,
+    onStatus: handleRealtimeStatus,
+    enabled: !!conversation,
+  });
+
+  // Fallback: Polling cada 10s como respaldo si SSE falla
   useEffect(() => {
     if (!conversation) return;
     const id = setInterval(() => {
       refreshMessages();
-    }, 5000); // cada 5 segundos
+    }, 10000); // cada 10 segundos (reducido porque SSE es el principal)
     return () => clearInterval(id);
   }, [conversation?.id, searchQ]);
-
-  // Polling ligero SOLO de estados (cada 5s)
-  useEffect(() => {
-    if (!conversation) return;
-    const t = setInterval(async () => {
-      try {
-        const r = await fetch(`${BASE}/api/message-status?conversation_id=${conversation.id}`.replace(/\/\//g, '/'));
-        const j = await r.json();
-        if (!j.ok) return;
-        const map = new Map(j.items.map((m) => [m.id, m.status]));
-        setItems((prev) =>
-          prev.map(m => (m.sender === "me" && map.has(m.id)) ? { ...m, status: map.get(m.id) } : m)
-        );
-      } catch {}
-    }, 5000);
-    return () => clearInterval(t);
-  }, [conversation?.id]);
 
   // notificaciones + sonido al recibir entrantes nuevos
   useEffect(() => {
@@ -458,6 +530,7 @@ function pickMime() {
           />
           <button type="button" onClick={runSearch} title="Buscar" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">🔎</button>
           <button type="button" onClick={openAttachments} title="Ver adjuntos" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📎</button>
+          <button type="button" onClick={() => { loadTemplates(); setShowTemplates(true); }} title="Enviar plantilla" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📋</button>
         </div>
       </div>
 
@@ -495,10 +568,13 @@ function pickMime() {
 
       {/* Composer */}
       <form onSubmit={send} className="p-3 border-t border-slate-800 flex items-center gap-2">
-        <label className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700 cursor-pointer">
+        <label className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700 cursor-pointer" title="Adjuntar archivo">
           <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
           📎
         </label>
+        <button type="button" onClick={() => setShowQuickReplies(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700" title="Respuestas rápidas">
+          ⚡
+        </button>
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
@@ -523,6 +599,49 @@ function pickMime() {
       </form>
 
       <MediaModal open={modal.open} kind={modal.kind} src={modal.src} onClose={closeMedia} />
+
+      {/* Modal Respuestas Rápidas */}
+      {showQuickReplies && (
+        <QuickReplies
+          onSelect={handleQuickReplySelect}
+          onClose={() => setShowQuickReplies(false)}
+        />
+      )}
+
+      {/* Modal Plantillas */}
+      {showTemplates && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowTemplates(false)}>
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[70vh] overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center mb-4">
+              <h3 className="font-semibold text-lg">Enviar Plantilla</h3>
+              <button className="ml-auto px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm" onClick={() => setShowTemplates(false)}>✕</button>
+            </div>
+            {templates.length === 0 ? (
+              <div className="text-slate-400 text-sm py-8 text-center">
+                No hay plantillas aprobadas disponibles.<br/>
+                <span className="text-xs">Las plantillas deben ser aprobadas por Meta antes de poder usarse.</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {templates.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    onClick={() => sendTemplate(tpl)}
+                    className="w-full text-left p-3 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800/70 hover:border-emerald-700/50 transition"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-200">{tpl.nombre}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400">{tpl.categoria}</span>
+                    </div>
+                    <div className="text-sm text-slate-400 mt-1 line-clamp-2">{tpl.body_text}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {attach.open && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closeAttachments}>
           <div className="bg-slate-950 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-auto p-4" onClick={(e)=>e.stopPropagation()}>
