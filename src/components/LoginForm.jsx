@@ -23,7 +23,7 @@ export default function LoginForm() {
       if (res.ok && data.ok) {
         setMensaje("¡Listo! Bienvenido.");
         const url = new URL(window.location.href);
-        const next = url.searchParams.get('next') || '/';
+        const next = url.searchParams.get('next') || `${import.meta.env.BASE_URL}/`;
         setTimeout(() => (window.location.href = next), 500);
       } else {
         setMensaje(`Error: ${data?.error ?? "Usuario o contraseña incorrectos."}`);
