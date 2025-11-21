@@ -24,7 +24,21 @@ export default function ConversationsPane({ onSelect }) {
     }
   }
 
-  useEffect(() => { load(""); /* eslint-disable-line */ }, [estado]);
+  // Carga inicial y cuando cambia el filtro de estado
+  useEffect(() => {
+    load("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estado]);
+
+  // Refresco automático periódico de la bandeja (polling)
+  useEffect(() => {
+    const id = setInterval(() => {
+      // reutiliza el último texto de búsqueda y estado seleccionados
+      load(q, estado);
+    }, 5000); // cada 5 segundos
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, estado]);
 
   return (
     <div className="bg-slate-950/70 border border-slate-800 rounded-xl overflow-hidden">
@@ -72,5 +86,4 @@ export default function ConversationsPane({ onSelect }) {
     </div>
   );
 }
-
 

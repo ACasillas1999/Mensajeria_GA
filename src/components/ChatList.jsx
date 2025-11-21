@@ -4,7 +4,28 @@ const BASE = import.meta.env.BASE_URL || '';
 
 export default function ChatList({ onSelect }) {
   const [items, setItems] = useState([])
-  useEffect(()=>{ fetch(`${BASE}/api/conversations`.replace(/\/\//g, '/')).then(r=>r.json()).then(setItems) },[])
+
+  async function load() {
+    const r = await fetch(`${BASE}/api/conversations`.replace(/\/\//g, '/'))
+    const j = await r.json()
+    setItems(j.items || j)
+  }
+
+  // carga inicial
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // refresco periódico para que la bandeja se actualice sola
+  useEffect(() => {
+    const id = setInterval(() => {
+      load()
+    }, 5000) // cada 5 segundos
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <div className="h-full overflow-y-auto">
       {items.map(c=>(
