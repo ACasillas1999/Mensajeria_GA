@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 
 const BASE = import.meta.env.BASE_URL || '';
+const SEEN_KEY = "mensajeria_seen_v1";
 
-export default function ConversationsPane({ onSelect }) {
+export default function ConversationsPane({ onSelect, currentId = null }) {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState(""); // '', NUEVA, ABIERTA, RESUELTA
   const [loading, setLoading] = useState(false);
+  const [seen, setSeen] = useState<Record<number, number>>({});
 
   async function load(search = "", st = estado) {
     setLoading(true);
@@ -23,6 +25,43 @@ export default function ConversationsPane({ onSelect }) {
       setLoading(false);
     }
   }
+
+  // cargar mapa de vistos desde localStorage (por navegador)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(SEEN_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, number>;
+        const norm: Record<number, number> = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          const id = Number(k);
+          if (!Number.isNaN(id)) norm[id] = Number(v) || 0;
+        }
+        setSeen(norm);
+      }
+    } catch {}
+  }, []);
+
+  // marcar como leída la conversación actualmente abierta
+  useEffect(() => {
+    if (!currentId) return;
+    setSeen(prev => {
+      const next = { ...prev, [currentId]: Math.floor(Date.now() / 1000) };
+      try {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(SEEN_KEY, JSON.stringify(next));
+        }
+      } catch {}
+      return next;
+    });
+  }, [currentId]);
+
+  const isUnread = (c: any) => {
+    const lastAt = Number((c as any).last_at || 0);
+    const seenAt = seen[c.id] || 0;
+    return lastAt > seenAt;
+  };
 
   // refresco silencioso para el polling (no toca `loading`)
   async function refresh(search = q, st = estado) {
@@ -56,6 +95,13 @@ export default function ConversationsPane({ onSelect }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, estado]);
 
+  const sorted = [...items].sort((a, b) => {
+    const ua = isUnread(a);
+    const ub = isUnread(b);
+    if (ua !== ub) return ua ? -1 : 1; // no leídos primero
+    return Number((b as any).last_at || 0) - Number((a as any).last_at || 0);
+  });
+
   return (
     <div className="bg-slate-950/70 border border-slate-800 rounded-xl overflow-hidden">
       <div className="h-12 px-3 flex items-center gap-2 border-b border-slate-800">
@@ -78,13 +124,13 @@ export default function ConversationsPane({ onSelect }) {
 
       <div className="max-h-[calc(100vh-14rem)] overflow-y-auto thin-scroll">
         {loading && <div className="p-3 text-sm text-slate-400">Cargando…</div>}
-        {!loading && items.length === 0 && <div className="p-3 text-sm text-slate-400">Sin resultados</div>}
+        {!loading && sorted.length === 0 && <div className="p-3 text-sm text-slate-400">Sin resultados</div>}
 
-        {items.map((c) => {
-          const isRecent = Number(c.last_at || 0) * 1000 > Date.now() - 15000; // últimos 15s
+        {sorted.map((c) => {
+          const unread = isUnread(c);
           const baseClasses = "w-full text-left px-4 py-3 border-b flex items-start gap-3";
-          const visual = isRecent
-            ? "bg-slate-900/80 border-slate-600"
+          const visual = unread
+            ? "bg-slate-900/80 border-emerald-500/60"
             : "hover:bg-slate-800/70 border-slate-800";
           return (
           <button
@@ -97,8 +143,15 @@ export default function ConversationsPane({ onSelect }) {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <div className="font-medium leading-tight truncate">{c.title || `Chat ${c.id}`}</div>
-                <span className="text-[10px] px-2 py-0.5 rounded-full border border-slate-700/80 text-emerald-300">{c.estado || '-'}</span>
+                <div className={`font-medium leading-tight truncate ${unread ? "text-emerald-200" : ""}`}>
+                  {c.title || `Chat ${c.id}`}
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full border border-slate-700/80 text-emerald-300">
+                  {c.estado || '-'}
+                </span>
+                {unread && (
+                  <span className="ml-1 w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+                )}
               </div>
               <div className="text-xs text-slate-400 truncate">{c.last_text || '-'}</div>
             </div>
