@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const BASE = import.meta.env.BASE_URL || '';
+
 export default function RegisterForm() {
   const [f, setF] = useState({
     email: "", nombre: "", password: "", confirmar: "", rol: "AGENTE",
@@ -24,7 +26,7 @@ export default function RegisterForm() {
     }
 
     try {
-      const r = await fetch("/api/register", {
+      const r = await fetch(`${BASE}/api/register`.replace(/\/\//g, '/'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(f),

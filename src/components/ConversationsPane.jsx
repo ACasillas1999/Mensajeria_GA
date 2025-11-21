@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const BASE = import.meta.env.BASE_URL || '';
+
 export default function ConversationsPane({ onSelect }) {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
@@ -14,7 +16,7 @@ export default function ConversationsPane({ onSelect }) {
         limit: String(50),
       });
       if (st) qs.set('estado', st);
-      const r = await fetch(`/api/conversations?${qs.toString()}`);
+      const r = await fetch(`${BASE}/api/conversations?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
       if (j.ok) setItems(j.items || []);
     } finally {

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import ReactFlow, { Background, Controls, MiniMap } from "reactflow";
 import "reactflow/dist/style.css";
 
+const BASE = import.meta.env.BASE_URL || '';
+
 export default function UsersFlow() {
   const [users, setUsers] = useState([]);
   const [sucursales, setSucursales] = useState([]);
@@ -13,8 +15,8 @@ export default function UsersFlow() {
   useEffect(() => {
     (async () => {
       const [u, s] = await Promise.all([
-        fetch("/api/admin/users").then(r=>r.json()),
-        fetch("/api/admin/sucursales").then(r=>r.json()),
+        fetch(`${BASE}/api/admin/users`.replace(/\/\//g, '/')).then(r=>r.json()),
+        fetch(`${BASE}/api/admin/sucursales`.replace(/\/\//g, '/')).then(r=>r.json()),
       ]);
       if (u.ok) setUsers(u.items || []);
       if (s.ok) setSucursales(s.items || []);

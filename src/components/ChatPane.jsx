@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import MediaModal from "./MediaModal.jsx";
 
+const BASE = import.meta.env.BASE_URL || '';
+
 // sonido (coloca public/ding.mp3)
 const ding = typeof Audio !== "undefined" ? new Audio("/ding.mp3") : null;
 
@@ -180,14 +182,14 @@ function pickMime() {
       const ext = (recState.blob.type || '').includes('ogg') ? 'ogg' : 'webm';
       const fileName = `audio-${Date.now()}.${ext}`;
       fd.append('file', new File([recState.blob], fileName, { type: recState.blob.type || 'audio/webm' }));
-      const up = await fetch('/api/upload', { method: 'POST', body: fd });
+      const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), { method: 'POST', body: fd });
       const uj = await up.json();
       if (!up.ok || !uj.ok) { alert(uj?.error || 'No se pudo subir el audio'); return; }
 
       const tempId = `temp-a-${Date.now()}`;
       setItems(prev => ([...prev, { id: tempId, sender:'me', tipo:'audio', media_url: uj.url, created_at: new Date().toISOString(), status:'sending' }]));
 
-      const res = await fetch('/api/send-media', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ conversacion_id: conversation.id, to: conversation.wa_user, kind:'audio', url: uj.url }) });
+      const res = await fetch(`${BASE}/api/send-media`.replace(/\/\//g, '/'), { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ conversacion_id: conversation.id, to: conversation.wa_user, kind:'audio', url: uj.url }) });
       const j = await res.json();
       if (j.ok) setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'sent' } : m));
       else { setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'failed' } : m)); alert(j.error?.message || 'No se pudo enviar el audio'); }
@@ -221,7 +223,7 @@ function pickMime() {
     try {
       const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(300) });
       if (searchQ.trim()) qs.set('q', searchQ.trim());
-      const r = await fetch(`/api/messages?${qs.toString()}`);
+      const r = await fetch(`${BASE}/api/messages?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
       if (j.ok) setItems(j.items || []);
     } finally {
@@ -233,7 +235,7 @@ function pickMime() {
   async function openAttachments() {
     if (!conversation) return;
     try {
-      const r = await fetch(`/api/conversation-attachments?conversation_id=${conversation.id}&limit=200`);
+      const r = await fetch(`${BASE}/api/conversation-attachments?conversation_id=${conversation.id}&limit=200`.replace(/\/\//g, '/'));
       const j = await r.json();
       if (j.ok) setAttach({ open:true, items: j.items || [] });
     } catch {}
@@ -248,7 +250,7 @@ function pickMime() {
     if (!conversation) return;
     const t = setInterval(async () => {
       try {
-        const r = await fetch(`/api/message-status?conversation_id=${conversation.id}`);
+        const r = await fetch(`${BASE}/api/message-status?conversation_id=${conversation.id}`.replace(/\/\//g, '/'));
         const j = await r.json();
         if (!j.ok) return;
         const map = new Map(j.items.map((m) => [m.id, m.status]));
@@ -319,9 +321,9 @@ function pickMime() {
         fd.append("to", to);
         if (text) fd.append("text", text);
         fd.append("file", file);
-        res = await fetch("/api/send", { method: "POST", body: fd });
+        res = await fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), { method: "POST", body: fd });
       } else {
-        res = await fetch("/api/send", {
+        res = await fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ conversacion_id, to, text }),
@@ -359,7 +361,7 @@ function pickMime() {
 
       setItems(prev => prev.map(m => m.id === failedMsg.id ? { ...m, status: "sending" } : m));
 
-      const res = await fetch("/api/send", {
+      const res = await fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), {
         method: "POST",
         headers: { "Content-Type":"application/json" },
         body: JSON.stringify({ conversacion_id, to, text: failedMsg.text || "" })
@@ -406,7 +408,7 @@ function pickMime() {
             onChange={async (e)=>{
               try {
                 const estado = e.target.value;
-                const r = await fetch('/api/conversation-status', {
+                const r = await fetch(`${BASE}/api/conversation-status`.replace(/\/\//g, '/'), {
                   method: 'POST', headers: { 'Content-Type':'application/json' },
                   body: JSON.stringify({ id: conversation.id, estado })
                 });

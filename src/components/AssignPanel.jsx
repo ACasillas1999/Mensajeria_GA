@@ -1,5 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 
+const BASE = import.meta.env.BASE_URL || '';
+
 export default function AssignPanel() {
   const [conv, setConv] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -18,9 +20,9 @@ export default function AssignPanel() {
     try {
       const asignadoParam = (fltAsignado === 'null') ? 'null' : (fltAgent ? String(fltAgent) : 'any');
       const [c, a, s] = await Promise.all([
-        fetch(`/api/admin/conversations?estado=${fltEstado}&asignado=${asignadoParam}&search=${encodeURIComponent(search)}`).then(r=>r.json()),
-        fetch(`/api/admin/agents?sucursal_id=${fltSuc}`).then(r=>r.json()),
-        fetch(`/api/admin/sucursales`).then(r=>r.json()),
+        fetch(`${BASE}/api/admin/conversations?estado=${fltEstado}&asignado=${asignadoParam}&search=${encodeURIComponent(search)}`.replace(/\/\//g, '/')).then(r=>r.json()),
+        fetch(`${BASE}/api/admin/agents?sucursal_id=${fltSuc}`.replace(/\/\//g, '/')).then(r=>r.json()),
+        fetch(`${BASE}/api/admin/sucursales`.replace(/\/\//g, '/')).then(r=>r.json()),
       ]);
       if (c.ok) setConv(c.items || []);
       if (a.ok) setAgents(a.items || []);
@@ -32,7 +34,7 @@ export default function AssignPanel() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [fltEstado, fltAsignado, fltSuc, search, fltAgent]);
 
   async function assign(conversacion_id, user_id) {
-    const r = await fetch("/api/admin/assign", {
+    const r = await fetch(`${BASE}/api/admin/assign`.replace(/\/\//g, '/'), {
       method: "POST",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ conversacion_id, user_id })

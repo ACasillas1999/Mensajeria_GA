@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+
+const BASE = import.meta.env.BASE_URL || '';
+
 export default function ChatList({ onSelect }) {
   const [items, setItems] = useState([])
-  useEffect(()=>{ fetch('/api/conversations').then(r=>r.json()).then(setItems) },[])
+  useEffect(()=>{ fetch(`${BASE}/api/conversations`.replace(/\/\//g, '/')).then(r=>r.json()).then(setItems) },[])
   return (
     <div className="h-full overflow-y-auto">
       {items.map(c=>(

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+const BASE = import.meta.env.BASE_URL || '';
+
 export default function ChatView({ conversation }) {
   const [msgs, setMsgs] = useState([])
   const [text, setText] = useState('')
@@ -20,7 +22,7 @@ export default function ChatView({ conversation }) {
     let cancel = false
 
     async function load() {
-      const r = await fetch(`/api/messages?conversation_id=${conversation.id}`)
+      const r = await fetch(`${BASE}/api/messages?conversation_id=${conversation.id}`.replace(/\/\//g, '/'))
       const data = await r.json()
       if (!cancel) setMsgs(data)
     }
@@ -50,12 +52,12 @@ export default function ChatView({ conversation }) {
 
     const fd = new FormData()
     fd.append('file', file)
-    const up = await fetch('/api/upload', { method:'POST', body: fd })
+    const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), { method:'POST', body: fd })
     const uj = await up.json()
     if (!uj.ok) { alert('Error al subir archivo'); return }
 
     const caption = prompt('Agregar comentario/caption? (opcional)') || ''
-    const sm = await fetch('/api/send-media', {
+    const sm = await fetch(`${BASE}/api/send-media`.replace(/\/\//g, '/'), {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({
@@ -71,7 +73,7 @@ export default function ChatView({ conversation }) {
     if (sm.status === 409 && sj?.requires_template) {
       const tpl = prompt('Fuera de 24h. NOMBRE de plantilla aprobada (ej: reengage_es):')
       if (!tpl) return
-      const r2 = await fetch('/api/send-template', {
+      const r2 = await fetch(`${BASE}/api/send-template`.replace(/\/\//g, '/'), {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({
@@ -103,7 +105,7 @@ export default function ChatView({ conversation }) {
   // ---- Enviar texto ----
   async function send() {
     if (!text.trim() || !conversation) return
-    const res = await fetch('/api/send', {
+    const res = await fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ conversacion_id: conversation.id, to: conversation.wa_user, text })
@@ -177,12 +179,12 @@ export default function ChatView({ conversation }) {
     // subir
     const fd = new FormData()
     fd.append('file', file)
-    const up = await fetch('/api/upload', { method:'POST', body: fd })
+    const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), { method:'POST', body: fd })
     const uj = await up.json()
     if (!uj.ok) { alert('Error al subir nota de voz'); cleanupRec(); return }
 
     // enviar por link como audio
-    const sm = await fetch('/api/send-media', {
+    const sm = await fetch(`${BASE}/api/send-media`.replace(/\/\//g, '/'), {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({

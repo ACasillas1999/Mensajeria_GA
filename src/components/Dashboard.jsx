@@ -1,5 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 
+const BASE = import.meta.env.BASE_URL || '';
+
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -7,7 +9,7 @@ export default function Dashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch('/api/dashboard');
+        const r = await fetch(`${BASE}/api/dashboard`.replace(/\/\//g, '/'));
         const j = await r.json();
         if (j.ok) setStats(j.stats);
       } finally {

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
+const BASE = import.meta.env.BASE_URL || '';
+
 export default function UsersAdmin() {
   const [users, setUsers] = useState([]);
   const [sucursales, setSucursales] = useState([]);
@@ -15,8 +17,8 @@ export default function UsersAdmin() {
     setLoading(true);
     try {
       const [u, s] = await Promise.all([
-        fetch(`/api/admin/users?rol=${filtroRol}&sucursal_id=${filtroSuc}`).then(r=>r.json()),
-        fetch("/api/admin/sucursales").then(r=>r.json()),
+        fetch(`${BASE}/api/admin/users?rol=${filtroRol}&sucursal_id=${filtroSuc}`.replace(/\/\//g, '/')).then(r=>r.json()),
+        fetch(`${BASE}/api/admin/sucursales`.replace(/\/\//g, '/')).then(r=>r.json()),
       ]);
       if (u.ok) setUsers(u.items || []);
       if (s.ok) setSucursales(s.items || []);
@@ -30,7 +32,7 @@ export default function UsersAdmin() {
       ...form,
       sucursal_id: form.sucursal_id ? Number(form.sucursal_id) : null
     };
-    const r = await fetch("/api/admin/users", {
+    const r = await fetch(`${BASE}/api/admin/users`.replace(/\/\//g, '/'), {
       method:"POST", headers:{ "Content-Type":"application/json" },
       body: JSON.stringify(payload)
     });
@@ -40,7 +42,7 @@ export default function UsersAdmin() {
   }
 
   async function toggleActivo(u){
-    const r = await fetch(`/api/admin/users/${u.id}`, {
+    const r = await fetch(`${BASE}/api/admin/users/${u.id}`.replace(/\/\//g, '/'), {
       method: "PATCH",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ activo: !u.activo })
@@ -50,7 +52,7 @@ export default function UsersAdmin() {
   }
 
   async function setSucursal(u, sucursal_id){
-    const r = await fetch(`/api/admin/users/${u.id}`, {
+    const r = await fetch(`${BASE}/api/admin/users/${u.id}`.replace(/\/\//g, '/'), {
       method: "PATCH",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ sucursal_id: sucursal_id ? Number(sucursal_id) : null })
@@ -60,7 +62,7 @@ export default function UsersAdmin() {
   }
 
   async function setRol(u, rol){
-    const r = await fetch(`/api/admin/users/${u.id}`, {
+    const r = await fetch(`${BASE}/api/admin/users/${u.id}`.replace(/\/\//g, '/'), {
       method: "PATCH",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ rol })
@@ -148,7 +150,7 @@ export default function UsersAdmin() {
                           e.preventDefault();
                           const pw = e.target.elements.pw.value;
                           if (!pw || pw.length < 8) return alert("Mínimo 8 caracteres");
-                          const r = await fetch(`/api/admin/users/${u.id}`, {
+                          const r = await fetch(`${BASE}/api/admin/users/${u.id}`.replace(/\/\//g, '/'), {
                             method: "PATCH",
                             headers: { "Content-Type":"application/json" },
                             body: JSON.stringify({ new_password: pw })

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const BASE = import.meta.env.BASE_URL || '';
+
 export default function ClientsPane() {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
@@ -8,7 +10,7 @@ export default function ClientsPane() {
   async function load(search = "") {
     setLoading(true);
     try {
-      const r = await fetch(`/api/conversations?search=${encodeURIComponent(search)}&limit=100`);
+      const r = await fetch(`${BASE}/api/conversations?search=${encodeURIComponent(search)}&limit=100`.replace(/\/\//g, '/'));
       const j = await r.json();
       if (j.ok) setItems(j.items || []);
     } finally {
