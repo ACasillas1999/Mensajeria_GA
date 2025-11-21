@@ -74,8 +74,9 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
 
   // For non-public pages, require auth
   if (!(locals as any).user) {
-    const target = '/login' + (pathname && pathname !== '/' ? `?next=${encodeURIComponent(pathname)}` : '');
-    const res = Response.redirect(new URL(target, url), 302);
+    const base = import.meta.env.BASE_URL || '/';
+    const target = `${base}/login`.replace(/\/\//g, '/') + (pathname && pathname !== '/' ? `?next=${encodeURIComponent(pathname)}` : '');
+    const res = Response.redirect(new URL(target, url.origin), 302);
     try { res.headers.set('x-guard', 'redirect'); } catch {}
     return res;
   }
