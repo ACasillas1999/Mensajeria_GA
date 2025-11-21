@@ -3,15 +3,19 @@ import "../styles/global.css";
 
 const { title = "Mensajería Web GA" } = Astro.props as { title?: string };
 const path = Astro.url.pathname;
+const base = import.meta.env.BASE_URL || '/';
 
 const linkBase = "group w-12 h-12 grid place-items-center rounded-xl transition";
 const idle = "text-slate-400 hover:text-white hover:bg-slate-800";
 const active = "text-white bg-slate-800";
-const isActive = (href: string) => (path === href || path.startsWith(href)) ? active : idle;
+const isActive = (href: string) => (path === href || path.startsWith(href) || path === `${base}${href}`.replace(/\/\//g, '/') || path.startsWith(`${base}${href}`.replace(/\/\//g, '/'))) ? active : idle;
 
 const user: any = (Astro.locals as any).user;
 const isAdmin = ((user?.rol || '').toLowerCase() === 'admin');
 const initial = ((user?.nombre || 'U').toString().slice(0,1).toUpperCase());
+
+// Helper to build URLs with base path
+const href = (p: string) => `${base}${p}`.replace(/\/\//g, '/');
 ---
 
 <html lang="es">
@@ -48,17 +52,17 @@ const initial = ((user?.nombre || 'U').toString().slice(0,1).toUpperCase());
     <!-- Sidebar -->
     <aside class="fixed left-0 top-14 bottom-0 w-16 z-30 bg-slate-950 border-r border-slate-800">
       <nav class="h-full flex flex-col items-center py-4 gap-2">
-        <a href="/"              class={`${linkBase} ${isActive("/")}`}><i data-feather="home"></i><span class="sr-only">Inicio</span></a>
-        <a href="/dashboard"     class={`${linkBase} ${isActive("/dashboard")}`}><i data-feather="bar-chart-2"></i><span class="sr-only">Dashboard</span></a>
-        <a href="/mensajes"      class={`${linkBase} ${isActive("/mensajes")}`}><i data-feather="message-square"></i><span class="sr-only">Mensajes</span></a>
-        <a href="/clientes"      class={`${linkBase} ${isActive("/clientes")}`}><i data-feather="users"></i><span class="sr-only">Clientes</span></a>
+        <a href={href("/")}              class={`${linkBase} ${isActive("/")}`}><i data-feather="home"></i><span class="sr-only">Inicio</span></a>
+        <a href={href("/dashboard")}     class={`${linkBase} ${isActive("/dashboard")}`}><i data-feather="bar-chart-2"></i><span class="sr-only">Dashboard</span></a>
+        <a href={href("/mensajes")}      class={`${linkBase} ${isActive("/mensajes")}`}><i data-feather="message-square"></i><span class="sr-only">Mensajes</span></a>
+        <a href={href("/clientes")}      class={`${linkBase} ${isActive("/clientes")}`}><i data-feather="users"></i><span class="sr-only">Clientes</span></a>
         {isAdmin && (
           <>
-            <a href="/admin/usuarios" class={`${linkBase} ${isActive("/admin/usuarios")}`}><i data-feather="user-check"></i><span class="sr-only">Usuarios</span></a>
-            <a href="/admin/asignacion" class={`${linkBase} ${isActive("/admin/asignacion")}`}>
+            <a href={href("/admin/usuarios")} class={`${linkBase} ${isActive("/admin/usuarios")}`}><i data-feather="user-check"></i><span class="sr-only">Usuarios</span></a>
+            <a href={href("/admin/asignacion")} class={`${linkBase} ${isActive("/admin/asignacion")}`}>
               <i data-feather="share-2"></i><span class="sr-only">Asignación</span>
             </a>
-            <a href="/admin/diagrama" class={`${linkBase} ${isActive("/admin/diagrama")}`}>
+            <a href={href("/admin/diagrama")} class={`${linkBase} ${isActive("/admin/diagrama")}`}>
               <i data-feather="git-branch"></i><span class="sr-only">Diagrama</span>
             </a>
           </>
@@ -66,7 +70,7 @@ const initial = ((user?.nombre || 'U').toString().slice(0,1).toUpperCase());
 
         <div class="mt-auto"></div>
 
-        <a href="/config" class={`${linkBase} ${isActive("/config")}`}><i data-feather="settings"></i><span class="sr-only">Config</span></a>
+        <a href={href("/config")} class={`${linkBase} ${isActive("/config")}`}><i data-feather="settings"></i><span class="sr-only">Config</span></a>
 
         <button type="button" id="logoutBtn" class={`${linkBase} ${idle}`} title="Cerrar sesión">
           <i data-feather="log-out"></i>
@@ -115,8 +119,9 @@ const initial = ((user?.nombre || 'U').toString().slice(0,1).toUpperCase());
         const btn = document.getElementById('logoutBtn');
         if (btn) {
           btn.addEventListener('click', async () => {
-            try { await fetch('/api/logout', { method: 'POST' }); } catch {}
-            window.location.href = '/login';
+            const base = document.querySelector('base')?.getAttribute('href') || '/mensajeria';
+            try { await fetch(`${base}/api/logout`.replace(/\/\//g, '/'), { method: 'POST' }); } catch {}
+            window.location.href = `${base}/login`.replace(/\/\//g, '/');
           });
         }
       });
