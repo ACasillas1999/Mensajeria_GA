@@ -44,7 +44,6 @@ export const POST: APIRoute = async ({ request }) => {
       { expiresIn: "8h" }
     );
 
-    const isProd = (process.env.NODE_ENV || "").toLowerCase() === "production";
     const cookie = [
       `auth=${token}`,
       "HttpOnly",
@@ -52,8 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
       "SameSite=Lax",
       // 8h
       "Max-Age=28800",
-      isProd ? "Secure" : "",
-    ].filter(Boolean).join("; ");
+    ].join("; ");
 
     return new Response(
       JSON.stringify({
