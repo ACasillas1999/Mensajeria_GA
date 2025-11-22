@@ -99,6 +99,9 @@ export default function ChatPane({ conversation }) {
 
   // atajos de respuestas rápidas
   const [shortcuts, setShortcuts] = useState([]);
+  // menú de sugerencias de atajos
+  const [shortcutSuggestions, setShortcutSuggestions] = useState([]);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(0);
   // audio recorder
   const [recState, setRecState] = useState({ recording:false, seconds:0, blob:null });
   const mediaRef = useRef(null);
@@ -495,19 +498,52 @@ function pickMime() {
     }
   }
 
-  // Enter para enviar (Shift+Enter = salto), Tab para autocompletar atajos
+  // Detectar cuando el texto cambia para mostrar sugerencias de atajos
+  useEffect(() => {
+    if (text.startsWith("/") && text.length > 1) {
+      const matches = shortcuts.filter(s => s.atajo && s.atajo.startsWith(text.trim()));
+      setShortcutSuggestions(matches);
+      setSelectedSuggestion(0);
+    } else {
+      setShortcutSuggestions([]);
+    }
+  }, [text, shortcuts]);
+
+  // Seleccionar una sugerencia de atajo
+  function selectShortcut(shortcut) {
+    setText(shortcut.contenido);
+    setShortcutSuggestions([]);
+  }
+
+  // Enter para enviar (Shift+Enter = salto), Tab/flechas para navegar atajos
   function onKeyDown(e) {
+    // Si hay sugerencias de atajos visibles
+    if (shortcutSuggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedSuggestion(prev => (prev + 1) % shortcutSuggestions.length);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedSuggestion(prev => (prev - 1 + shortcutSuggestions.length) % shortcutSuggestions.length);
+        return;
+      }
+      if (e.key === "Tab" || e.key === "Enter") {
+        e.preventDefault();
+        selectShortcut(shortcutSuggestions[selectedSuggestion]);
+        return;
+      }
+      if (e.key === "Escape") {
+        setShortcutSuggestions([]);
+        return;
+      }
+    }
+
+    // Enter normal para enviar
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       send();
-    }
-    // Tab para autocompletar atajos (ej: /saludo + Tab)
-    if (e.key === "Tab" && text.startsWith("/")) {
-      const shortcut = shortcuts.find(s => s.atajo === text.trim());
-      if (shortcut) {
-        e.preventDefault();
-        setText(shortcut.contenido);
-      }
     }
   }
 
@@ -591,6 +627,29 @@ function pickMime() {
         ))}
         <div ref={endRef} />
       </div>
+
+      {/* Menú de sugerencias de atajos */}
+      {shortcutSuggestions.length > 0 && (
+        <div className="mx-3 mb-1 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow-lg">
+          <div className="text-xs text-slate-400 px-3 py-1.5 border-b border-slate-700 bg-slate-800/50">
+            Atajos disponibles (↑↓ navegar, Tab/Enter seleccionar, Esc cerrar)
+          </div>
+          {shortcutSuggestions.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => selectShortcut(s)}
+              className={`w-full text-left px-3 py-2 flex items-center gap-3 transition ${
+                i === selectedSuggestion ? 'bg-emerald-600/20 border-l-2 border-emerald-400' : 'hover:bg-slate-800'
+              }`}
+            >
+              <code className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400">{s.atajo}</code>
+              <span className="font-medium text-slate-200">{s.titulo}</span>
+              <span className="text-xs text-slate-500 truncate ml-auto max-w-[200px]">{s.contenido}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Composer */}
       <form onSubmit={send} className="p-3 border-t border-slate-800 flex items-center gap-2">
