@@ -96,6 +96,9 @@ export default function ChatPane({ conversation }) {
   // composer
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+
+  // atajos de respuestas rápidas
+  const [shortcuts, setShortcuts] = useState([]);
   // audio recorder
   const [recState, setRecState] = useState({ recording:false, seconds:0, blob:null });
   const mediaRef = useRef(null);
@@ -222,6 +225,21 @@ function pickMime() {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
     }
+  }, []);
+
+  // cargar atajos de respuestas rápidas
+  useEffect(() => {
+    async function loadShortcuts() {
+      try {
+        const r = await fetch(`${BASE}/api/quick-replies`.replace(/\/\//g, '/'));
+        const j = await r.json();
+        if (j.ok && j.items) {
+          // Solo guardar los que tienen atajo definido
+          setShortcuts(j.items.filter(i => i.atajo));
+        }
+      } catch {}
+    }
+    loadShortcuts();
   }, []);
 
   async function load() {
@@ -477,11 +495,19 @@ function pickMime() {
     }
   }
 
-  // Enter para enviar (Shift+Enter = salto)
+  // Enter para enviar (Shift+Enter = salto), Tab para autocompletar atajos
   function onKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       send();
+    }
+    // Tab para autocompletar atajos (ej: /saludo + Tab)
+    if (e.key === "Tab" && text.startsWith("/")) {
+      const shortcut = shortcuts.find(s => s.atajo === text.trim());
+      if (shortcut) {
+        e.preventDefault();
+        setText(shortcut.contenido);
+      }
     }
   }
 
@@ -604,7 +630,14 @@ function pickMime() {
       {showQuickReplies && (
         <QuickReplies
           onSelect={handleQuickReplySelect}
-          onClose={() => setShowQuickReplies(false)}
+          onClose={() => {
+            setShowQuickReplies(false);
+            // Recargar atajos por si crearon uno nuevo
+            fetch(`${BASE}/api/quick-replies`.replace(/\/\//g, '/'))
+              .then(r => r.json())
+              .then(j => { if (j.ok && j.items) setShortcuts(j.items.filter(i => i.atajo)); })
+              .catch(() => {});
+          }}
         />
       )}
 
