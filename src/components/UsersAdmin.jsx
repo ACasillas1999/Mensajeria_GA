@@ -41,6 +41,30 @@ export default function UsersAdmin() {
     else alert(j.error || "No se pudo crear");
   }
 
+  async function createSucursalQuick() {
+    const nombre = window.prompt("Nombre de la nueva sucursal:");
+    if (!nombre) return;
+    const trimmed = nombre.trim();
+    if (!trimmed) return;
+    try {
+      const r = await fetch(`${BASE}/api/admin/sucursales`.replace(/\/\//g, '/'), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: trimmed }),
+      });
+      const j = await r.json();
+      if (j.ok) {
+        // recargar lista y seleccionar la nueva sucursal en el filtro
+        await load();
+        setFiltroSuc(String(j.id));
+      } else {
+        alert(j.error || "No se pudo crear la sucursal");
+      }
+    } catch {
+      alert("Error de red creando sucursal");
+    }
+  }
+
   async function toggleActivo(u){
     const r = await fetch(`${BASE}/api/admin/users/${u.id}`.replace(/\/\//g, '/'), {
       method: "PATCH",
@@ -88,6 +112,13 @@ export default function UsersAdmin() {
           <option value="">Todas las sucursales</option>
           {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
         </select>
+        <button
+          type="button"
+          onClick={createSucursalQuick}
+          className="px-3 py-2 rounded bg-slate-800 border border-slate-700 text-sm"
+        >
+          + Sucursal
+        </button>
         <button
           onClick={() => setModal(true)}
           className="ml-auto px-3 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400"
