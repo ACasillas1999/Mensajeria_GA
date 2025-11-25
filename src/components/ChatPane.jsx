@@ -204,24 +204,49 @@ function pickMime() {
   async function sendRecorded() {
     if (!recState.blob || !conversation) return;
     try {
+      console.log('📤 Enviando audio:', { blobSize: recState.blob.size, blobType: recState.blob.type });
+
       const fd = new FormData();
       const ext = (recState.blob.type || '').includes('ogg') ? 'ogg' : 'webm';
       const fileName = `audio-${Date.now()}.${ext}`;
       fd.append('file', new File([recState.blob], fileName, { type: recState.blob.type || 'audio/webm' }));
+
+      console.log('⬆️ Subiendo audio al servidor...');
       const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), { method: 'POST', body: fd });
       const uj = await up.json();
-      if (!up.ok || !uj.ok) { alert(uj?.error || 'No se pudo subir el audio'); return; }
+      console.log('✅ Respuesta upload:', uj);
+
+      if (!up.ok || !uj.ok) {
+        const errorMsg = uj?.error || 'No se pudo subir el audio';
+        console.error('❌ Error en upload:', errorMsg);
+        alert(errorMsg);
+        return;
+      }
 
       const tempId = `temp-a-${Date.now()}`;
       setItems(prev => ([...prev, { id: tempId, sender:'me', tipo:'audio', media_url: uj.url, created_at: new Date().toISOString(), status:'sending' }]));
       requestAnimationFrame(() => scrollToBottom());
 
-      const res = await fetch(`${BASE}/api/send-media`.replace(/\/\//g, '/'), { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ conversacion_id: conversation.id, to: conversation.wa_user, kind:'audio', url: uj.url }) });
+      console.log('📨 Enviando a WhatsApp...', { url: uj.url });
+      const res = await fetch(`${BASE}/api/send-media`.replace(/\/\//g, '/'), {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ conversacion_id: conversation.id, to: conversation.wa_user, kind:'audio', url: uj.url })
+      });
       const j = await res.json();
-      if (j.ok) setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'sent' } : m));
-      else { setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'failed' } : m)); alert(j.error?.message || 'No se pudo enviar el audio'); }
+      console.log('✅ Respuesta send-media:', j);
+
+      if (j.ok) {
+        setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'sent' } : m));
+      } else {
+        setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'failed' } : m));
+        const errorMsg = j.error?.message || 'No se pudo enviar el audio';
+        console.error('❌ Error en send-media:', j.error);
+        alert(errorMsg);
+      }
     } catch (e) {
-      alert('Error enviando audio');
+      console.error('❌ Error crítico enviando audio:', e);
+      alert(`Error enviando audio:\n\n${e.message || e}`);
     } finally {
       setRecState({ recording:false, seconds:0, blob:null });
       setTimeout(scrollToBottom, 0);
