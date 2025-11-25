@@ -35,13 +35,16 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const [rows] = await pool.query<RowDataPacket[]>(
       `
       SELECT
-        id,
-        wa_user,
-        COALESCE(wa_profile_name, wa_user, CONCAT('Chat ', id)) AS title,
-        COALESCE(ultimo_msg, '') AS last_text,
-        COALESCE(ultimo_ts, UNIX_TIMESTAMP(creado_en)) AS last_at,
-        estado
-      FROM conversaciones
+        c.id,
+        c.wa_user,
+        COALESCE(c.wa_profile_name, c.wa_user, CONCAT('Chat ', c.id)) AS title,
+        COALESCE(c.ultimo_msg, '') AS last_text,
+        COALESCE(c.ultimo_ts, UNIX_TIMESTAMP(c.creado_en)) AS last_at,
+        c.estado,
+        c.asignado_a,
+        u.nombre AS asignado_nombre
+      FROM conversaciones c
+      LEFT JOIN usuarios u ON u.id = c.asignado_a
       ${where}
       ORDER BY last_at DESC
       LIMIT ? OFFSET ?

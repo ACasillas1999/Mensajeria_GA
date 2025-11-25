@@ -100,6 +100,8 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             last_at: conv.ultimo_ts,
             estado: conv.estado,
             title: conv.wa_profile_name || conv.wa_user,
+            asignado_a: conv.asignado_a,
+            asignado_nombre: conv.asignado_nombre,
           });
         } else {
           // Nueva conversación
@@ -110,6 +112,8 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             estado: conv.estado,
             last_text: conv.ultimo_msg,
             last_at: conv.ultimo_ts,
+            asignado_a: conv.asignado_a,
+            asignado_nombre: conv.asignado_nombre,
           });
         }
       }
@@ -192,6 +196,12 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
                 )}
               </div>
               <div className="text-xs text-slate-400 truncate">{c.last_text || '-'}</div>
+              {c.asignado_nombre && (
+                <div className="text-[10px] text-sky-400 mt-0.5 flex items-center gap-1">
+                  <span>👤</span>
+                  <span>{c.asignado_nombre}</span>
+                </div>
+              )}
             </div>
           </button>
         )})}

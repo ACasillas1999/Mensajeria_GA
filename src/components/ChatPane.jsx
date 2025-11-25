@@ -11,7 +11,7 @@ const ding = typeof Audio !== "undefined"
   : null;
 
 /* Muestra imágenes / videos / audios / docs */
-function MediaBubble({ m, onOpen }) {
+function MediaBubble({ m, onOpen, onImageLoad }) {
   const mime = (m.mime_type || "").toLowerCase();
   const kind =
     m.tipo ||
@@ -28,6 +28,7 @@ function MediaBubble({ m, onOpen }) {
           src={src}
           className="max-w-xs rounded border border-slate-700 transition-transform group-hover:scale-[1.02]"
           alt="imagen"
+          onLoad={onImageLoad}
         />
       </button>
     );
@@ -201,6 +202,7 @@ function pickMime() {
 
       const tempId = `temp-a-${Date.now()}`;
       setItems(prev => ([...prev, { id: tempId, sender:'me', tipo:'audio', media_url: uj.url, created_at: new Date().toISOString(), status:'sending' }]));
+      requestAnimationFrame(() => scrollToBottom());
 
       const res = await fetch(`${BASE}/api/send-media`.replace(/\/\//g, '/'), { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ conversacion_id: conversation.id, to: conversation.wa_user, kind:'audio', url: uj.url }) });
       const j = await res.json();
@@ -219,8 +221,13 @@ function pickMime() {
   const scrollerRef = useRef(null);
   const scrollToBottom = () => {
     const sc = scrollerRef.current;
-    if (sc) sc.scrollTop = sc.scrollHeight;
-    else endRef.current?.scrollIntoView({ behavior: "auto" });
+    if (sc) {
+      // Scroll instantáneo al final
+      sc.scrollTop = sc.scrollHeight;
+    } else if (endRef.current) {
+      // Fallback: usar scrollIntoView
+      endRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+    }
   };
 
   // pedir permiso notificaciones
@@ -256,7 +263,10 @@ function pickMime() {
       if (j.ok) setItems(j.items || []);
     } finally {
       setLoading(false);
+      // Scroll múltiple para asegurar que llegue al fondo incluso con imágenes cargando
       setTimeout(scrollToBottom, 0);
+      setTimeout(scrollToBottom, 100);
+      setTimeout(scrollToBottom, 300);
     }
   }
 
@@ -326,15 +336,36 @@ function pickMime() {
   }
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [conversation?.id]);
-  useEffect(() => { scrollToBottom(); }, [items.length]); // autoscroll ante nuevos mensajes
+
+  // Autoscroll cuando cambian los mensajes
+  useEffect(() => {
+    // Usar requestAnimationFrame para asegurar que el DOM se haya actualizado
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
+  }, [items.length]);
+
+  // Autoscroll cuando cambia la conversación (asegurar scroll inicial)
+  useEffect(() => {
+    if (conversation?.id && items.length > 0) {
+      // Esperar un tick adicional para asegurar render completo
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToBottom();
+        });
+      });
+    }
+  }, [conversation?.id, items.length > 0]);
 
   // SSE: Recibir mensajes en tiempo real
   const handleRealtimeMessages = useCallback((newMessages) => {
     if (!Array.isArray(newMessages)) return;
     setItems((prev) => {
-      const existingIds = new Set(prev.map(m => m.wa_msg_id || m.id));
+      const existingWaIds = new Set(prev.map(m => m.wa_msg_id).filter(Boolean));
+      const existingDbIds = new Set(prev.map(m => m.id).filter(id => !String(id).startsWith('tmp_')));
+
       const toAdd = newMessages
-        .filter(m => !existingIds.has(m.wa_msg_id) && !existingIds.has(m.id))
+        .filter(m => !existingWaIds.has(m.wa_msg_id) && !existingDbIds.has(m.id))
         .map(m => ({
           id: m.id,
           conversation_id: m.conversacion_id,
@@ -347,8 +378,30 @@ function pickMime() {
           mime_type: m.mime_type,
           wa_msg_id: m.wa_msg_id,
         }));
+
       if (toAdd.length === 0) return prev;
-      return [...prev, ...toAdd];
+
+      // Reemplazar mensajes temporales con los reales si tienen wa_msg_id
+      const updated = prev.map(m => {
+        if (String(m.id).startsWith('tmp_') && m.status === 'sending') {
+          // Buscar si alguno de los nuevos mensajes corresponde a este temporal
+          const match = toAdd.find(newMsg =>
+            newMsg.sender === 'me' &&
+            newMsg.text === m.text &&
+            Math.abs(new Date(newMsg.created_at).getTime() - new Date(m.created_at).getTime()) < 10000
+          );
+          if (match) {
+            return { ...match }; // Reemplazar temporal con real
+          }
+        }
+        return m;
+      });
+
+      // Agregar solo los que no reemplazaron temporales
+      const replacedIds = new Set(updated.filter(m => !String(m.id).startsWith('tmp_')).map(m => m.id));
+      const finalToAdd = toAdd.filter(m => !replacedIds.has(m.id));
+
+      return [...updated, ...finalToAdd];
     });
   }, []);
 
@@ -386,18 +439,16 @@ function pickMime() {
     const prev = prevIncomingCountRef.current;
 
     if (incoming.length > prev) {
-      const inBackground = typeof document !== "undefined" && document.visibilityState === "hidden";
-
       // sonido
       try {
-        if (ding /* && inBackground */) {
+        if (ding) {
           ding.currentTime = 0;
           ding.play().catch(() => {});
         }
       } catch {}
 
       // notificación
-      if ("Notification" in window && Notification.permission === "granted" /* && inBackground */) {
+      if ("Notification" in window && Notification.permission === "granted") {
         const last = incoming[incoming.length - 1];
         const title = conversation?.title || conversation?.wa_user || "Nuevo mensaje";
         const body = (last?.text && String(last.text).slice(0, 80)) || `[${last?.tipo || "mensaje"}]`;
@@ -429,7 +480,8 @@ function pickMime() {
       status: "sending",
     };
     setItems((prev) => [...prev, optimistic]);
-    setTimeout(scrollToBottom, 0);
+    // Scroll inmediato al enviar
+    requestAnimationFrame(() => scrollToBottom());
 
     try {
       let res, j;
@@ -614,7 +666,7 @@ function pickMime() {
                    ? 'ml-auto bg-emerald-600/20 border-emerald-700'
                    : 'bg-slate-800 border-slate-700'}`}>
             {m.tipo === "text" && m.text && <div className="text-sm whitespace-pre-wrap">{m.text}</div>}
-            {m.tipo !== "text" && <MediaBubble m={m} onOpen={openMedia} />}
+            {m.tipo !== "text" && <MediaBubble m={m} onOpen={openMedia} onImageLoad={scrollToBottom} />}
 
             <div className="mt-1 flex items-center gap-2">
               <div className="text-[10px] text-slate-400">
