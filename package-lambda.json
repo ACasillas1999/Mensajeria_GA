@@ -1,0 +1,21 @@
+{
+  "name": "mensajeria-ga-lambda",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "lambda-handler.mjs",
+  "dependencies": {
+    "@astrojs/node": "^9.4.5",
+    "@astrojs/react": "^4.4.0",
+    "@astrojs/tailwind": "^6.0.2",
+    "@aws-sdk/client-s3": "^3.939.0",
+    "astro": "^5.14.3",
+    "axios": "^1.12.2",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.15.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^3.25.76"
+  }
+}

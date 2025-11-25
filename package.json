@@ -10,12 +10,14 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "start": "node ./dist/server/entry.mjs"
+    "start": "node ./dist/server/entry.mjs",
+    "build:lambda": "npm run build && node create-lambda-package.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.5",
     "@astrojs/react": "^4.4.0",
     "@astrojs/tailwind": "^6.0.2",
+    "@aws-sdk/client-s3": "^3.939.0",
     "astro": "^5.14.3",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
@@ -31,7 +33,6 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@astrojs/vercel": "^8.0.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.7.1",
@@ -39,6 +40,7 @@
     "@types/react-dom": "^19.2.1",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
+    "sst": "^3.3.29",
     "tailwindcss": "^3.4.18"
   }
 }
