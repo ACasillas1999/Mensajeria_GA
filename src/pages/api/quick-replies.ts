@@ -2,14 +2,19 @@ import type { APIRoute } from 'astro';
 import { pool } from '../../lib/db';
 import { z } from 'zod';
 
-// GET: Listar respuestas rápidas
-export const GET: APIRoute = async ({ url }) => {
+// GET: Listar respuestas rápidas (personales por usuario)
+export const GET: APIRoute = async ({ url, locals }) => {
   try {
+    const user = (locals as any).user;
+    if (!user) {
+      return new Response(JSON.stringify({ ok: false, error: 'No autenticado' }), { status: 401 });
+    }
+
     const categoria = url.searchParams.get('categoria') || '';
     const search = url.searchParams.get('search') || '';
 
-    let query = 'SELECT * FROM respuestas_rapidas WHERE activo = 1';
-    const params: any[] = [];
+    let query = 'SELECT * FROM respuestas_rapidas WHERE activo = 1 AND created_by = ?';
+    const params: any[] = [user.id];
 
     if (categoria) {
       query += ' AND categoria = ?';
@@ -37,7 +42,7 @@ export const GET: APIRoute = async ({ url }) => {
   }
 };
 
-// POST: Crear respuesta rápida
+// POST: Crear respuesta rápida (personal)
 const createSchema = z.object({
   titulo: z.string().min(1).max(100),
   contenido: z.string().min(1).max(2000),
@@ -57,7 +62,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const [result] = await pool.query(
       `INSERT INTO respuestas_rapidas (titulo, contenido, categoria, atajo, created_by)
        VALUES (?, ?, ?, ?, ?)`,
-      [body.titulo, body.contenido, body.categoria || null, body.atajo || null, user.sub]
+      [body.titulo, body.contenido, body.categoria || null, body.atajo || null, user.id]
     );
 
     return new Response(JSON.stringify({ ok: true, id: (result as any).insertId }), {
@@ -73,3 +78,4 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
   }
 };
+

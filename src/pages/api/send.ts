@@ -90,7 +90,26 @@ export const POST: APIRoute = async ({ request }) => {
     // --- JSON (solo texto) ---
     if (ct.includes("application/json")) {
       const { conversacion_id, to, text } = await request.json();
-      const now = Math.floor(Date.now()/1000);
+      const now = Math.floor(Date.now() / 1000);
+
+      // Ventana de 24h basada en el último inbound
+      const [rows] = await pool.query(
+        "SELECT MAX(ts) AS last_in FROM mensajes WHERE conversacion_id=? AND from_me=0",
+        [conversacion_id]
+      );
+      const lastIn = (rows as any[])[0]?.last_in ?? null;
+      const within24h = lastIn && now - Number(lastIn) <= 24 * 3600;
+      if (!within24h) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            requires_template: true,
+            error: { message: "Esta conversaci\u00f3n est\u00e1 fuera de la ventana de 24h, debes usar una plantilla aprobada." },
+          }),
+          { status: 409 }
+        );
+      }
+
       const data = await sendText({ to, body: text });
       const msgId = data?.messages?.[0]?.id || null;
 
@@ -103,7 +122,7 @@ export const POST: APIRoute = async ({ request }) => {
         `UPDATE conversaciones SET ultimo_msg=?, ultimo_ts=?, estado="ABIERTA" WHERE id=?`,
         [text, now, conversacion_id]
       );
-      return new Response(JSON.stringify({ ok:true, data }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true, data }), { status: 200 });
     }
 
     // --- FORM-DATA (archivo y/o texto) ---
@@ -121,6 +140,24 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const now = Math.floor(Date.now()/1000);
+
+    // Ventana de 24h basada en el último inbound (aplica para texto o media)
+    const [rows] = await pool.query(
+      "SELECT MAX(ts) AS last_in FROM mensajes WHERE conversacion_id=? AND from_me=0",
+      [conversacion_id]
+    );
+    const lastIn = (rows as any[])[0]?.last_in ?? null;
+    const within24h = lastIn && now - Number(lastIn) <= 24 * 3600;
+    if (!within24h) {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          requires_template: true,
+          error: { message: "Esta conversaci\u00f3n est\u00e1 fuera de la ventana de 24h, debes usar una plantilla aprobada." },
+        }),
+        { status: 409 }
+      );
+    }
 
     // Si hay archivo: subir → enviar según tipo
     if (file instanceof File) {

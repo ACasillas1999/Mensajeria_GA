@@ -449,7 +449,7 @@ function pickMime() {
       }
       j = await res.json();
 
-      if (j.ok) {
+      if (res.ok && j.ok) {
         setItems((prev) =>
           prev.map(m => m.id === tempId ? { ...m, status: "sent" } : m)
         );
@@ -457,7 +457,11 @@ function pickMime() {
         setItems((prev) =>
           prev.map(m => m.id === tempId ? { ...m, status: "failed" } : m)
         );
-        alert(j.error?.message || "No se pudo enviar");
+        if (res.status === 409 && j.requires_template) {
+          alert(j.error?.message || "Esta conversaci\u00f3n est\u00e1 fuera de la ventana de 24h, env\u00eda una plantilla desde el bot\u00f3n de plantillas.");
+        } else {
+          alert(j.error?.message || "No se pudo enviar");
+        }
       }
     } catch {
       setItems((prev) =>
@@ -486,11 +490,15 @@ function pickMime() {
       });
       const j = await res.json();
 
-      if (j.ok) {
+      if (res.ok && j.ok) {
         setItems(prev => prev.map(m => m.id === failedMsg.id ? { ...m, status: "sent" } : m));
       } else {
         setItems(prev => prev.map(m => m.id === failedMsg.id ? { ...m, status: "failed" } : m));
-        alert(j.error?.message || "No se pudo reenviar");
+        if (res.status === 409 && j.requires_template) {
+          alert(j.error?.message || "Esta conversaci\u00f3n est\u00e1 fuera de la ventana de 24h, env\u00eda una plantilla desde el bot\u00f3n de plantillas.");
+        } else {
+          alert(j.error?.message || "No se pudo reenviar");
+        }
       }
     } catch {
       setItems(prev => prev.map(m => m.id === failedMsg.id ? { ...m, status: "failed" } : m));
