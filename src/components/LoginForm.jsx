@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const BASE = import.meta.env.BASE_URL || "";
+
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,7 +14,7 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${import.meta.env.BASE_URL}/api/login`.replace(/\/\//g, '/'), {
+      const res = await fetch(`${BASE}/api/login`.replace(/\/\//g, "/"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -23,8 +25,10 @@ export default function LoginForm() {
       if (res.ok && data.ok) {
         setMensaje("¡Listo! Bienvenido.");
         const url = new URL(window.location.href);
-        const next = url.searchParams.get('next') || `${import.meta.env.BASE_URL}/`;
-        setTimeout(() => (window.location.href = next), 500);
+        const next = url.searchParams.get("next") || `${BASE}/`.replace(/\/\//g, "/") || "/";
+        setTimeout(() => {
+          window.location.href = next || "/";
+        }, 500);
       } else {
         setMensaje(`Error: ${data?.error ?? "Usuario o contraseña incorrectos."}`);
       }
@@ -36,8 +40,9 @@ export default function LoginForm() {
   };
 
   const hasError = mensaje.startsWith("Error:");
-  const formClass = `w-80 p-6 rounded-2xl border transition-all duration-300
-    bg-slate-900/60 backdrop-blur-md border-slate-700/60 shadow-xl` + (hasError ? ' animate-shake' : '');
+  const formClass =
+    `w-80 p-6 rounded-2xl border transition-all duration-300
+    bg-slate-900/60 backdrop-blur-md border-slate-700/60 shadow-xl` + (hasError ? " animate-shake" : "");
 
   return (
     <form onSubmit={handleSubmit} className={formClass}>
