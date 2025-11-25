@@ -124,16 +124,20 @@ function pickMime() {
 
   async function startRecording() {
   try {
-    // 0) Requisito: HTTPS o localhost
-    const secure = location.protocol === 'https:' ||
-                   ['localhost','127.0.0.1'].includes(location.hostname);
-    if (!secure) {
-      alert('Activa HTTPS o usa localhost para permitir la grabación.');
+    // Verificar soporte del navegador
+    if (!navigator.mediaDevices?.getUserMedia) {
+      alert('❌ Tu navegador no soporta grabación de audio.\n\nUsa Chrome, Firefox o Edge actualizado.');
       return;
     }
 
-    if (!navigator.mediaDevices?.getUserMedia) {
-      alert('Grabación no soportada por el navegador.');
+    // 0) Requisito: HTTPS o localhost o red local
+    const isLocalNetwork = location.hostname.match(/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./);
+    const secure = location.protocol === 'https:' ||
+                   ['localhost','127.0.0.1'].includes(location.hostname) ||
+                   isLocalNetwork;
+
+    if (!secure) {
+      alert('⚠️ La grabación de audio requiere HTTPS.\n\nTu URL: ' + location.protocol + '//' + location.hostname);
       return;
     }
 
@@ -179,7 +183,15 @@ function pickMime() {
     );
   } catch (e) {
     console.error('No se pudo iniciar la grabación:', e);
-    alert('No se pudo iniciar la grabación: ' + (e?.message || e));
+    let errorMsg = 'No se pudo iniciar la grabación.';
+    if (e?.name === 'NotAllowedError') {
+      errorMsg = '❌ Permiso denegado.\n\nDa permiso al micrófono en tu navegador.';
+    } else if (e?.name === 'NotFoundError') {
+      errorMsg = '❌ No se encontró micrófono.\n\nConecta un micrófono e intenta de nuevo.';
+    } else if (e?.message) {
+      errorMsg += '\n\n' + e.message;
+    }
+    alert(errorMsg);
   }
 }
 
