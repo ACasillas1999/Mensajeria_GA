@@ -113,6 +113,9 @@ export default function ChatPane({ conversation }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
 
+  // selector de reacciones
+  const [reactionPicker, setReactionPicker] = useState({ show: false, msgId: null });
+
   // composer
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
@@ -380,6 +383,12 @@ function pickMime() {
 
   // Reaccionar a un mensaje (texto, media o sticker)
   async function reactToMessage(msg, emoji) {
+    // Cerrar el picker inmediatamente
+    setReactionPicker({ show: false, msgId: null });
+
+    // Actualizar UI optimísticamente
+    setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: emoji } : m));
+
     try {
       const res = await fetch(`${BASE}/api/message-reaction`.replace(/\/\//g, '/'), {
         method: 'POST',
@@ -394,21 +403,20 @@ function pickMime() {
       } catch (parseError) {
         console.error('Error parseando respuesta de reacción:', parseError);
         // Si el status es exitoso pero no pudimos parsear, asumir que funcionó
-        if (res.ok) {
-          setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: emoji } : m));
-          return;
-        }
+        if (res.ok) return;
         throw new Error('Respuesta inválida del servidor');
       }
 
-      if (res.ok && j.ok) {
-        setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: emoji } : m));
-      } else {
+      if (!res.ok || !j.ok) {
         console.error('Error en reacción:', j);
+        // Revertir cambio optimista si falló
+        setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: null } : m));
         alert(j.error || 'No se pudo enviar la reacción');
       }
     } catch (err) {
       console.error('Error al enviar reacción:', err);
+      // Revertir cambio optimista si falló
+      setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: null } : m));
       alert('Error de red al enviar la reacción');
     }
   }
@@ -841,7 +849,7 @@ function pickMime() {
             {m.tipo === "text" && m.text && <div className="text-sm whitespace-pre-wrap">{m.text}</div>}
             {m.tipo !== "text" && <MediaBubble m={m} onOpen={openMedia} onImageLoad={scrollToBottom} />}
 
-            <div className="mt-1 flex items-center gap-2">
+            <div className="mt-1 flex items-center gap-2 relative">
               <div className="text-[10px] text-slate-400">
                 {new Date(m.created_at).toLocaleString()}
               </div>
@@ -856,18 +864,43 @@ function pickMime() {
                   {m.reaction_emoji}
                 </span>
               )}
-              <button
-                type="button"
-                onClick={async () => {
-                  const emoji = window.prompt("Reacción (ej. 👍, ❤️, 😂):", "👍");
-                  if (!emoji) return;
-                  await reactToMessage(m, emoji);
-                }}
-                className="ml-auto text-[11px] px-1.5 py-0.5 rounded hover:bg-slate-700/80 text-slate-300"
-                title="Reaccionar"
-              >
-                🙂
-              </button>
+
+              {/* Botón para abrir selector de reacciones */}
+              <div className="ml-auto relative">
+                <button
+                  type="button"
+                  onClick={() => setReactionPicker({ show: true, msgId: m.id })}
+                  className="text-[11px] w-6 h-6 flex items-center justify-center rounded hover:bg-slate-700/80 text-slate-400 hover:text-slate-200 transition"
+                  title="Reaccionar"
+                >
+                  +
+                </button>
+
+                {/* Picker de reacciones (estilo WhatsApp) */}
+                {reactionPicker.show && reactionPicker.msgId === m.id && (
+                  <>
+                    {/* Backdrop para cerrar al hacer click fuera */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setReactionPicker({ show: false, msgId: null })}
+                    />
+                    {/* Panel de emojis */}
+                    <div className="absolute bottom-full right-0 mb-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-2 flex gap-1 z-50">
+                      {['👍', '❤️', '😂', '😮', '😢', '🙏', '👏', '🔥'].map(emoji => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => reactToMessage(m, emoji)}
+                          className="text-2xl w-10 h-10 flex items-center justify-center rounded hover:bg-slate-800 transition transform hover:scale-110"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
               {m.sender === "me" && m.status === "failed" && (
                 <button
                   onClick={() => retryMessage(m)}
