@@ -129,12 +129,27 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
 
     setSending(true);
     try {
+      // Formatear número: si es de 10 dígitos, agregar 521 (México celular)
+      let formattedPhone = newPhone.trim().replace(/\D/g, ''); // Quitar todo lo que no sea número
+
+      if (formattedPhone.length === 10) {
+        // Número local de 10 dígitos -> agregar 521
+        formattedPhone = '521' + formattedPhone;
+      } else if (formattedPhone.length === 11 && formattedPhone.startsWith('1')) {
+        // Ya tiene el 1 pero falta 52
+        formattedPhone = '52' + formattedPhone;
+      } else if (formattedPhone.length === 12 && formattedPhone.startsWith('52')) {
+        // Ya tiene 52 pero falta el 1
+        formattedPhone = '521' + formattedPhone.substring(2);
+      }
+      // Si tiene 13 dígitos y empieza con 521, dejarlo como está
+
       const tpl = templates.find(t => t.nombre === selectedTemplate);
       const r = await fetch(`${BASE}/api/start-conversation`.replace(/\/\//g, '/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: newPhone.trim(),
+          phone: formattedPhone,
           template_name: selectedTemplate,
           language_code: tpl?.idioma || 'es',
         }),
@@ -383,11 +398,11 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
                   type="text"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
-                  placeholder="521234567890"
+                  placeholder="3331679990"
                   className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm outline-none focus:border-emerald-400"
                   autoFocus
                 />
-                <p className="text-xs text-slate-500 mt-1">Incluye código de país (ej: 521234567890)</p>
+                <p className="text-xs text-slate-500 mt-1">Escribe el número de 10 dígitos (ej: 3331679990)</p>
               </div>
 
               <div>

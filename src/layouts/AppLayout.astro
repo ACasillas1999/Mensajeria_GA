@@ -71,9 +71,6 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
             <a href={href("/admin/auditoria")} class={`${linkBase} ${isActive("/admin/auditoria")}`} title="Auditoría en vivo">
               <i data-feather="eye"></i><span class="sr-only">Auditoría</span>
             </a>
-            <a href={href("/admin/plantillas")} class={`${linkBase} ${isActive("/admin/plantillas")}`} title="Plantillas WhatsApp">
-              <i data-feather="file-text"></i><span class="sr-only">Plantillas</span>
-            </a>
             <a href={href("/admin/diagrama")} class={`${linkBase} ${isActive("/admin/diagrama")}`}>
               <i data-feather="git-branch"></i><span class="sr-only">Diagrama</span>
             </a>
