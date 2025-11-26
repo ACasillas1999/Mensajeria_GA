@@ -125,7 +125,7 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, '/');
         const btn = document.getElementById('logoutBtn');
         if (btn) {
           btn.addEventListener('click', async () => {
-            const base = '{base}'; // Astro BASE_URL inyectado
+            const base = `${base}`;
             try {
               await fetch(`${base}/api/logout`.replace(/\/\//g, '/'), { method: 'POST' });
             } catch (e) {
