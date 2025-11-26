@@ -15,35 +15,38 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     const params: any[] = [cid];
-    let where = "WHERE conversacion_id = ?";
+    let where = "WHERE m.conversacion_id = ?";
     if (before) {
       const b = /^\d+$/.test(before) ? Number(before) : Math.floor(new Date(before).getTime()/1000);
-      where += " AND COALESCE(UNIX_TIMESTAMP(creado_en), ts) < ?";
+      where += " AND COALESCE(UNIX_TIMESTAMP(m.creado_en), m.ts) < ?";
       params.push(b);
     }
     if (q) {
-      where += " AND cuerpo LIKE CONCAT('%', ?, '%')";
+      where += " AND m.cuerpo LIKE CONCAT('%', ?, '%')";
       params.push(q);
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(
       `
       SELECT
-        id,
-        conversacion_id,
-        cuerpo,
-        from_me,
-        tipo,
-        media_id,                -- 👈 AÑADIDO
-        media_url,
-        mime_type,
-        wa_msg_id,               -- 👈 AÑADIDO
-        status,                  -- 👈 AÑADIDO ('sent','delivered','read','failed',NULL)
-        status_ts,               -- 👈 AÑADIDO
-        COALESCE(creado_en, FROM_UNIXTIME(ts)) AS creado_en
-      FROM mensajes
+        m.id,
+        m.conversacion_id,
+        m.cuerpo,
+        m.from_me,
+        m.tipo,
+        m.media_id,
+        m.media_url,
+        m.mime_type,
+        m.wa_msg_id,
+        m.status,
+        m.status_ts,
+        m.usuario_id,
+        u.nombre AS usuario_nombre,
+        COALESCE(m.creado_en, FROM_UNIXTIME(m.ts)) AS creado_en
+      FROM mensajes m
+      LEFT JOIN usuarios u ON u.id = m.usuario_id
       ${where}
-      ORDER BY COALESCE(creado_en, FROM_UNIXTIME(ts)) ASC
+      ORDER BY COALESCE(m.creado_en, FROM_UNIXTIME(m.ts)) ASC
       LIMIT ?
       `,
       [...params, limit]
@@ -65,6 +68,8 @@ export const GET: APIRoute = async ({ request }) => {
         wa_msg_id: (r as any).wa_msg_id || null,
         status: (r as any).status || null,
         status_ts: (r as any).status_ts || null,
+        usuario_id: (r as any).usuario_id || null,
+        usuario_nombre: (r as any).usuario_nombre || null,
       };
     });
 

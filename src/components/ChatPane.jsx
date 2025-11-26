@@ -94,6 +94,11 @@ export default function ChatPane({ conversation }) {
   const [showTemplates, setShowTemplates] = useState(false);
   const [templates, setTemplates] = useState([]);
 
+  // comentarios internos
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+
   // composer
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
@@ -212,7 +217,11 @@ function pickMime() {
       fd.append('file', new File([recState.blob], fileName, { type: recState.blob.type || 'audio/webm' }));
 
       console.log('⬆️ Subiendo audio al servidor...');
-      const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), { method: 'POST', body: fd });
+      const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        body: fd,
+        credentials: 'include' // ✅ IMPORTANTE: enviar cookies de autenticación
+      });
       const uj = await up.json();
       console.log('✅ Respuesta upload:', uj);
 
@@ -372,7 +381,43 @@ function pickMime() {
     setShowQuickReplies(false);
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [conversation?.id]);
+  // Cargar comentarios internos
+  async function loadComments() {
+    if (!conversation) return;
+    try {
+      const r = await fetch(`${BASE}/api/comentarios?conversacion_id=${conversation.id}`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) setComments(j.items || []);
+    } catch {}
+  }
+
+  // Crear comentario interno
+  async function createComment(e) {
+    e?.preventDefault?.();
+    if (!conversation || !newComment.trim()) return;
+    try {
+      const r = await fetch(`${BASE}/api/comentarios`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversacion_id: conversation.id, comentario: newComment.trim() })
+      });
+      const j = await r.json();
+      if (j.ok) {
+        setNewComment("");
+        loadComments();
+      } else {
+        alert(j.error || 'No se pudo crear el comentario');
+      }
+    } catch {
+      alert('Error de red');
+    }
+  }
+
+  useEffect(() => {
+    load();
+    loadComments();
+    /* eslint-disable-next-line */
+  }, [conversation?.id]);
 
   // Autoscroll cuando cambian los mensajes
   useEffect(() => {
@@ -414,6 +459,8 @@ function pickMime() {
           media_id: m.media_id,
           mime_type: m.mime_type,
           wa_msg_id: m.wa_msg_id,
+          usuario_id: m.usuario_id,
+          usuario_nombre: m.usuario_nombre,
         }));
 
       if (toAdd.length === 0) return prev;
@@ -709,6 +756,11 @@ function pickMime() {
               <div className="text-[10px] text-slate-400">
                 {new Date(m.created_at).toLocaleString()}
               </div>
+              {m.sender === "me" && m.usuario_nombre && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-900/30 border border-sky-700/50 text-sky-300">
+                  👤 {m.usuario_nombre}
+                </span>
+              )}
               {m.sender === "me" && <StatusBadge s={m.status} />}
               {m.sender === "me" && m.status === "failed" && (
                 <button
@@ -748,37 +800,114 @@ function pickMime() {
         </div>
       )}
 
-      {/* Composer */}
-      <form onSubmit={send} className="p-3 border-t border-slate-800 flex items-center gap-2">
-        <label className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700 cursor-pointer" title="Adjuntar archivo">
-          <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
-          📎
-        </label>
-        <button type="button" onClick={() => setShowQuickReplies(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700" title="Respuestas rápidas">
-          ⚡
+      {/* Composer o aviso de ventana 24h */}
+      {conversation.dentro_ventana_24h === 0 ? (
+        <div className="p-3 border-t border-slate-800 bg-amber-950/20">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 text-sm text-amber-300">
+              ⚠️ Fuera de ventana 24h. Solo puedes enviar plantillas aprobadas.
+            </div>
+            <button
+              type="button"
+              onClick={() => { loadTemplates(); setShowTemplates(true); }}
+              className="px-4 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400"
+            >
+              📋 Enviar Plantilla
+            </button>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={send} className="p-3 border-t border-slate-800 flex items-center gap-2">
+          <label className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700 cursor-pointer" title="Adjuntar archivo">
+            <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
+            📎
+          </label>
+          <button type="button" onClick={() => setShowQuickReplies(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700" title="Respuestas rápidas">
+            ⚡
+          </button>
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={file ? "Mensaje (opcional)..." : "Escribe un mensaje..."}
+            rows={1}
+            className="resize-none flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 outline-none focus:border-emerald-400"
+          />
+          <button type="button" onClick={() => recState.recording ? stopRecording() : startRecording()} className={`inline-flex items-center justify-center w-10 h-10 rounded ${recState.recording ? 'bg-red-600 hover:bg-red-500' : 'bg-slate-800 hover:bg-slate-700'} transition`} title={recState.recording ? 'Detener grabación' : 'Grabar audio'}>
+            {recState.recording ? '⏹️' : '🎤'}
+          </button>
+          {recState.recording && (
+            <span className="text-xs text-red-400">{String(Math.floor(recState.seconds/60)).padStart(2,'0')}:{String(recState.seconds%60).padStart(2,'0')}</span>
+          )}
+          {!!recState.blob && !recState.recording && (
+            <button type="button" onClick={sendRecorded} className="px-3 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Enviar audio</button>
+          )}
+          {file && <span className="text-xs text-slate-300 truncate max-w-[200px]">{file.name}</span>}
+          <button className="px-4 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400">
+            Enviar
+          </button>
+        </form>
+      )}
+
+      {/* Sección de comentarios internos */}
+      <div className="border-t border-slate-800">
+        <button
+          type="button"
+          onClick={() => setShowComments(!showComments)}
+          className="w-full px-4 py-2 flex items-center gap-2 text-sm text-slate-300 hover:bg-slate-900/50 transition"
+        >
+          <span className="flex-1 text-left font-medium">
+            💬 Comentarios internos ({comments.length})
+          </span>
+          <span className="text-slate-500">{showComments ? '▼' : '▶'}</span>
         </button>
-        <textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={file ? "Mensaje (opcional)..." : "Escribe un mensaje..."}
-          rows={1}
-          className="resize-none flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 outline-none focus:border-emerald-400"
-        />
-        <button type="button" onClick={() => recState.recording ? stopRecording() : startRecording()} className={`inline-flex items-center justify-center w-10 h-10 rounded ${recState.recording ? 'bg-red-600 hover:bg-red-500' : 'bg-slate-800 hover:bg-slate-700'} transition`} title={recState.recording ? 'Detener grabación' : 'Grabar audio'}>
-          {recState.recording ? '⏹️' : '🎤'}
-        </button>
-        {recState.recording && (
-          <span className="text-xs text-red-400">{String(Math.floor(recState.seconds/60)).padStart(2,'0')}:{String(recState.seconds%60).padStart(2,'0')}</span>
+
+        {showComments && (
+          <div className="border-t border-slate-800 bg-slate-950/50">
+            {/* Lista de comentarios */}
+            <div className="max-h-48 overflow-y-auto thin-scroll p-3 space-y-2">
+              {comments.length === 0 ? (
+                <div className="text-xs text-slate-500 text-center py-4">
+                  No hay comentarios internos aún
+                </div>
+              ) : (
+                comments.map(c => (
+                  <div key={c.id} className="bg-slate-900/50 border border-slate-800 rounded-lg p-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium text-sky-300">
+                        {c.usuario_nombre || 'Usuario'}
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        {new Date(c.creado_en).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-300 whitespace-pre-wrap">
+                      {c.comentario}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Formulario para nuevo comentario */}
+            <form onSubmit={createComment} className="p-3 border-t border-slate-800 flex gap-2">
+              <textarea
+                value={newComment}
+                onChange={e => setNewComment(e.target.value)}
+                placeholder="Escribe un comentario interno..."
+                rows={2}
+                className="resize-none flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm outline-none focus:border-sky-400"
+              />
+              <button
+                type="submit"
+                className="px-3 py-2 rounded bg-sky-600 text-white font-semibold hover:bg-sky-500 self-end"
+              >
+                Agregar
+              </button>
+            </form>
+          </div>
         )}
-        {!!recState.blob && !recState.recording && (
-          <button type="button" onClick={sendRecorded} className="px-3 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Enviar audio</button>
-        )}
-        {file && <span className="text-xs text-slate-300 truncate max-w-[200px]">{file.name}</span>}
-        <button className="px-4 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400">
-          Enviar
-        </button>
-      </form>
+      </div>
 
       <MediaModal open={modal.open} kind={modal.kind} src={modal.src} onClose={closeMedia} />
 

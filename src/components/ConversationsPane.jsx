@@ -4,6 +4,22 @@ import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 const BASE = import.meta.env.BASE_URL || '';
 const SEEN_KEY = "mensajeria_seen_v1";
 
+// Formato de tiempo relativo estilo WhatsApp
+function formatRelativeTime(timestamp) {
+  if (!timestamp) return '';
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - Number(timestamp);
+
+  if (diff < 60) return 'ahora';
+  if (diff < 3600) return `${Math.floor(diff / 60)}min`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+
+  // Más de una semana: mostrar fecha
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' });
+}
+
 export default function ConversationsPane({ onSelect, currentId = null }) {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
@@ -180,28 +196,42 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             onClick={() => onSelect?.(c)}
             className={`${baseClasses} ${visual}`}
           >
-            <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 text-xs">
+            <div className="w-9 h-9 shrink-0 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 text-xs">
               {String((c.title || 'C')[0]).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <div className={`font-medium leading-tight truncate ${unread ? "text-emerald-200" : ""}`}>
+              {/* Fila superior: Nombre + Timestamp */}
+              <div className="flex items-baseline justify-between gap-2 mb-1">
+                <div className={`font-medium leading-tight truncate flex-1 ${unread ? "text-emerald-200 font-semibold" : ""}`}>
                   {c.title || `Chat ${c.id}`}
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded-full border border-slate-700/80 text-emerald-300">
-                  {c.estado || '-'}
-                </span>
+                <div className="text-[10px] text-slate-500 shrink-0">
+                  {formatRelativeTime(c.last_at)}
+                </div>
+              </div>
+
+              {/* Fila intermedia: Último mensaje */}
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`text-xs truncate flex-1 ${unread ? "text-slate-300 font-medium" : "text-slate-400"}`}>
+                  {c.last_text || '-'}
+                </div>
                 {unread && (
-                  <span className="ml-1 w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
                 )}
               </div>
-              <div className="text-xs text-slate-400 truncate">{c.last_text || '-'}</div>
-              {c.asignado_nombre && (
-                <div className="text-[10px] text-sky-400 mt-0.5 flex items-center gap-1">
-                  <span>👤</span>
-                  <span>{c.asignado_nombre}</span>
-                </div>
-              )}
+
+              {/* Fila inferior: Badges (estado + agente) */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] px-2 py-0.5 rounded-full border border-slate-700/80 text-emerald-300 bg-emerald-900/20">
+                  {c.estado || '-'}
+                </span>
+                {c.asignado_nombre && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-sky-700/80 text-sky-400 bg-sky-900/20 flex items-center gap-1">
+                    <span>👤</span>
+                    <span>{c.asignado_nombre}</span>
+                  </span>
+                )}
+              </div>
             </div>
           </button>
         )})}

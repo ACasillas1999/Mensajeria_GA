@@ -42,7 +42,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
         COALESCE(c.ultimo_ts, UNIX_TIMESTAMP(c.creado_en)) AS last_at,
         c.estado,
         c.asignado_a,
-        u.nombre AS asignado_nombre
+        u.nombre AS asignado_nombre,
+        c.dentro_ventana_24h
       FROM conversaciones c
       LEFT JOIN usuarios u ON u.id = c.asignado_a
       ${where}
