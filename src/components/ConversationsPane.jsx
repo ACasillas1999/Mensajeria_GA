@@ -129,13 +129,14 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
 
     setSending(true);
     try {
+      const tpl = templates.find(t => t.nombre === selectedTemplate);
       const r = await fetch(`${BASE}/api/start-conversation`.replace(/\/\//g, '/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: newPhone.trim(),
           template_name: selectedTemplate,
-          language_code: 'es',
+          language_code: tpl?.idioma || 'es',
         }),
       });
 
