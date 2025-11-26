@@ -84,12 +84,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     );
 
-    // Guardar reacción en BD (última reacción enviada por un agente)
+    // Guardar reacción del agente en BD
     await pool.query(
       `UPDATE mensajes
-          SET reaction_emoji = ?, reaction_by = ?
+          SET agent_reaction_emoji = ?
         WHERE id = ?`,
-      [emoji, user.id, mensaje_id]
+      [emoji, mensaje_id]
     );
 
     return new Response(

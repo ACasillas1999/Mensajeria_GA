@@ -387,7 +387,7 @@ function pickMime() {
     setReactionPicker({ show: false, msgId: null });
 
     // Actualizar UI optimísticamente
-    setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: emoji } : m));
+    setItems(prev => prev.map(m => m.id === msg.id ? { ...m, agent_reaction_emoji: emoji } : m));
 
     try {
       const res = await fetch(`${BASE}/api/message-reaction`.replace(/\/\//g, '/'), {
@@ -410,13 +410,13 @@ function pickMime() {
       if (!res.ok || !j.ok) {
         console.error('Error en reacción:', j);
         // Revertir cambio optimista si falló
-        setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: null } : m));
+        setItems(prev => prev.map(m => m.id === msg.id ? { ...m, agent_reaction_emoji: null } : m));
         alert(j.error || 'No se pudo enviar la reacción');
       }
     } catch (err) {
       console.error('Error al enviar reacción:', err);
       // Revertir cambio optimista si falló
-      setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: null } : m));
+      setItems(prev => prev.map(m => m.id === msg.id ? { ...m, agent_reaction_emoji: null } : m));
       alert('Error de red al enviar la reacción');
     }
   }
@@ -859,11 +859,20 @@ function pickMime() {
                 </span>
               )}
               {m.sender === "me" && <StatusBadge s={m.status} />}
-              {m.reaction_emoji && (
-                <span className="ml-1 text-xs px-1.5 py-0.5 rounded bg-slate-900/60 border border-slate-700/80">
-                  {m.reaction_emoji}
-                </span>
-              )}
+
+              {/* Mostrar ambas reacciones si existen */}
+              <div className="ml-1 flex gap-1">
+                {m.agent_reaction_emoji && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-900/40 border border-emerald-700/60" title="Reacción del agente">
+                    {m.agent_reaction_emoji}
+                  </span>
+                )}
+                {m.client_reaction_emoji && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-slate-900/60 border border-slate-700/80" title="Reacción del cliente">
+                    {m.client_reaction_emoji}
+                  </span>
+                )}
+              </div>
 
               {/* Botón para abrir selector de reacciones */}
               <div className="ml-auto relative">

@@ -99,7 +99,7 @@ export const POST: APIRoute = async ({ request }) => {
           if (emoji && msgId) {
             // Actualizar el mensaje en BD con la reacción del cliente
             await pool.query(
-              `UPDATE mensajes SET reaction_emoji=?, reaction_by=NULL WHERE wa_msg_id=?`,
+              `UPDATE mensajes SET client_reaction_emoji=? WHERE wa_msg_id=?`,
               [emoji, msgId]
             );
           }

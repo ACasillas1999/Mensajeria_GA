@@ -40,8 +40,8 @@ export const GET: APIRoute = async ({ request }) => {
         m.wa_msg_id,
         m.status,
         m.status_ts,
-        m.reaction_emoji,
-        m.reaction_by,
+        m.agent_reaction_emoji,
+        m.client_reaction_emoji,
         m.usuario_id,
         u.nombre AS usuario_nombre,
         COALESCE(m.creado_en, FROM_UNIXTIME(m.ts)) AS creado_en
@@ -70,8 +70,8 @@ export const GET: APIRoute = async ({ request }) => {
         wa_msg_id: (r as any).wa_msg_id || null,
         status: (r as any).status || null,
         status_ts: (r as any).status_ts || null,
-        reaction_emoji: (r as any).reaction_emoji || null,
-        reaction_by: (r as any).reaction_by || null,
+        agent_reaction_emoji: (r as any).agent_reaction_emoji || null,
+        client_reaction_emoji: (r as any).client_reaction_emoji || null,
         usuario_id: (r as any).usuario_id || null,
         usuario_nombre: (r as any).usuario_nombre || null,
       };
