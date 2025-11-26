@@ -9,7 +9,7 @@ const WABA_VERSION = process.env.WABA_VERSION || 'v20.0';
 export const POST: APIRoute = async ({ locals }) => {
   try {
     const user = (locals as any).user;
-    if (!user || user.rol?.toLowerCase() !== 'admin') {
+    if (!user || !user.rol || user.rol.toUpperCase() !== 'ADMIN') {
       return new Response(
         JSON.stringify({ ok: false, error: 'Solo administradores pueden sincronizar plantillas' }),
         { status: 403, headers: { 'Content-Type': 'application/json' } }
