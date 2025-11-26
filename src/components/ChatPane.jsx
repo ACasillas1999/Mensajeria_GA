@@ -386,14 +386,29 @@ function pickMime() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mensaje_id: msg.id, emoji }),
       });
-      const j = await res.json();
+
+      // Intentar parsear respuesta
+      let j;
+      try {
+        j = await res.json();
+      } catch (parseError) {
+        console.error('Error parseando respuesta de reacción:', parseError);
+        // Si el status es exitoso pero no pudimos parsear, asumir que funcionó
+        if (res.ok) {
+          setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: emoji } : m));
+          return;
+        }
+        throw new Error('Respuesta inválida del servidor');
+      }
+
       if (res.ok && j.ok) {
         setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: emoji } : m));
-        setReactionTarget(null);
       } else {
+        console.error('Error en reacción:', j);
         alert(j.error || 'No se pudo enviar la reacción');
       }
-    } catch {
+    } catch (err) {
+      console.error('Error al enviar reacción:', err);
       alert('Error de red al enviar la reacción');
     }
   }

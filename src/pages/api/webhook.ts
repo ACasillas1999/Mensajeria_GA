@@ -90,10 +90,29 @@ export const POST: APIRoute = async ({ request }) => {
           continue; // listo con este change
         }
 
-        // 2) MENSAJES ENTRANTES
-        const msgs = c?.value?.messages as any[] | undefined;
+        // 2) REACCIONES ENTRANTES (cuando el cliente reacciona a nuestros mensajes)
+        const reactions = c?.value?.messages?.filter((m: any) => m.type === 'reaction') || [];
+        for (const r of reactions) {
+          const emoji = r.reaction?.emoji;
+          const msgId = r.reaction?.message_id; // wa_msg_id del mensaje al que reacciona
+
+          if (emoji && msgId) {
+            // Actualizar el mensaje en BD con la reacción del cliente
+            await pool.query(
+              `UPDATE mensajes SET reaction_emoji=?, reaction_by=NULL WHERE wa_msg_id=?`,
+              [emoji, msgId]
+            );
+          }
+        }
+
+        // 3) MENSAJES ENTRANTES (excluir reacciones, ya las procesamos arriba)
+        const allMsgs = c?.value?.messages as any[] | undefined;
         const contacts = c?.value?.contacts as any[] | undefined;
-        if (!msgs || !contacts) continue;
+        if (!allMsgs || !contacts) continue;
+
+        // Filtrar solo mensajes que NO son reacciones
+        const msgs = allMsgs.filter((m: any) => m.type !== 'reaction');
+        if (msgs.length === 0) continue;
 
         const from = msgs[0]?.from;
         const profileName = contacts[0]?.profile?.name || null;
