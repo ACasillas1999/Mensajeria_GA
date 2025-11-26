@@ -108,20 +108,21 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estado]);
 
-  // Cargar plantillas aprobadas cuando se abre el modal
+  // Cargar plantillas cuando se abre el modal
   useEffect(() => {
     if (showNewChat && templates.length === 0) {
-      fetch(`${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/'))
-        .then(r => r.json())
-        .then(j => {
-          if (j.ok) {
-            setTemplates(j.items || []);
-            if (j.items.length > 0) setSelectedTemplate(j.items[0].nombre);
-          }
-        })
-        .catch(console.error);
+      setTemplates([
+        {
+          id: "ga_notificarchofer",
+          nombre: "ga_notificarchofer",
+          idioma: "en_US",
+          categoria: "UTILITY",
+          body_text: "Notificación al chofer.",
+        },
+      ]);
+      setSelectedTemplate("ga_notificarchofer");
     }
-  }, [showNewChat]);
+  }, [showNewChat, templates.length]);
 
   async function startNewConversation() {
     if (!newPhone.trim() || !selectedTemplate) return;
