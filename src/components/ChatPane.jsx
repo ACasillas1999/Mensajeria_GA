@@ -500,11 +500,23 @@ function pickMime() {
     );
   }, []);
 
+  // SSE: Recibir comentarios internos en tiempo real
+  const handleRealtimeComments = useCallback((newComments) => {
+    if (!Array.isArray(newComments)) return;
+    setComments((prev) => {
+      const existingIds = new Set(prev.map(c => c.id));
+      const toAdd = newComments.filter(c => !existingIds.has(c.id));
+      if (toAdd.length === 0) return prev;
+      return [...prev, ...toAdd];
+    });
+  }, []);
+
   // Conectar SSE para esta conversación
   useRealtimeChat({
     conversationId: conversation?.id,
     onMessage: handleRealtimeMessages,
     onStatus: handleRealtimeStatus,
+    onComments: handleRealtimeComments,
     enabled: !!conversation,
   });
 
@@ -805,7 +817,7 @@ function pickMime() {
         <div className="p-3 border-t border-slate-800 bg-amber-950/20">
           <div className="flex items-center gap-3">
             <div className="flex-1 text-sm text-amber-300">
-              ⚠️ Fuera de ventana 24h. Solo puedes enviar plantillas aprobadas.
+              ⚠️ Envia un mensaje de plantilla para poder iniciar una conversacion.
             </div>
             <button
               type="button"

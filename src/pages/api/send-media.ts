@@ -3,8 +3,11 @@ import { pool } from '../../lib/db'
 import { sendImageLink, sendDocumentLink, sendAudioLink, sendVideoLink } from '../../lib/whatsapp'
 import axios from 'axios'
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    const user = (locals as any).user as { id: number } | undefined;
+    const usuario_id = user?.id || null;
+
     const { conversacion_id, to, kind, url, caption='' } = await request.json()
     const now = Math.floor(Date.now()/1000)
 
@@ -30,9 +33,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Guarda mensaje saliente con media_url
     await pool.query(
-      `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, media_url)
-       VALUES (?,?,?,?,?,?,?,?)`,
-      [conversacion_id, 1, kind, caption || `[${kind}]`, msgId, now, 'sent', url]
+      `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, media_url, usuario_id)
+       VALUES (?,?,?,?,?,?,?,?,?)`,
+      [conversacion_id, 1, kind, caption || `[${kind}]`, msgId, now, 'sent', url, usuario_id]
     )
     await pool.query(
       'UPDATE conversaciones SET ultimo_msg=?, ultimo_ts=?, estado="ABIERTA" WHERE id=?',

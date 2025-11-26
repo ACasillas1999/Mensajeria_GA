@@ -83,8 +83,11 @@ async function sendMediaWABA({ to, type, media_id, caption }:{
   return data;
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    const user = (locals as any).user as { id: number } | undefined;
+    const usuario_id = user?.id || null;
+
     const ct = request.headers.get("content-type") || "";
 
     // --- JSON (solo texto) ---
@@ -114,9 +117,9 @@ export const POST: APIRoute = async ({ request }) => {
       const msgId = data?.messages?.[0]?.id || null;
 
       await pool.query(
-        `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status)
-         VALUES (?,?,?,?,?,?,?)`,
-        [conversacion_id, 1, "text", text, msgId, now, "sent"]
+        `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, usuario_id)
+         VALUES (?,?,?,?,?,?,?,?)`,
+        [conversacion_id, 1, "text", text, msgId, now, "sent", usuario_id]
       );
       await pool.query(
         `UPDATE conversaciones SET ultimo_msg=?, ultimo_ts=?, estado="ABIERTA" WHERE id=?`,
@@ -178,9 +181,9 @@ export const POST: APIRoute = async ({ request }) => {
       const msgId = wabaResp?.messages?.[0]?.id || null;
 
       await pool.query(
-        `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, media_id, mime_type)
-         VALUES (?,?,?,?,?,?,?,?,?)`,
-        [conversacion_id, 1, tipo, text || `[${tipo}]`, msgId, now, "sent", media_id, mime]
+        `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, media_id, mime_type, usuario_id)
+         VALUES (?,?,?,?,?,?,?,?,?,?)`,
+        [conversacion_id, 1, tipo, text || `[${tipo}]`, msgId, now, "sent", media_id, mime, usuario_id]
       );
       await pool.query(
         `UPDATE conversaciones SET ultimo_msg=?, ultimo_ts=?, estado="ABIERTA" WHERE id=?`,
@@ -194,9 +197,9 @@ export const POST: APIRoute = async ({ request }) => {
     const data = await sendText({ to, body: text });
     const msgId = data?.messages?.[0]?.id || null;
     await pool.query(
-      `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status)
-       VALUES (?,?,?,?,?,?,?)`,
-      [conversacion_id, 1, "text", text, msgId, now, "sent"]
+      `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, usuario_id)
+       VALUES (?,?,?,?,?,?,?,?)`,
+      [conversacion_id, 1, "text", text, msgId, now, "sent", usuario_id]
     );
     await pool.query(
       `UPDATE conversaciones SET ultimo_msg=?, ultimo_ts=?, estado="ABIERTA" WHERE id=?`,

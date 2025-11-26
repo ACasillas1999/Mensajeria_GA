@@ -110,6 +110,20 @@ export const GET: APIRoute = async ({ request, locals }) => {
             if ((statusRows as any[]).length > 0) {
               sendEvent(clientId, 'status', statusRows);
             }
+
+            // Verificar nuevos comentarios internos
+            const [commentRows] = await pool.query(
+              `SELECT c.id, c.conversacion_id, c.usuario_id, u.nombre AS usuario_nombre,
+                      c.comentario, c.creado_en
+               FROM comentarios_internos c
+               LEFT JOIN usuarios u ON u.id = c.usuario_id
+               WHERE c.conversacion_id = ? AND UNIX_TIMESTAMP(c.creado_en) > ?
+               ORDER BY c.creado_en ASC`,
+              [client.conversationId, client.lastCheck]
+            );
+            if ((commentRows as any[]).length > 0) {
+              sendEvent(clientId, 'comments', commentRows);
+            }
           } else {
             // Verificar nuevas conversaciones o actualizaciones
             const [rows] = await pool.query(

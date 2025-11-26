@@ -1,0 +1,118 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+
+const user = (Astro.locals as any).user;
+if (!user || user.rol?.toLowerCase() !== 'admin') {
+  return Astro.redirect('/');
+}
+---
+
+<AppLayout title="Gestión de Plantillas">
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-2xl font-bold text-emerald-400">Plantillas de WhatsApp</h2>
+      <button
+        id="syncBtn"
+        class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition"
+      >
+        🔄 Sincronizar desde Meta
+      </button>
+    </div>
+
+    <div id="syncStatus" class="hidden p-4 rounded-lg"></div>
+
+    <div id="templatesList" class="space-y-3"></div>
+  </div>
+
+  <script>
+    const BASE = import.meta.env.BASE_URL || '';
+
+    async function syncTemplates() {
+      const btn = document.getElementById('syncBtn');
+      const status = document.getElementById('syncStatus');
+      if (!btn || !status) return;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Sincronizando...';
+      status.className = 'p-4 rounded-lg bg-slate-800 border border-slate-700 text-slate-300';
+      status.textContent = 'Sincronizando plantillas desde Meta...';
+      status.classList.remove('hidden');
+
+      try {
+        const res = await fetch(`${BASE}/api/sync-templates`.replace(/\/\//g, '/'), {
+          method: 'POST',
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          status.className = 'p-4 rounded-lg bg-emerald-900/30 border border-emerald-700 text-emerald-300';
+          status.textContent = `✅ ${data.message}`;
+          loadTemplates();
+        } else {
+          status.className = 'p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
+          status.textContent = `❌ Error: ${data.error}`;
+        }
+      } catch (err) {
+        status.className = 'p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
+        status.textContent = `❌ Error de red: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔄 Sincronizar desde Meta';
+      }
+    }
+
+    async function loadTemplates() {
+      const container = document.getElementById('templatesList');
+      if (!container) return;
+
+      try {
+        const res = await fetch(`${BASE}/api/templates`.replace(/\/\//g, '/'));
+        const data = await res.json();
+
+        if (data.ok && data.items.length > 0) {
+          container.innerHTML = data.items
+            .map(
+              (tpl) => `
+            <div class="p-4 rounded-lg border border-slate-800 bg-slate-900/50">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="flex-1">
+                  <div class="font-medium text-slate-200">${tpl.nombre}</div>
+                  <div class="text-xs text-slate-500">${tpl.idioma} · ${tpl.categoria}</div>
+                </div>
+                <span class="px-2 py-1 rounded text-xs font-semibold ${
+                  tpl.estado === 'APPROVED'
+                    ? 'bg-emerald-900/30 border border-emerald-700 text-emerald-300'
+                    : tpl.estado === 'PENDING'
+                    ? 'bg-amber-900/30 border border-amber-700 text-amber-300'
+                    : 'bg-red-900/30 border border-red-700 text-red-300'
+                }">
+                  ${tpl.estado}
+                </span>
+              </div>
+              ${tpl.header_text ? `<div class="text-xs text-slate-400 mb-1">📌 ${tpl.header_text}</div>` : ''}
+              <div class="text-sm text-slate-300 whitespace-pre-wrap">${tpl.body_text || '-'}</div>
+              ${tpl.footer_text ? `<div class="text-xs text-slate-500 mt-1">${tpl.footer_text}</div>` : ''}
+            </div>
+          `
+            )
+            .join('');
+        } else {
+          container.innerHTML = `
+            <div class="p-8 rounded-lg border border-slate-800 bg-slate-900/50 text-center text-slate-400">
+              No hay plantillas sincronizadas. Haz clic en "Sincronizar desde Meta" para importarlas.
+            </div>
+          `;
+        }
+      } catch (err) {
+        container.innerHTML = `
+          <div class="p-8 rounded-lg border border-red-800 bg-red-900/20 text-center text-red-300">
+            Error cargando plantillas: ${err.message}
+          </div>
+        `;
+      }
+    }
+
+    document.getElementById('syncBtn')?.addEventListener('click', syncTemplates);
+    loadTemplates();
+  </script>
+</AppLayout>
