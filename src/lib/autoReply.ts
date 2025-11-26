@@ -87,7 +87,7 @@ async function findMatchingRule(messageText: string): Promise<AutoReplyRule | nu
   const rules = rows as AutoReplyRule[];
 
   for (const rule of rules) {
-    const keywords = rule.trigger_keywords.split(',').map(k => k.trim());
+    const keywords = rule.trigger_keywords.split(',').map(k => k.trim();
     const text = rule.case_sensitive ? messageText : messageText.toLowerCase();
 
     for (const keyword of keywords) {
@@ -177,7 +177,7 @@ export async function processAutoReply(
 
     // 3. Verificar si estamos dentro de horario
     const withinHours = await isWithinBusinessHours();
-    const outOfHoursEnabled = (await getSetting('out_of_hours_enabled')) === 'true';
+    const outOfHoursEnabled = (await getSetting('out_of_hours_enabled') === 'true';
 
     // Si estamos fuera de horario, enviar mensaje de fuera de horario
     if (!withinHours && outOfHoursEnabled) {
@@ -189,7 +189,7 @@ export async function processAutoReply(
         await new Promise(resolve => setTimeout(resolve, delay * 1000));
 
         // Enviar mensaje
-        const response = await sendText({ to: from, text: outOfHoursMessage });
+        const response = await sendText({ to: from, body: outOfHoursMessage });
         const waMessageId = response?.messages?.[0]?.id || null;
 
         // Guardar en BD como mensaje automático
@@ -210,7 +210,7 @@ export async function processAutoReply(
     const delay = parseInt(await getSetting('auto_reply_delay_seconds') || '2');
     await new Promise(resolve => setTimeout(resolve, delay * 1000));
 
-    const response = await sendText({ to: from, text: rule.response_text });
+    const response = await sendText({ to: from, body: rule.response_text });
     const waMessageId = response?.messages?.[0]?.id || null;
 
     // Guardar en BD como mensaje automático
@@ -225,3 +225,6 @@ export async function processAutoReply(
     // No lanzar error para no interrumpir el flujo del webhook
   }
 }
+
+
+
