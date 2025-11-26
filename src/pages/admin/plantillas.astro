@@ -7,7 +7,7 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
 }
 ---
 
-<AppLayout title="Gesti��n de Plantillas">
+<AppLayout title="Gestión de Plantillas">
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <h2 class="text-2xl font-bold text-emerald-400">Plantillas de WhatsApp</h2>
@@ -15,7 +15,7 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
         id="syncBtn"
         class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition"
       >
-        �Y"" Sincronizar desde Meta
+        Sincronizar desde Meta
       </button>
     </div>
 
@@ -33,7 +33,7 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
       if (!btn || !status) return;
 
       btn.disabled = true;
-      btn.textContent = '�?� Sincronizando...';
+      btn.textContent = 'Sincronizando...';
       status.className = 'p-4 rounded-lg bg-slate-800 border border-slate-700 text-slate-300';
       status.textContent = 'Sincronizando plantillas desde Meta...';
       status.classList.remove('hidden');
@@ -45,17 +45,14 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
         const contentType = res.headers.get('content-type') || '';
         let data = null;
 
-        // Solo intentamos parsear JSON si el servidor realmente lo envió
         if (contentType.includes('application/json')) {
           data = await res.json();
         }
 
-        // Si la respuesta NO es ok (por ejemplo 403/500), intentamos mostrar un mensaje claro
         if (!res.ok) {
           let extra = '';
 
           if (!data) {
-            // Puede venir HTML de un WAF / proxy (mensaje "Cross-site ...")
             try {
               const text = await res.text();
               extra = text ? ` Detalle: ${text.slice(0, 120)}...` : '';
@@ -68,9 +65,9 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
 
           status.className = 'p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
           status.textContent =
-            `�?O Error ${res.status} al sincronizar plantillas.` +
+            `Error ${res.status} al sincronizar plantillas.` +
             (res.status === 403
-              ? ' Verifica que tu sesi��n tenga rol ADMIN y que el servidor permita este POST.'
+              ? ' Verifica que tu sesión tenga rol ADMIN y que el servidor permita este POST.'
               : '') +
             extra;
           return;
@@ -78,18 +75,18 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
 
         if (data && data.ok) {
           status.className = 'p-4 rounded-lg bg-emerald-900/30 border border-emerald-700 text-emerald-300';
-          status.textContent = `�o. ${data.message}`;
+          status.textContent = data.message || 'Sincronización completada.';
           loadTemplates();
         } else {
           status.className = 'p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
-          status.textContent = `�?O Error: ${data?.error || 'Respuesta inesperada del servidor'}`;
+          status.textContent = `Error: ${data?.error || 'Respuesta inesperada del servidor'}`;
         }
       } catch (err) {
         status.className = 'p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
-        status.textContent = `�?O Error de red: ${err?.message || err}`;
+        status.textContent = `Error de red: ${err?.message || err}`;
       } finally {
         btn.disabled = false;
-        btn.textContent = '�Y"" Sincronizar desde Meta';
+        btn.textContent = 'Sincronizar desde Meta';
       }
     }
 
@@ -109,7 +106,7 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
               <div class="flex items-center gap-3 mb-2">
                 <div class="flex-1">
                   <div class="font-medium text-slate-200">${tpl.nombre}</div>
-                  <div class="text-xs text-slate-500">${tpl.idioma} �� ${tpl.categoria}</div>
+                  <div class="text-xs text-slate-500">${tpl.idioma} · ${tpl.categoria}</div>
                 </div>
                 <span class="px-2 py-1 rounded text-xs font-semibold ${
                   tpl.estado === 'APPROVED'
@@ -121,9 +118,17 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
                   ${tpl.estado}
                 </span>
               </div>
-              ${tpl.header_text ? `<div class="text-xs text-slate-400 mb-1">�Y"O ${tpl.header_text}</div>` : ''}
+              ${
+                tpl.header_text
+                  ? `<div class="text-xs text-slate-400 mb-1">Asunto: ${tpl.header_text}</div>`
+                  : ''
+              }
               <div class="text-sm text-slate-300 whitespace-pre-wrap">${tpl.body_text || '-'}</div>
-              ${tpl.footer_text ? `<div class="text-xs text-slate-500 mt-1">${tpl.footer_text}</div>` : ''}
+              ${
+                tpl.footer_text
+                  ? `<div class="text-xs text-slate-500 mt-1">${tpl.footer_text}</div>`
+                  : ''
+              }
             </div>
           `
             )
