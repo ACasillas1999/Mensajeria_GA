@@ -77,6 +77,31 @@ async function getAutoReplyCount(conversacionId: number): Promise<number> {
 }
 
 /**
+ * Revisa si hubo actividad reciente de un agente humano en la conversación.
+ * Si un agente escribió en los últimos N segundos, el bot no debe responder.
+ */
+async function hasRecentAgentActivity(
+  conversacionId: number,
+  windowSeconds: number = 10 * 60
+): Promise<boolean> {
+  const cutoff = Math.floor(Date.now() / 1000) - windowSeconds;
+
+  const [rows] = await pool.query(
+    `SELECT MAX(ts) AS last_agent_ts
+     FROM mensajes
+     WHERE conversacion_id = ?
+       AND from_me = 1
+       AND (is_auto_reply IS NULL OR is_auto_reply = FALSE)`,
+    [conversacionId]
+  );
+
+  const last = (rows as any[])[0]?.last_agent_ts;
+  if (!last) return false;
+
+  return Number(last) >= cutoff;
+}
+
+/**
  * Busca una regla de auto-respuesta que coincida con el mensaje
  */
 async function findMatchingRule(messageText: string): Promise<AutoReplyRule | null> {
@@ -87,7 +112,7 @@ async function findMatchingRule(messageText: string): Promise<AutoReplyRule | nu
   const rules = rows as AutoReplyRule[];
 
   for (const rule of rules) {
-    const keywords = rule.trigger_keywords.split(',').map(k => k.trim());
+    const keywords = rule.trigger_keywords.split(',').map((k) => k.trim());
     const text = rule.case_sensitive ? messageText : messageText.toLowerCase();
 
     for (const keyword of keywords) {
@@ -167,26 +192,41 @@ export async function processAutoReply(
     const enabled = await isAutoReplyEnabled();
     if (!enabled) return;
 
-    // 2. Verificar límite de auto-respuestas por conversación
-    const maxReplies = parseInt(await getSetting('max_auto_replies_per_conversation') || '3');
+    // 2. Evitar intervenir si hubo actividad reciente de un agente (últimos 10 minutos)
+    const recentAgent = await hasRecentAgentActivity(conversacionId, 10 * 60);
+    if (recentAgent) {
+      console.log(
+        `Skipping auto-reply for conversation ${conversacionId} due to recent agent activity`
+      );
+      return;
+    }
+
+    // 3. Verificar límite de auto-respuestas por conversación
+    const maxReplies = parseInt(
+      (await getSetting('max_auto_replies_per_conversation')) || '3',
+      10
+    );
     const currentCount = await getAutoReplyCount(conversacionId);
     if (currentCount >= maxReplies) {
       console.log(`Auto-reply limit reached for conversation ${conversacionId}`);
       return;
     }
 
-    // 3. Verificar si estamos dentro de horario
+    // 4. Verificar si estamos dentro de horario
     const withinHours = await isWithinBusinessHours();
-    const outOfHoursEnabled = (await getSetting('out_of_hours_enabled') === 'true');
+    const outOfHoursEnabled = (await getSetting('out_of_hours_enabled')) === 'true';
 
-    // Si estamos fuera de horario, enviar mensaje de fuera de horario
+    // Si estamos fuera de horario y está habilitada la respuesta fuera de horario
     if (!withinHours && outOfHoursEnabled) {
       const outOfHoursMessage = await getSetting('out_of_hours_message');
       if (outOfHoursMessage) {
-        const delay = parseInt(await getSetting('auto_reply_delay_seconds') || '2');
+        const delay = parseInt(
+          (await getSetting('auto_reply_delay_seconds')) || '2',
+          10
+        );
 
         // Esperar un poco para parecer más humano
-        await new Promise(resolve => setTimeout(resolve, delay * 1000));
+        await new Promise((resolve) => setTimeout(resolve, delay * 1000));
 
         // Enviar mensaje
         const response = await sendText({ to: from, body: outOfHoursMessage });
@@ -202,29 +242,29 @@ export async function processAutoReply(
       return;
     }
 
-    // 4. Buscar regla que coincida con el mensaje
+    // 5. Buscar regla que coincida con el mensaje
     const rule = await findMatchingRule(messageText);
     if (!rule) return;
 
-    // 5. Enviar respuesta automática
-   const delay = parseInt(await getSetting('auto_reply_delay_seconds') || '2');
-await new Promise(resolve => setTimeout(resolve, delay * 1000));
+    // 6. Enviar respuesta automática basada en regla
+    const delay = parseInt(
+      (await getSetting('auto_reply_delay_seconds')) || '2',
+      10
+    );
+    await new Promise((resolve) => setTimeout(resolve, delay * 1000));
 
-const response = await sendText({ to: from, body: rule.response_text });
-const waMessageId = response?.messages?.[0]?.id || null;
+    const response = await sendText({ to: from, body: rule.response_text });
+    const waMessageId = response?.messages?.[0]?.id || null;
 
     // Guardar en BD como mensaje automático
     await saveAutoReplyMessage(conversacionId, rule.response_text, waMessageId);
 
-    // 6. Registrar en log
+    // 7. Registrar en log
     await logAutoReply(conversacionId, rule.id, messageText, rule.response_text);
     console.log(`Sent auto-reply "${rule.name}" to ${from}`);
-
   } catch (error) {
     console.error('Error in processAutoReply:', error);
     // No lanzar error para no interrumpir el flujo del webhook
   }
 }
-
-
 
