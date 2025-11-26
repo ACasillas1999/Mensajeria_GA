@@ -10,7 +10,7 @@ const ding = typeof Audio !== "undefined"
   ? new Audio(`${BASE}/ding.mp3`.replace(/\/\//g, '/'))
   : null;
 
-/* Muestra imágenes / videos / audios / docs */
+/* Muestra imágenes / videos / audios / docs / stickers */
 function MediaBubble({ m, onOpen, onImageLoad }) {
   const mime = (m.mime_type || "").toLowerCase();
   const kind =
@@ -20,6 +20,20 @@ function MediaBubble({ m, onOpen, onImageLoad }) {
      mime.startsWith("audio/") ? "audio" : "document");
 
   const src = m.media_url || (m.media_id ? `${BASE}/api/media/${m.media_id}`.replace(/\/\//g, '/') : null);
+
+  // Stickers son imágenes WebP que se muestran más pequeñas
+  if (kind === "sticker" && src) {
+    return (
+      <button onClick={() => onOpen?.("image", src)} className="group">
+        <img
+          src={src}
+          className="max-w-[150px] rounded transition-transform group-hover:scale-105"
+          alt="sticker"
+          onLoad={onImageLoad}
+        />
+      </button>
+    );
+  }
 
   if (kind === "image" && src) {
     return (
@@ -363,6 +377,26 @@ function pickMime() {
     } catch {}
   }
   function closeAttachments() { setAttach({ open:false, items:[] }); }
+
+  // Reaccionar a un mensaje (texto, media o sticker)
+  async function reactToMessage(msg, emoji) {
+    try {
+      const res = await fetch(`${BASE}/api/message-reaction`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje_id: msg.id, emoji }),
+      });
+      const j = await res.json();
+      if (res.ok && j.ok) {
+        setItems(prev => prev.map(m => m.id === msg.id ? { ...m, reaction_emoji: emoji } : m));
+        setReactionTarget(null);
+      } else {
+        alert(j.error || 'No se pudo enviar la reacción');
+      }
+    } catch {
+      alert('Error de red al enviar la reacción');
+    }
+  }
 
   // Cargar plantillas disponibles (usamos una sola plantilla fija)
   function loadTemplates() {
@@ -802,6 +836,23 @@ function pickMime() {
                 </span>
               )}
               {m.sender === "me" && <StatusBadge s={m.status} />}
+              {m.reaction_emoji && (
+                <span className="ml-1 text-xs px-1.5 py-0.5 rounded bg-slate-900/60 border border-slate-700/80">
+                  {m.reaction_emoji}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={async () => {
+                  const emoji = window.prompt("Reacción (ej. 👍, ❤️, 😂):", "👍");
+                  if (!emoji) return;
+                  await reactToMessage(m, emoji);
+                }}
+                className="ml-auto text-[11px] px-1.5 py-0.5 rounded hover:bg-slate-700/80 text-slate-300"
+                title="Reaccionar"
+              >
+                🙂
+              </button>
               {m.sender === "me" && m.status === "failed" && (
                 <button
                   onClick={() => retryMessage(m)}
