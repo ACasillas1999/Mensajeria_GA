@@ -1,6 +1,12 @@
 ---
 import "../styles/global.css";
 import LoginForm from "../components/LoginForm.jsx";
+
+const base = import.meta.env.BASE_URL || "/";
+const user = (Astro.locals as any).user;
+if (user) {
+  return Astro.redirect(base);
+}
 ---
 
 <html lang="es">
@@ -24,4 +30,3 @@ import LoginForm from "../components/LoginForm.jsx";
     </script>
   </body>
 </html>
-

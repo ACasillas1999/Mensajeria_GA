@@ -340,13 +340,17 @@ function pickMime() {
   }
   function closeAttachments() { setAttach({ open:false, items:[] }); }
 
-  // Cargar plantillas disponibles
-  async function loadTemplates() {
-    try {
-      const r = await fetch(`${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/'));
-      const j = await r.json();
-      if (j.ok) setTemplates(j.items || []);
-    } catch {}
+  // Cargar plantillas disponibles (usamos una sola plantilla fija)
+  function loadTemplates() {
+    setTemplates([
+      {
+        id: "ga_notificarchofer",
+        nombre: "ga_notificarchofer",
+        idioma: "en_US",
+        categoria: "UTILITY",
+        body_text: "Notificación al chofer.",
+      },
+    ]);
   }
 
   // Enviar plantilla

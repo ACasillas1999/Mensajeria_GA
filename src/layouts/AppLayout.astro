@@ -126,7 +126,10 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, '/');
         if (btn) {
           btn.addEventListener('click', async () => {
             try {
-              await fetch(`${base}/api/logout`.replace(/\/\//g, '/'), { method: 'POST' });
+              await fetch(`${base}/api/logout`.replace(/\/\//g, '/'), {
+                method: 'POST',
+                credentials: 'include',
+              });
             } catch (e) {
               console.error('Logout error:', e);
             }
@@ -137,4 +140,3 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, '/');
     </script>
   </body>
 </html>
-
