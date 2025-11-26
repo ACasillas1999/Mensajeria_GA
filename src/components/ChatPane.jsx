@@ -788,6 +788,49 @@ function pickMime() {
     }
   }
 
+  // Marcar como favorita / archivar
+  async function toggleFavorite() {
+    if (!conversation) return;
+    const action = conversation.is_favorite ? 'unfavorite' : 'favorite';
+    try {
+      const r = await fetch(`${BASE}/api/conversation-user-status`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversacion_id: conversation.id, action })
+      });
+      const j = await r.json();
+      if (j.ok) {
+        conversation.is_favorite = !conversation.is_favorite;
+        setItems(prev => [...prev]); // Forzar re-render
+      } else {
+        alert(j.error || 'No se pudo actualizar');
+      }
+    } catch (err) {
+      alert('Error al marcar como favorito');
+    }
+  }
+
+  async function toggleArchive() {
+    if (!conversation) return;
+    const action = conversation.is_archived ? 'unarchive' : 'archive';
+    try {
+      const r = await fetch(`${BASE}/api/conversation-user-status`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversacion_id: conversation.id, action })
+      });
+      const j = await r.json();
+      if (j.ok) {
+        conversation.is_archived = !conversation.is_archived;
+        setItems(prev => [...prev]); // Forzar re-render
+      } else {
+        alert(j.error || 'No se pudo actualizar');
+      }
+    } catch (err) {
+      alert('Error al archivar');
+    }
+  }
+
   if (!conversation) {
     return (
       <div className="bg-slate-950/70 border border-slate-800 rounded-xl h-[calc(100vh-14rem)] flex items-center justify-center">
@@ -802,6 +845,32 @@ function pickMime() {
         <div className="font-medium truncate">{conversation.title || `Chat ${conversation.id}`}</div>
         <div className="text-xs text-slate-400 truncate">{conversation.wa_user}</div>
         <div className="ml-auto flex items-center gap-2">
+          {/* Botón favorito */}
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            title={conversation.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
+            className={`h-8 px-2 rounded text-xs transition ${
+              conversation.is_favorite
+                ? 'bg-yellow-600/20 border border-yellow-600/60 text-yellow-300'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
+            }`}
+          >
+            {conversation.is_favorite ? '⭐' : '☆'}
+          </button>
+          {/* Botón archivar */}
+          <button
+            type="button"
+            onClick={toggleArchive}
+            title={conversation.is_archived ? "Desarchivar" : "Archivar"}
+            className={`h-8 px-2 rounded text-xs ${
+              conversation.is_archived
+                ? 'bg-slate-700/60 text-slate-300'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
+            }`}
+          >
+            📦
+          </button>
           <span className="text-[10px] px-2 py-0.5 rounded-full border border-slate-700/80 text-emerald-300">{conversation.estado || "-"}</span>
           <select
             defaultValue={conversation.estado || 'ABIERTA'}

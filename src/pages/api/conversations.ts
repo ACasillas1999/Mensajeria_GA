@@ -43,14 +43,17 @@ export const GET: APIRoute = async ({ request, locals }) => {
         c.estado,
         c.asignado_a,
         u.nombre AS asignado_nombre,
-        c.dentro_ventana_24h
+        c.dentro_ventana_24h,
+        COALESCE(cus.is_archived, FALSE) AS is_archived,
+        COALESCE(cus.is_favorite, FALSE) AS is_favorite
       FROM conversaciones c
       LEFT JOIN usuarios u ON u.id = c.asignado_a
+      LEFT JOIN conversation_user_status cus ON cus.conversacion_id = c.id AND cus.usuario_id = ?
       ${where}
       ORDER BY last_at DESC
       LIMIT ? OFFSET ?
       `,
-      [...params, limit, offset]
+      [user.id, ...params, limit, offset]
     );
 
     return new Response(JSON.stringify({ ok: true, items: rows }), {
