@@ -87,7 +87,7 @@ async function findMatchingRule(messageText: string): Promise<AutoReplyRule | nu
   const rules = rows as AutoReplyRule[];
 
   for (const rule of rules) {
-    const keywords = rule.trigger_keywords.split(',').map(k => k.trim();
+    const keywords = rule.trigger_keywords.split(',').map(k => k.trim());
     const text = rule.case_sensitive ? messageText : messageText.toLowerCase();
 
     for (const keyword of keywords) {
