@@ -1,17 +1,18 @@
 import type { APIRoute } from 'astro'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import path from 'node:path'
-import fs from 'node:fs/promises'
 
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads')
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1'
+})
 
-export const POST: APIRoute = async ({ request, url: astroUrl }) => {
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'grupo-ascencio-messaging-app'
+
+export const POST: APIRoute = async ({ request }) => {
   try {
     const form = await request.formData()
     const file = form.get('file') as File | null
     if (!file) return new Response(JSON.stringify({ ok:false, error:'file_required' }), { status:400 })
-
-    // Crear directorio de uploads si no existe
-    await fs.mkdir(UPLOAD_DIR, { recursive: true })
 
     const buf = Buffer.from(await file.arrayBuffer())
 
@@ -25,13 +26,16 @@ export const POST: APIRoute = async ({ request, url: astroUrl }) => {
                : mime.startsWith('video/') ? 'video'
                : 'document'
 
-    // Guardar archivo localmente
-    const filePath = path.join(UPLOAD_DIR, name)
-    await fs.writeFile(filePath, buf)
+    // Subir a S3
+    await s3Client.send(new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: name,
+      Body: buf,
+      ContentType: mime || 'application/octet-stream',
+    }))
 
-    // URL pública del archivo (accesible desde /uploads/)
-    const origin = astroUrl.origin
-    const url = `${origin}/uploads/${name}`
+    // URL pública del archivo en S3
+    const url = `https://${BUCKET_NAME}.s3.amazonaws.com/${name}`
 
     return new Response(JSON.stringify({ ok:true, url, kind, mime }), { status:200 })
   } catch (e:any) {

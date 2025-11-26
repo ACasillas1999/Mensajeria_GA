@@ -27,6 +27,11 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   const [view, setView] = useState("active"); // 'active', 'favorites', 'archived'
   const [loading, setLoading] = useState(false);
   const [seen, setSeen] = useState({});
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [newPhone, setNewPhone] = useState("");
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [sending, setSending] = useState(false);
 
   async function load(search = "", st = estado) {
     setLoading(true);
@@ -102,6 +107,59 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     load("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estado]);
+
+  // Cargar plantillas aprobadas cuando se abre el modal
+  useEffect(() => {
+    if (showNewChat && templates.length === 0) {
+      fetch(`${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/'))
+        .then(r => r.json())
+        .then(j => {
+          if (j.ok) {
+            setTemplates(j.items || []);
+            if (j.items.length > 0) setSelectedTemplate(j.items[0].nombre);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [showNewChat]);
+
+  async function startNewConversation() {
+    if (!newPhone.trim() || !selectedTemplate) return;
+
+    setSending(true);
+    try {
+      const r = await fetch(`${BASE}/api/start-conversation`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: newPhone.trim(),
+          template_name: selectedTemplate,
+          language_code: 'es',
+        }),
+      });
+
+      const j = await r.json();
+      if (j.ok) {
+        setShowNewChat(false);
+        setNewPhone("");
+        load(); // Recargar lista
+        // Abrir la conversación recién creada
+        if (j.conversacion_id && onSelect) {
+          setTimeout(() => {
+            const conv = items.find(c => c.id === j.conversacion_id);
+            if (conv) onSelect(conv);
+          }, 500);
+        }
+      } else {
+        alert(`Error: ${j.error || 'No se pudo iniciar la conversación'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error al iniciar conversación');
+    } finally {
+      setSending(false);
+    }
+  }
 
   // SSE: Recibir actualizaciones de conversaciones en tiempo real
   const handleRealtimeConversations = useCallback((updated) => {
@@ -190,6 +248,13 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
       <div className="px-3 py-2 border-b border-slate-800">
         <div className="flex items-center gap-2 mb-2">
           <span className="font-medium">Conversaciones</span>
+          <button
+            onClick={() => setShowNewChat(true)}
+            className="px-2 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+            title="Nueva conversación"
+          >
+            + Nueva
+          </button>
           <select value={estado} onChange={(e)=>setEstado(e.target.value)} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs">
             <option value="">Todas</option>
             <option value="NUEVA">Nuevas</option>
@@ -302,6 +367,62 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
           </button>
         )})}
       </div>
+
+      {/* Modal para nueva conversación */}
+      {showNewChat && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowNewChat(false)}>
+          <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 w-96 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Nueva Conversación</h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Número de teléfono</label>
+                <input
+                  type="text"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  placeholder="521234567890"
+                  className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                  autoFocus
+                />
+                <p className="text-xs text-slate-500 mt-1">Incluye código de país (ej: 521234567890)</p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Plantilla</label>
+                <select
+                  value={selectedTemplate}
+                  onChange={(e) => setSelectedTemplate(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                >
+                  {templates.length === 0 && <option value="">Cargando...</option>}
+                  {templates.map(t => (
+                    <option key={t.id} value={t.nombre}>{t.nombre}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500 mt-1">Solo plantillas aprobadas por WhatsApp</p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setShowNewChat(false)}
+                  className="flex-1 px-4 py-2 text-sm rounded bg-slate-800 hover:bg-slate-700 border border-slate-700"
+                  disabled={sending}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={startNewConversation}
+                  disabled={!newPhone.trim() || !selectedTemplate || sending}
+                  className="flex-1 px-4 py-2 text-sm rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sending ? 'Enviando...' : 'Iniciar Chat'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
