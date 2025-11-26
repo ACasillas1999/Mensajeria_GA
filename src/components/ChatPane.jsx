@@ -102,6 +102,7 @@ export default function ChatPane({ conversation }) {
   // composer
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+  const [insideWindow, setInsideWindow] = useState(true);
 
   // atajos de respuestas rápidas
   const [shortcuts, setShortcuts] = useState([]);
@@ -329,6 +330,29 @@ function pickMime() {
       // ignorar errores puntuales
     }
   }
+
+  // Recalcular si la conversaci��n est�� dentro de la ventana de 24h
+  useEffect(() => {
+    if (!items || items.length === 0) {
+      setInsideWindow(true);
+      return;
+    }
+    let lastInbound = 0;
+    for (const m of items) {
+      if (m.sender === "them") {
+        const raw = m.created_at || m.ts || m.timestamp || m.time;
+        const t = raw ? new Date(raw).getTime() : NaN;
+        if (!Number.isNaN(t) && t > lastInbound) lastInbound = t;
+      }
+    }
+    if (!lastInbound) {
+      setInsideWindow(true);
+    } else {
+      const diffMs = Date.now() - lastInbound;
+      setInsideWindow(diffMs <= 24 * 3600 * 1000);
+    }
+  }, [items]);
+
   async function runSearch() { await load(); }
   async function openAttachments() {
     if (!conversation) return;
@@ -817,7 +841,7 @@ function pickMime() {
       )}
 
       {/* Composer o aviso de ventana 24h */}
-      {conversation.dentro_ventana_24h === 0 ? (
+      {!insideWindow ? (
         <div className="p-3 border-t border-slate-800 bg-amber-950/20">
           <div className="flex items-center gap-3">
             <div className="flex-1 text-sm text-amber-300">

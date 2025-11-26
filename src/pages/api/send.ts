@@ -11,7 +11,15 @@ import { sendText } from "../../lib/whatsapp";
 const WABA_TOKEN = process.env.WABA_TOKEN || "";
 const WABA_PHONE_ID = process.env.WABA_PHONE_ID || process.env.WABA_PHONE_NUMBER_ID || "";
 
-async function uploadBufferToWABA({ buffer, filename, contentType }:{ buffer: Buffer; filename: string; contentType: string }) {
+async function uploadBufferToWABA({
+  buffer,
+  filename,
+  contentType,
+}: {
+  buffer: Buffer;
+  filename: string;
+  contentType: string;
+}) {
   if (!WABA_TOKEN || !WABA_PHONE_ID) throw new Error("Faltan WABA_TOKEN/WABA_PHONE_ID");
   const form = new FormData();
   form.append("messaging_product", "whatsapp");
@@ -57,20 +65,32 @@ async function ensureAudioCompatible(file: File): Promise<{ buffer: Buffer; file
   });
 
   const outBuf = await fs.readFile(tmpOut);
-  try { await fs.unlink(tmpIn); } catch {}
-  try { await fs.unlink(tmpOut); } catch {}
+  try {
+    await fs.unlink(tmpIn);
+  } catch {}
+  try {
+    await fs.unlink(tmpOut);
+  } catch {}
   const base = (file.name || "audio").replace(/\.[^.]*$/, "");
   return { buffer: outBuf, filename: `${base}.ogg`, mime: "audio/ogg" };
 }
 
-async function sendMediaWABA({ to, type, media_id, caption }:{
-  to: string; type: "image"|"video"|"audio"|"document"; media_id: string; caption?: string
+async function sendMediaWABA({
+  to,
+  type,
+  media_id,
+  caption,
+}: {
+  to: string;
+  type: "image" | "video" | "audio" | "document";
+  media_id: string;
+  caption?: string;
 }) {
   const body: any = {
     messaging_product: "whatsapp",
     to,
     type,
-    [type]: { id: media_id }
+    [type]: { id: media_id },
   };
   if (caption && (type === "image" || type === "video" || type === "document")) {
     body[type].caption = caption;
@@ -95,7 +115,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const { conversacion_id, to, text } = await request.json();
       const now = Math.floor(Date.now() / 1000);
 
-      // Ventana de 24h basada en el último inbound
+      // Validación obligatoria de ventana de 24h basada en el último inbound.
       const [rows] = await pool.query(
         "SELECT MAX(ts) AS last_in FROM mensajes WHERE conversacion_id=? AND from_me=0",
         [conversacion_id]
@@ -107,7 +127,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
           JSON.stringify({
             ok: false,
             requires_template: true,
-            error: { message: "Esta conversaci\u00f3n est\u00e1 fuera de la ventana de 24h, debes usar una plantilla aprobada." },
+            error: {
+              message:
+                "Esta conversaci\u00f3n est\u00e1 fuera de la ventana de 24h, debes usar una plantilla aprobada.",
+            },
           }),
           { status: 409 }
         );
@@ -136,15 +159,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const file = form.get("file");
 
     if (!conversacion_id || !to) {
-      return new Response(JSON.stringify({ ok:false, error:"conversacion_id y to requeridos" }), { status: 400 });
+      return new Response(JSON.stringify({ ok: false, error: "conversacion_id y to requeridos" }), {
+        status: 400,
+      });
     }
     if (!(file instanceof File) && !text) {
-      return new Response(JSON.stringify({ ok:false, error:"Mensaje vacío" }), { status: 400 });
+      return new Response(JSON.stringify({ ok: false, error: "Mensaje vac\u00edo" }), { status: 400 });
     }
 
-    const now = Math.floor(Date.now()/1000);
+    const now = Math.floor(Date.now() / 1000);
 
-    // Ventana de 24h basada en el último inbound (aplica para texto o media)
+    // Validación obligatoria de ventana de 24h también para media.
     const [rows] = await pool.query(
       "SELECT MAX(ts) AS last_in FROM mensajes WHERE conversacion_id=? AND from_me=0",
       [conversacion_id]
@@ -156,27 +181,37 @@ export const POST: APIRoute = async ({ request, locals }) => {
         JSON.stringify({
           ok: false,
           requires_template: true,
-          error: { message: "Esta conversaci\u00f3n est\u00e1 fuera de la ventana de 24h, debes usar una plantilla aprobada." },
+          error: {
+            message:
+              "Esta conversaci\u00f3n est\u00e1 fuera de la ventana de 24h, debes usar una plantilla aprobada.",
+          },
         }),
         { status: 409 }
       );
     }
 
-    // Si hay archivo: subir → enviar según tipo
+    // Si hay archivo: subir y enviar según tipo
     if (file instanceof File) {
       // Asegurar formato compatible: convertir WEBM -> OGG/OPUS si aplica
       const compat = await ensureAudioCompatible(file);
-      const media_id = await uploadBufferToWABA({ buffer: compat.buffer, filename: compat.filename, contentType: compat.mime });
+      const media_id = await uploadBufferToWABA({
+        buffer: compat.buffer,
+        filename: compat.filename,
+        contentType: compat.mime,
+      });
 
       let wabaResp: any;
-      let tipo: "image"|"video"|"audio"|"document" = "document";
+      let tipo: "image" | "video" | "audio" | "document" = "document";
       const mime = compat.mime || (file.type || "");
-      if (mime.startsWith("image/"))  tipo = "image";
+      if (mime.startsWith("image/")) tipo = "image";
       else if (mime.startsWith("video/")) tipo = "video";
       else if (mime.startsWith("audio/")) tipo = "audio";
 
       wabaResp = await sendMediaWABA({
-        to, type: tipo, media_id, caption: text || undefined
+        to,
+        type: tipo,
+        media_id,
+        caption: text || undefined,
       });
       const msgId = wabaResp?.messages?.[0]?.id || null;
 
@@ -190,7 +225,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         [text || `[${tipo}]`, now, conversacion_id]
       );
 
-      return new Response(JSON.stringify({ ok:true, data: wabaResp }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true, data: wabaResp }), { status: 200 });
     }
 
     // Si no hay archivo, pero viene form-data con solo texto (por compatibilidad)
@@ -205,9 +240,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       `UPDATE conversaciones SET ultimo_msg=?, ultimo_ts=?, estado="ABIERTA" WHERE id=?`,
       [text, now, conversacion_id]
     );
-    return new Response(JSON.stringify({ ok:true, data }), { status:200 });
-
-  } catch (err:any) {
+    return new Response(JSON.stringify({ ok: true, data }), { status: 200 });
+  } catch (err: any) {
     const isAxios = axios.isAxiosError(err);
     const status = (isAxios && err.response?.status) || 500;
     const payload = isAxios
@@ -219,6 +253,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
         }
       : { message: String(err?.message || err) };
     console.error("SEND ERROR:", { status, payload });
-    return new Response(JSON.stringify({ ok:false, error: payload }), { status });
+    return new Response(JSON.stringify({ ok: false, error: payload }), { status });
   }
 };
