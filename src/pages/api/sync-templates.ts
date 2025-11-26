@@ -6,7 +6,7 @@ const WABA_TOKEN = process.env.WABA_TOKEN;
 const WABA_BUSINESS_ID = process.env.WABA_BUSINESS_ID;
 const WABA_VERSION = process.env.WABA_VERSION || 'v20.0';
 
-export const POST: APIRoute = async ({ locals }) => {
+const syncTemplates: APIRoute = async ({ locals }) => {
   try {
     const user = (locals as any).user;
     if (!user || !user.rol || user.rol.toUpperCase() !== 'ADMIN') {
@@ -44,6 +44,11 @@ export const POST: APIRoute = async ({ locals }) => {
         const idioma = tpl.language || 'es';
         const categoria = tpl.category || 'MARKETING';
         const estado = tpl.status || 'PENDING';
+
+        // Solo sincronizar plantillas aprobadas
+        if (estado !== 'APPROVED') {
+          continue;
+        }
         const wa_template_id = tpl.id;
 
         // Extraer componentes
@@ -110,3 +115,6 @@ export const POST: APIRoute = async ({ locals }) => {
     );
   }
 };
+
+export const POST: APIRoute = syncTemplates;
+export const GET: APIRoute = syncTemplates;

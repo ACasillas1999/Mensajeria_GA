@@ -40,7 +40,8 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
 
       try {
         const url = `${BASE}/api/sync-templates`.replace(/\/\//g, '/');
-        const res = await fetch(url, { method: 'POST' });
+        // GET para evitar ciertas restricciones a POST
+        const res = await fetch(url);
 
         const contentType = res.headers.get('content-type') || '';
         let data = null;
@@ -67,7 +68,7 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
           status.textContent =
             `Error ${res.status} al sincronizar plantillas.` +
             (res.status === 403
-              ? ' Verifica que tu sesión tenga rol ADMIN y que el servidor permita este POST.'
+              ? ' Verifica que tu sesión tenga rol ADMIN y que el servidor permita esta petición.'
               : '') +
             extra;
           return;
@@ -95,7 +96,9 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
       if (!container) return;
 
       try {
-        const res = await fetch(`${BASE}/api/templates`.replace(/\/\//g, '/'));
+        const res = await fetch(
+          `${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/')
+        );
         const data = await res.json();
 
         if (data.ok && data.items.length > 0) {
