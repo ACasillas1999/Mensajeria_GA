@@ -177,7 +177,7 @@ export async function processAutoReply(
 
     // 3. Verificar si estamos dentro de horario
     const withinHours = await isWithinBusinessHours();
-    const outOfHoursEnabled = (await getSetting('out_of_hours_enabled') === 'true';
+    const outOfHoursEnabled = (await getSetting('out_of_hours_enabled') === 'true');
 
     // Si estamos fuera de horario, enviar mensaje de fuera de horario
     if (!withinHours && outOfHoursEnabled) {
@@ -207,11 +207,11 @@ export async function processAutoReply(
     if (!rule) return;
 
     // 5. Enviar respuesta automática
-    const delay = parseInt(await getSetting('auto_reply_delay_seconds') || '2');
-    await new Promise(resolve => setTimeout(resolve, delay * 1000));
+   const delay = parseInt(await getSetting('auto_reply_delay_seconds') || '2');
+await new Promise(resolve => setTimeout(resolve, delay * 1000));
 
-    const response = await sendText({ to: from, body: rule.response_text });
-    const waMessageId = response?.messages?.[0]?.id || null;
+const response = await sendText({ to: from, body: rule.response_text });
+const waMessageId = response?.messages?.[0]?.id || null;
 
     // Guardar en BD como mensaje automático
     await saveAutoReplyMessage(conversacionId, rule.response_text, waMessageId);
