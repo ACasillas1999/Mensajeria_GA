@@ -93,7 +93,7 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, '/');
     </main>
 
     <script src="https://unpkg.com/feather-icons" defer></script>
-    <script is:inline>
+    <script is:inline define:vars={{ base }}>
       // Icons + page transitions
       window.addEventListener("DOMContentLoaded", () => {
         window.feather?.replace();
@@ -125,7 +125,6 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, '/');
         const btn = document.getElementById('logoutBtn');
         if (btn) {
           btn.addEventListener('click', async () => {
-            const base = `${base}`;
             try {
               await fetch(`${base}/api/logout`.replace(/\/\//g, '/'), { method: 'POST' });
             } catch (e) {
