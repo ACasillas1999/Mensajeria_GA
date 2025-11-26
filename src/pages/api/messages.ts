@@ -32,6 +32,7 @@ export const GET: APIRoute = async ({ request }) => {
         m.id,
         m.conversacion_id,
         m.cuerpo,
+        m.is_auto_reply,
         m.from_me,
         m.tipo,
         m.media_id,
@@ -54,7 +55,7 @@ export const GET: APIRoute = async ({ request }) => {
       [...params, limit]
     );
 
-    const items = rows.map(r => {
+      const items = rows.map(r => {
       let text = r.cuerpo ?? "";
       if ((!text || String(text).trim()==="") && r.tipo && r.tipo!=="text") text = `[${r.tipo}]`;
       return {
@@ -63,6 +64,7 @@ export const GET: APIRoute = async ({ request }) => {
         text,
         created_at: r.creado_en,
         sender: r.from_me ? "me" : "them",
+        is_auto_reply: !!(r as any).is_auto_reply,
         tipo: r.tipo,
         media_id: (r as any).media_id || null,
         media_url: r.media_url || null,

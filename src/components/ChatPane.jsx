@@ -918,11 +918,16 @@ function pickMime() {
             {m.tipo === "text" && m.text && <div className="text-sm whitespace-pre-wrap">{m.text}</div>}
             {m.tipo !== "text" && <MediaBubble m={m} onOpen={openMedia} onImageLoad={scrollToBottom} />}
 
-            <div className="mt-1 flex items-center gap-2 relative">
-              <div className="text-[10px] text-slate-400">
-                {new Date(m.created_at).toLocaleString()}
-              </div>
-              {m.sender === "me" && m.usuario_nombre && (
+              <div className="mt-1 flex items-center gap-2 relative">
+                <div className="text-[10px] text-slate-400">
+                  {new Date(m.created_at).toLocaleString()}
+                </div>
+                {m.is_auto_reply && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/40 border border-emerald-700/60 text-emerald-300">
+                    🤖 Bot
+                  </span>
+                )}
+                {m.sender === "me" && m.usuario_nombre && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-900/30 border border-sky-700/50 text-sky-300">
                   👤 {m.usuario_nombre}
                 </span>

@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import 'dotenv/config';
 import { pool } from '../../lib/db';
 import crypto from 'crypto';
+import { processAutoReply } from '../../lib/autoReply';
 
 /**
  * Valida la firma X-Hub-Signature-256 de Meta/WhatsApp
@@ -211,6 +212,14 @@ export const POST: APIRoute = async ({ request }) => {
              WHERE id=?`,
             [profileName, cuerpo, ts, convId]
           );
+
+          // Procesar auto-respuesta solo para mensajes de texto entrantes
+          if (tipo === 'text' && cuerpo) {
+            // Ejecutar en segundo plano para no demorar la respuesta del webhook
+            processAutoReply(convId, cuerpo, from).catch((err) => {
+              console.error('Auto-reply error:', err);
+            });
+          }
         }
       }
     }
