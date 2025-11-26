@@ -40,8 +40,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     } else {
       // Crear nueva conversación
       const [result] = await pool.query(
-        `INSERT INTO conversaciones (wa_user, estado, created_at, ultimo_ts)
-         VALUES (?, 'NUEVA', UNIX_TIMESTAMP(), UNIX_TIMESTAMP())`,
+        `INSERT INTO conversaciones (wa_user, estado, ultimo_ts)
+         VALUES (?, 'NUEVA', UNIX_TIMESTAMP())`,
         [cleanPhone]
       ) as any;
       conversacion_id = result.insertId;
