@@ -74,6 +74,20 @@ export default function UnrecognizedMessagesAnalytics() {
     }
   };
 
+  const createRuleFromMessage = (messageText) => {
+    if (!messageText) return;
+    try {
+      const encoded = encodeURIComponent(messageText);
+      const target = `${BASE}/admin/auto-respuestas?fromMessage=${encoded}`.replace(
+        /\/\//g,
+        '/'
+      );
+      window.location.href = target;
+    } catch (e) {
+      console.error('Error navegando a auto-respuestas:', e);
+    }
+  };
+
   const StatCard = ({ label, value, accent }) => (
     <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/70">
       <div className="text-xs text-slate-400">{label}</div>
@@ -300,6 +314,13 @@ export default function UnrecognizedMessagesAnalytics() {
                       >
                         {m.resolved ? 'Marcar pendiente' : 'Marcar resuelto'}
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => createRuleFromMessage(m.message_text)}
+                        className="px-2 py-0.5 rounded-md border border-emerald-600 text-[11px] text-emerald-300 hover:bg-emerald-700/40"
+                      >
+                        Crear regla
+                      </button>
                     </td>
                   </tr>
                 );
@@ -336,4 +357,3 @@ export default function UnrecognizedMessagesAnalytics() {
     </div>
   );
 }
-

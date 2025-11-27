@@ -76,6 +76,20 @@ export default function AutoRepliesAdmin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const fromMessage = url.searchParams.get("fromMessage");
+      if (fromMessage) {
+        openNewRuleFromMessage(fromMessage);
+        url.searchParams.delete("fromMessage");
+        window.history.replaceState({}, "", url.toString());
+      }
+    } catch (e) {
+      console.error("Error leyendo fromMessage:", e);
+    }
+  }, []);
+
   async function checkEmbeddingService() {
     try {
       const res = await fetch(`${BASE}/api/generate-embeddings`.replace(/\/\//g, "/"));
@@ -121,6 +135,21 @@ export default function AutoRepliesAdmin() {
       id: null,
       name: "",
       trigger_keywords: "",
+      response_text: "",
+      priority: 0,
+      match_type: "contains",
+      case_sensitive: 0,
+      is_active: 1,
+    });
+  }
+
+  function openNewRuleFromMessage(messageText) {
+    const baseText = (messageText || "").trim();
+    const short = baseText.slice(0, 60);
+    setModalRule({
+      id: null,
+      name: short || "",
+      trigger_keywords: baseText || "",
       response_text: "",
       priority: 0,
       match_type: "contains",
@@ -857,4 +886,3 @@ export default function AutoRepliesAdmin() {
     </div>
   );
 }
-
