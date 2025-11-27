@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { pool } from '../../../lib/db';
 import { z } from 'zod';
+import { updateRuleEmbedding } from '../../../lib/embeddings';
 
 function requireAdmin(locals: any): { ok: boolean; error?: string } {
   const user = locals?.user;
@@ -91,7 +92,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       ]
     );
 
-    return new Response(JSON.stringify({ ok: true, id: (result as any).insertId }), {
+    const insertId = (result as any).insertId;
+
+    // Generar embedding automáticamente en segundo plano
+    updateRuleEmbedding(insertId).catch((err) =>
+      console.error('Error generating embedding:', err)
+    );
+
+    return new Response(JSON.stringify({ ok: true, id: insertId }), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {
@@ -170,6 +178,13 @@ export const PATCH: APIRoute = async ({ request, url, locals }) => {
     params.push(id);
 
     await pool.query(`UPDATE auto_replies SET ${fields.join(', ')} WHERE id = ?`, params);
+
+    // Regenerar embedding si se modificaron los triggers
+    if (data.trigger_keywords !== undefined) {
+      updateRuleEmbedding(id).catch((err) =>
+        console.error('Error regenerating embedding:', err)
+      );
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { 'Content-Type': 'application/json' },
