@@ -218,6 +218,8 @@ export default function AutoRepliesAdmin() {
         auto_reply_delay_seconds: settings.auto_reply_delay_seconds,
         max_auto_replies_per_conversation:
           settings.max_auto_replies_per_conversation,
+        embedding_service_enabled: settings.embedding_service_enabled,
+        embedding_similarity_threshold: settings.embedding_similarity_threshold,
       };
       const res = await fetch(
         `${BASE}/api/admin/auto-reply-settings`.replace(/\/\//g, "/"),
