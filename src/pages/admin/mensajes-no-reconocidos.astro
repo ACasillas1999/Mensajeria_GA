@@ -1,0 +1,19 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import UnrecognizedMessagesAnalytics from '../../components/UnrecognizedMessagesAnalytics.jsx';
+
+const user = (Astro.locals as any).user;
+if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
+  return Astro.redirect('/');
+}
+---
+
+<AppLayout title="Mensajes no reconocidos">
+  <h1 class="text-2xl font-bold mb-4">❓ Mensajes que el bot no entiende</h1>
+  <p class="text-sm text-slate-400 mb-4">
+    Aquí puedes revisar los mensajes que el bot no logró responder, marcar cuáles ya cubriste con nuevas reglas
+    y detectar oportunidades para mejorar las auto-respuestas.
+  </p>
+  <UnrecognizedMessagesAnalytics client:load />
+</AppLayout>
+
