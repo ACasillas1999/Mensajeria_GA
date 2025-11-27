@@ -22,6 +22,8 @@ export const GET: APIRoute = async ({ locals }) => {
       'out_of_hours_message',
       'auto_reply_delay_seconds',
       'max_auto_replies_per_conversation',
+      'embedding_service_enabled',
+      'embedding_similarity_threshold',
     ];
 
     const [rows] = await pool.query(
