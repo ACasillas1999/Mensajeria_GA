@@ -1,0 +1,20 @@
+[Unit]
+Description=WhatsApp Auto-Reply Embedding Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/html/mensajeria-web-ga/python-services
+Environment="PATH=/usr/bin:/usr/local/bin"
+ExecStart=/usr/bin/python3 embedding_service.py
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=embedding-service
+
+[Install]
+WantedBy=multi-user.target

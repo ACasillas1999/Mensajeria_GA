@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "start": "node ./dist/server/entry.mjs",
-    "build:lambda": "npm run build && node create-lambda-package.mjs"
+    "build:lambda": "npm run build && node create-lambda-package.mjs",
+    "generate-embeddings": "node scripts/generate-embeddings.js"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.5",

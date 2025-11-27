@@ -1,5 +1,6 @@
 import { pool } from './db';
 import { sendText } from './whatsapp';
+import { findSimilarRules, isEmbeddingServiceEnabled } from './embeddings';
 
 interface AutoReplyRule {
   id: number;
@@ -102,9 +103,9 @@ async function hasRecentAgentActivity(
 }
 
 /**
- * Busca una regla de auto-respuesta que coincida con el mensaje
+ * Busca una regla de auto-respuesta usando keywords (método tradicional)
  */
-async function findMatchingRule(messageText: string): Promise<AutoReplyRule | null> {
+async function findMatchingRuleByKeywords(messageText: string): Promise<AutoReplyRule | null> {
   const [rows] = await pool.query(
     'SELECT * FROM auto_replies WHERE is_active = TRUE ORDER BY priority DESC'
   );
@@ -135,6 +136,66 @@ async function findMatchingRule(messageText: string): Promise<AutoReplyRule | nu
       if (matches) {
         return rule;
       }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Busca una regla de auto-respuesta usando embeddings (método inteligente)
+ */
+async function findMatchingRuleByEmbeddings(messageText: string): Promise<AutoReplyRule | null> {
+  try {
+    const matches = await findSimilarRules(messageText);
+
+    if (matches.length === 0) return null;
+
+    // Obtener la regla con mejor score
+    // Combinar score de similitud con prioridad
+    const bestMatch = matches.reduce((best, current) => {
+      const currentScore = current.score + (current.priority * 0.01); // Pequeño boost por prioridad
+      const bestScore = best.score + (best.priority * 0.01);
+      return currentScore > bestScore ? current : best;
+    });
+
+    // Obtener la regla completa de la BD
+    const [rows] = await pool.query(
+      'SELECT * FROM auto_replies WHERE id = ? AND is_active = TRUE',
+      [bestMatch.id]
+    );
+
+    const rule = (rows as AutoReplyRule[])[0];
+    if (rule) {
+      console.log(`[Embeddings] Matched rule "${rule.name}" with score ${bestMatch.score.toFixed(3)}`);
+    }
+
+    return rule || null;
+  } catch (err) {
+    console.error('Error finding rule by embeddings:', err);
+    return null;
+  }
+}
+
+/**
+ * Busca una regla de auto-respuesta usando sistema híbrido
+ * 1. Intenta match exacto por keywords
+ * 2. Si falla, intenta embeddings (si está habilitado)
+ */
+async function findMatchingRule(messageText: string): Promise<AutoReplyRule | null> {
+  // Primero intentar match exacto (más rápido y preciso)
+  const keywordMatch = await findMatchingRuleByKeywords(messageText);
+  if (keywordMatch) {
+    console.log(`[Keywords] Matched rule "${keywordMatch.name}"`);
+    return keywordMatch;
+  }
+
+  // Si no hay match exacto, intentar embeddings (más flexible)
+  const embeddingEnabled = await isEmbeddingServiceEnabled();
+  if (embeddingEnabled) {
+    const embeddingMatch = await findMatchingRuleByEmbeddings(messageText);
+    if (embeddingMatch) {
+      return embeddingMatch;
     }
   }
 
