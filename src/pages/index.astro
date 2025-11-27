@@ -3,14 +3,12 @@ import AppLayout from "../layouts/AppLayout.astro";
 import Dashboard from "../components/Dashboard.jsx"
 import MagicBento from "../components/MagicBento.jsx";
 import LogoHero from "../components/LogoHero.jsx";
+import BotHealthWidget from "../components/BotHealthWidget.jsx";
 const isAdmin = ((Astro.locals as any).user?.rol || '').toLowerCase() === 'admin';
 ---
 
 <AppLayout title="Panel principal">
- 
-
-    
-<MagicBento client:load isAdmin={isAdmin} />
+  {isAdmin && <BotHealthWidget client:load />}
+  <MagicBento client:load isAdmin={isAdmin} />
 </AppLayout>
-
 

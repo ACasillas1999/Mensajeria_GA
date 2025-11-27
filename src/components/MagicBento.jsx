@@ -39,24 +39,39 @@ export default function MagicBento({ isAdmin = false }) {
         icon={<span className="text-2xl">⚙️</span>}
       />
 
-      {isAdmin && (
+            {isAdmin && (
         <>
           <Tile
             href="/admin/asignacion"
             title="Asignación"
             subtitle="Distribuir conversaciones"
             className="col-span-6 md:col-span-4"
-            icon={<span className="text-2xl">🔀</span>}
+            icon={<span className="text-2xl">📤</span>}
           />
           <Tile
             href="/admin/usuarios"
             title="Usuarios"
             subtitle="Gestión del equipo"
             className="col-span-6 md:col-span-4"
-            icon={<span className="text-2xl">🛂</span>}
+            icon={<span className="text-2xl">👥</span>}
+          />
+          <Tile
+            href="/admin/auto-respuestas"
+            title="Auto-respuestas"
+            subtitle="Reglas y respuestas del bot"
+            className="col-span-6 md:col-span-4"
+            icon={<span className="text-2xl">🤖</span>}
+          />
+          <Tile
+            href="/admin/mensajes-no-reconocidos"
+            title="Mensajes no reconocidos"
+            subtitle="Frases que el bot no entiende"
+            className="col-span-6 md:col-span-4"
+            icon={<span className="text-2xl">❓</span>}
           />
         </>
       )}
+
     </section>
   );
 }
