@@ -14,8 +14,12 @@ export default function AutoRepliesAdmin() {
     out_of_hours_message: "",
     auto_reply_delay_seconds: "2",
     max_auto_replies_per_conversation: "3",
+    embedding_service_enabled: "true",
+    embedding_similarity_threshold: "0.7",
   });
   const [savingSettings, setSavingSettings] = useState(false);
+  const [embeddingStatus, setEmbeddingStatus] = useState(null);
+  const [regeneratingEmbeddings, setRegeneratingEmbeddings] = useState(false);
 
   const [modalRule, setModalRule] = useState(null);
 
@@ -64,8 +68,43 @@ export default function AutoRepliesAdmin() {
 
   useEffect(() => {
     loadSettings();
+    checkEmbeddingService();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function checkEmbeddingService() {
+    try {
+      const res = await fetch(`${BASE}/api/generate-embeddings`.replace(/\/\//g, "/"));
+      const data = await res.json();
+      if (data.ok) {
+        setEmbeddingStatus(data);
+      }
+    } catch (err) {
+      console.error("Error checking embedding service:", err);
+    }
+  }
+
+  async function regenerateAllEmbeddings() {
+    if (!confirm("¿Regenerar embeddings para todas las reglas activas?")) return;
+
+    setRegeneratingEmbeddings(true);
+    try {
+      const res = await fetch(`${BASE}/api/generate-embeddings`.replace(/\/\//g, "/"), {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(`✅ Embeddings generados para ${data.updated} reglas`);
+        await loadRules();
+      } else {
+        alert(data.error || "Error al generar embeddings");
+      }
+    } catch (err) {
+      alert("Error al generar embeddings");
+    } finally {
+      setRegeneratingEmbeddings(false);
+    }
+  }
 
   const sortedRules = useMemo(() => rules, [rules]);
 
@@ -311,6 +350,83 @@ export default function AutoRepliesAdmin() {
             </div>
           </div>
         </form>
+
+        {/* Sección de Embeddings (IA) */}
+        <div className="mt-4 p-4 rounded-lg border border-sky-700/50 bg-sky-950/20">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-semibold text-sky-300">🧠 Sistema Inteligente (IA)</span>
+                {embeddingStatus?.healthy && (
+                  <span className="text-xs px-2 py-0.5 bg-emerald-900/40 text-emerald-300 rounded">
+                    Operacional
+                  </span>
+                )}
+                {embeddingStatus && !embeddingStatus.healthy && (
+                  <span className="text-xs px-2 py-0.5 bg-amber-900/40 text-amber-300 rounded">
+                    Offline
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-400">
+                El bot usa embeddings para entender el significado de los mensajes, no solo palabras exactas.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setSettings((s) => ({
+                  ...s,
+                  embedding_service_enabled:
+                    s.embedding_service_enabled === "true" ? "false" : "true",
+                }))
+              }
+              disabled={embeddingStatus && !embeddingStatus.healthy}
+              className={`px-3 py-1 rounded-full text-xs border transition ${
+                settings.embedding_service_enabled === "true"
+                  ? "bg-emerald-600/30 border-emerald-500 text-emerald-100"
+                  : "bg-slate-800 border-slate-600 text-slate-300"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {settings.embedding_service_enabled === "true" ? "Activado" : "Desactivado"}
+            </button>
+          </div>
+
+          {settings.embedding_service_enabled === "true" && (
+            <div className="flex items-center gap-3 pt-3 border-t border-sky-700/30">
+              <div className="flex-1">
+                <label className="block text-xs text-slate-400 mb-1">
+                  Umbral de similitud (0.0 - 1.0)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={settings.embedding_similarity_threshold}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      embedding_similarity_threshold: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  0.6 = flexible, 0.7 = balance, 0.8 = estricto
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={regenerateAllEmbeddings}
+                disabled={regeneratingEmbeddings}
+                className="mt-4 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded text-sm transition disabled:opacity-50"
+              >
+                {regeneratingEmbeddings ? "Regenerando..." : "🔄 Regenerar embeddings"}
+              </button>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="p-4 rounded-xl border border-slate-800 bg-slate-950/70 space-y-3">
