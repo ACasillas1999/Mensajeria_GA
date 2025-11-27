@@ -399,8 +399,8 @@ export default function AutoRepliesAdmin() {
           </div>
 
           {settings.embedding_service_enabled === "true" && (
-            <div className="flex items-center gap-3 pt-3 border-t border-sky-700/30">
-              <div className="flex-1">
+            <div className="pt-3 border-t border-sky-700/30 space-y-3">
+              <div>
                 <label className="block text-xs text-slate-400 mb-1">
                   Umbral de similitud (0.0 - 1.0)
                 </label>
@@ -422,14 +422,24 @@ export default function AutoRepliesAdmin() {
                   0.6 = flexible, 0.7 = balance, 0.8 = estricto
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={regenerateAllEmbeddings}
-                disabled={regeneratingEmbeddings}
-                className="mt-4 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded text-sm transition disabled:opacity-50"
-              >
-                {regeneratingEmbeddings ? "Regenerando..." : "🔄 Regenerar embeddings"}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={saveSettings}
+                  disabled={savingSettings}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-sm transition disabled:opacity-50"
+                >
+                  {savingSettings ? "Guardando..." : "Guardar umbral"}
+                </button>
+                <button
+                  type="button"
+                  onClick={regenerateAllEmbeddings}
+                  disabled={regeneratingEmbeddings}
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded text-sm transition disabled:opacity-50"
+                >
+                  {regeneratingEmbeddings ? "Regenerando..." : "🔄 Regenerar embeddings"}
+                </button>
+              </div>
             </div>
           )}
         </div>
