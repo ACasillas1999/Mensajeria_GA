@@ -91,6 +91,10 @@ export default function AutoRepliesAdmin() {
     try {
       const res = await fetch(`${BASE}/api/generate-embeddings`.replace(/\/\//g, "/"), {
         method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
       const data = await res.json();
       if (data.ok) {
