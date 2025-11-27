@@ -7,7 +7,7 @@ import {
 
 function requireAdmin(locals: any): { ok: boolean; error?: string } {
   const user = locals?.user;
-  if (!user || user.rol !== 'ADMIN') {
+  if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
     return { ok: false, error: 'No autorizado' };
   }
   return { ok: true };
