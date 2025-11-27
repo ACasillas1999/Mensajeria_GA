@@ -5,9 +5,9 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/var/www/html/mensajeria-web-ga/python-services
-Environment="PATH=/usr/bin:/usr/local/bin"
-ExecStart=/usr/bin/python3 embedding_service.py
+WorkingDirectory=/home/ubuntu/mensajeria-app/python-services
+Environment="PATH=/home/ubuntu/mensajeria-app/python-services/venv/bin:/usr/bin:/usr/local/bin"
+ExecStart=/home/ubuntu/mensajeria-app/python-services/venv/bin/python embedding_service.py
 Restart=always
 RestartSec=10
 
