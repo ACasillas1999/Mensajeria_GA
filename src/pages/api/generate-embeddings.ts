@@ -5,16 +5,24 @@ import {
   generateAllRuleEmbeddings,
 } from '../../lib/embeddings';
 
+function requireAdmin(locals: any): { ok: boolean; error?: string } {
+  const user = locals?.user;
+  if (!user || user.rol !== 'ADMIN') {
+    return { ok: false, error: 'No autorizado' };
+  }
+  return { ok: true };
+}
+
 /**
  * GET /api/generate-embeddings
  * Verifica el estado del servicio de embeddings
  */
 export const GET: APIRoute = async ({ locals }) => {
   try {
-    const user = (locals as any).user;
-    if (!user) {
-      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
-        status: 401,
+    const auth = requireAdmin(locals);
+    if (!auth.ok) {
+      return new Response(JSON.stringify({ ok: false, error: auth.error }), {
+        status: 403,
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -48,10 +56,10 @@ export const GET: APIRoute = async ({ locals }) => {
  */
 export const POST: APIRoute = async ({ locals }) => {
   try {
-    const user = (locals as any).user;
-    if (!user) {
-      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
-        status: 401,
+    const auth = requireAdmin(locals);
+    if (!auth.ok) {
+      return new Response(JSON.stringify({ ok: false, error: auth.error }), {
+        status: 403,
         headers: { 'Content-Type': 'application/json' },
       });
     }
