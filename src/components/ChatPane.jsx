@@ -546,6 +546,7 @@ function pickMime() {
           wa_msg_id: m.wa_msg_id,
           usuario_id: m.usuario_id,
           usuario_nombre: m.usuario_nombre,
+          is_auto_reply: !!m.is_auto_reply,
         }));
 
       if (toAdd.length === 0) return prev;

@@ -87,10 +87,12 @@ export const GET: APIRoute = async ({ request, locals }) => {
           if (client.conversationId) {
             // Verificar nuevos mensajes en la conversación
             const [rows] = await pool.query(
-              `SELECT id, conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, media_id, mime_type
-               FROM mensajes
-               WHERE conversacion_id = ? AND ts > ?
-               ORDER BY ts ASC
+              `SELECT m.id, m.conversacion_id, m.from_me, m.tipo, m.cuerpo, m.wa_msg_id, m.ts, m.status,
+                      m.media_id, m.mime_type, m.is_auto_reply, m.usuario_id, u.nombre AS usuario_nombre
+               FROM mensajes m
+               LEFT JOIN usuarios u ON u.id = m.usuario_id
+               WHERE m.conversacion_id = ? AND m.ts > ?
+               ORDER BY m.ts ASC
                LIMIT 50`,
               [client.conversationId, client.lastCheck]
             );
