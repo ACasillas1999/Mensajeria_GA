@@ -144,12 +144,13 @@ async function findMatchingRuleByKeywords(messageText: string): Promise<AutoRepl
 
 /**
  * Busca una regla de auto-respuesta usando embeddings (método inteligente)
+ * Retorna la regla Y el mejor match (para usar en sugerencias)
  */
-async function findMatchingRuleByEmbeddings(messageText: string): Promise<AutoReplyRule | null> {
+async function findMatchingRuleByEmbeddings(messageText: string): Promise<{rule: AutoReplyRule | null, bestMatch: any}> {
   try {
     const matches = await findSimilarRules(messageText);
 
-    if (matches.length === 0) return null;
+    if (matches.length === 0) return {rule: null, bestMatch: null};
 
     // Obtener la regla con mejor score
     // Combinar score de similitud con prioridad
@@ -170,10 +171,10 @@ async function findMatchingRuleByEmbeddings(messageText: string): Promise<AutoRe
       console.log(`[Embeddings] Matched rule "${rule.name}" with score ${bestMatch.score.toFixed(3)}`);
     }
 
-    return rule || null;
+    return {rule: rule || null, bestMatch};
   } catch (err) {
     console.error('Error finding rule by embeddings:', err);
-    return null;
+    return {rule: null, bestMatch: null};
   }
 }
 
@@ -181,25 +182,43 @@ async function findMatchingRuleByEmbeddings(messageText: string): Promise<AutoRe
  * Busca una regla de auto-respuesta usando sistema híbrido
  * 1. Intenta match exacto por keywords
  * 2. Si falla, intenta embeddings (si está habilitado)
+ * Retorna: {rule, closestMatch} para poder hacer sugerencias
  */
-async function findMatchingRule(messageText: string): Promise<AutoReplyRule | null> {
+async function findMatchingRule(messageText: string): Promise<{rule: AutoReplyRule | null, closestMatch: any}> {
   // Primero intentar match exacto (más rápido y preciso)
   const keywordMatch = await findMatchingRuleByKeywords(messageText);
   if (keywordMatch) {
     console.log(`[Keywords] Matched rule "${keywordMatch.name}"`);
-    return keywordMatch;
+    return {rule: keywordMatch, closestMatch: null};
   }
 
   // Si no hay match exacto, intentar embeddings (más flexible)
   const embeddingEnabled = await isEmbeddingServiceEnabled();
   if (embeddingEnabled) {
-    const embeddingMatch = await findMatchingRuleByEmbeddings(messageText);
-    if (embeddingMatch) {
-      return embeddingMatch;
+    const {rule, bestMatch} = await findMatchingRuleByEmbeddings(messageText);
+    if (rule) {
+      return {rule, closestMatch: null};
     }
+    // Si no pasó el umbral, pero hay un match cercano, retornarlo para sugerencias
+    return {rule: null, closestMatch: bestMatch};
   }
 
-  return null;
+  return {rule: null, closestMatch: null};
+}
+
+/**
+ * Registra un mensaje no reconocido en la BD
+ */
+async function logUnrecognizedMessage(
+  conversacionId: number,
+  messageText: string,
+  closestMatch: any
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO unrecognized_messages (conversacion_id, message_text, closest_match_id, closest_match_score)
+     VALUES (?, ?, ?, ?)`,
+    [conversacionId, messageText, closestMatch?.id || null, closestMatch?.score || null]
+  );
 }
 
 /**
@@ -304,8 +323,65 @@ export async function processAutoReply(
     }
 
     // 5. Buscar regla que coincida con el mensaje
-    const rule = await findMatchingRule(messageText);
-    if (!rule) return;
+    const {rule, closestMatch} = await findMatchingRule(messageText);
+
+    if (!rule) {
+      // No se encontró ninguna regla
+      console.log(`No rule matched for message: "${messageText}"`);
+
+      // Registrar mensaje no reconocido
+      await logUnrecognizedMessage(conversacionId, messageText, closestMatch);
+
+      // Verificar si hay fallback habilitado
+      const fallbackEnabled = (await getSetting('fallback_message_enabled')) === 'true';
+
+      if (fallbackEnabled) {
+        const delay = parseInt(
+          (await getSetting('auto_reply_delay_seconds')) || '2',
+          10
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay * 1000));
+
+        let fallbackText = '';
+
+        // Si hay un match cercano (score por debajo del umbral pero arriba del umbral de sugerencias)
+        const suggestEnabled = (await getSetting('fallback_suggest_enabled')) === 'true';
+        const suggestThreshold = parseFloat((await getSetting('fallback_suggest_threshold')) || '0.60');
+
+        if (suggestEnabled && closestMatch && closestMatch.score >= suggestThreshold) {
+          // Obtener el nombre de la regla más cercana
+          const [rows] = await pool.query(
+            'SELECT name FROM auto_replies WHERE id = ?',
+            [closestMatch.id]
+          );
+          const closestRule = (rows as any[])[0];
+
+          if (closestRule) {
+            fallbackText = `No estoy seguro de entender tu pregunta. ¿Quizás querías preguntar sobre "${closestRule.name}"?\n\nSi no, por favor reformula tu pregunta o escribe "ayuda".`;
+            console.log(`Suggesting closest match: "${closestRule.name}" with score ${closestMatch.score.toFixed(3)}`);
+          }
+        }
+
+        // Si no hay sugerencia, usar mensaje de fallback genérico
+        if (!fallbackText) {
+          fallbackText = (await getSetting('fallback_message_text')) ||
+            'Lo siento, no entendí tu pregunta. ¿Podrías reformularla o escribir "ayuda" para ver en qué puedo ayudarte?';
+        }
+
+        // Enviar mensaje de fallback
+        const response = await sendText({ to: from, body: fallbackText });
+        const waMessageId = response?.messages?.[0]?.id || null;
+
+        // Guardar en BD como mensaje automático
+        await saveAutoReplyMessage(conversacionId, fallbackText, waMessageId);
+
+        // Registrar en log
+        await logAutoReply(conversacionId, null, messageText, fallbackText);
+        console.log(`Sent fallback message to ${from}`);
+      }
+
+      return;
+    }
 
     // 6. Enviar respuesta automática basada en regla
     const delay = parseInt(

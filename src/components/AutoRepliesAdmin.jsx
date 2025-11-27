@@ -16,6 +16,10 @@ export default function AutoRepliesAdmin() {
     max_auto_replies_per_conversation: "3",
     embedding_service_enabled: "true",
     embedding_similarity_threshold: "0.7",
+    fallback_message_enabled: "true",
+    fallback_message_text: "",
+    fallback_suggest_enabled: "true",
+    fallback_suggest_threshold: "0.60",
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [embeddingStatus, setEmbeddingStatus] = useState(null);
@@ -220,6 +224,10 @@ export default function AutoRepliesAdmin() {
           settings.max_auto_replies_per_conversation,
         embedding_service_enabled: settings.embedding_service_enabled,
         embedding_similarity_threshold: settings.embedding_similarity_threshold,
+        fallback_message_enabled: settings.fallback_message_enabled,
+        fallback_message_text: settings.fallback_message_text,
+        fallback_suggest_enabled: settings.fallback_suggest_enabled,
+        fallback_suggest_threshold: settings.fallback_suggest_threshold,
       };
       const res = await fetch(
         `${BASE}/api/admin/auto-reply-settings`.replace(/\/\//g, "/"),
@@ -438,6 +446,112 @@ export default function AutoRepliesAdmin() {
                   className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded text-sm transition disabled:opacity-50"
                 >
                   {regeneratingEmbeddings ? "Regenerando..." : "🔄 Regenerar embeddings"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sección de Mensajes de Fallback */}
+        <div className="mt-4 p-4 rounded-lg border border-amber-700/50 bg-amber-950/20">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-semibold text-amber-300">💬 Mensajes de Fallback</span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Envía un mensaje cuando el bot no reconoce la pregunta del cliente
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setSettings((s) => ({
+                  ...s,
+                  fallback_message_enabled:
+                    s.fallback_message_enabled === "true" ? "false" : "true",
+                }))
+              }
+              className={`px-3 py-1 rounded-full text-xs border transition ${
+                settings.fallback_message_enabled === "true"
+                  ? "bg-emerald-600/30 border-emerald-500 text-emerald-100"
+                  : "bg-slate-800 border-slate-600 text-slate-300"
+              }`}
+            >
+              {settings.fallback_message_enabled === "true" ? "Activado" : "Desactivado"}
+            </button>
+          </div>
+
+          {settings.fallback_message_enabled === "true" && (
+            <div className="pt-3 border-t border-amber-700/30 space-y-3">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">
+                  Mensaje de fallback (cuando no se reconoce la pregunta)
+                </label>
+                <textarea
+                  value={settings.fallback_message_text}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      fallback_message_text: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm resize-none"
+                  placeholder="Lo siento, no entendí tu pregunta. ¿Podrías reformularla?"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 mb-2">
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings.fallback_suggest_enabled === "true"}
+                    onChange={(e) =>
+                      setSettings((s) => ({
+                        ...s,
+                        fallback_suggest_enabled: e.target.checked ? "true" : "false",
+                      }))
+                    }
+                    className="rounded bg-slate-900 border-slate-700"
+                  />
+                  <span className="text-slate-300">Sugerir regla más cercana</span>
+                </label>
+              </div>
+
+              {settings.fallback_suggest_enabled === "true" && (
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">
+                    Umbral de sugerencias (0.0 - 1.0)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={settings.fallback_suggest_threshold}
+                    onChange={(e) =>
+                      setSettings((s) => ({
+                        ...s,
+                        fallback_suggest_threshold: e.target.value,
+                      }))
+                    }
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Si el score está entre este umbral y el umbral principal, se sugiere la regla más cercana
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <button
+                  type="button"
+                  onClick={saveSettings}
+                  disabled={savingSettings}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-sm transition disabled:opacity-50"
+                >
+                  {savingSettings ? "Guardando..." : "Guardar configuración"}
                 </button>
               </div>
             </div>
