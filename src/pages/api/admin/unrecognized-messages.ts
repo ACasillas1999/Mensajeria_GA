@@ -54,7 +54,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
       `
       SELECT
         um.*,
-        c.numero as conversacion_numero,
+        c.wa_user as conversacion_numero,
         ar.name as closest_match_name
       FROM unrecognized_messages um
       LEFT JOIN conversaciones c ON um.conversacion_id = c.id
@@ -150,4 +150,3 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
     });
   }
 };
-
