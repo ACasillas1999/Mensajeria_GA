@@ -1,6 +1,7 @@
 import { pool } from './db';
 import { sendText } from './whatsapp';
 import { findSimilarRules, isEmbeddingServiceEnabled } from './embeddings';
+import { processRuleSuggestions } from './ruleSuggestions';
 
 interface AutoReplyRule {
   id: number;
@@ -219,6 +220,11 @@ async function logUnrecognizedMessage(
      VALUES (?, ?, ?, ?)`,
     [conversacionId, messageText, closestMatch?.id || null, closestMatch?.score || null]
   );
+
+  // Procesar sugerencias automáticas en segundo plano (no bloqueante)
+  processRuleSuggestions().catch((err) => {
+    console.error('Error processing rule suggestions:', err);
+  });
 }
 
 /**

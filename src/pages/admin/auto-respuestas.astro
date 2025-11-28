@@ -1,6 +1,8 @@
 ---
 import AppLayout from '../../layouts/AppLayout.astro';
 import AutoRepliesAdmin from '../../components/AutoRepliesAdmin.jsx';
+import BotTestingWidget from '../../components/BotTestingWidget.jsx';
+import RuleSuggestionsWidget from '../../components/RuleSuggestionsWidget.jsx';
 
 const user = (Astro.locals as any).user;
 if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
@@ -13,6 +15,16 @@ if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
   <p class="text-sm text-slate-400 mb-4">
     Configura las reglas que desencadenan respuestas automáticas y ajusta el comportamiento del bot.
   </p>
-  <AutoRepliesAdmin client:load />
+
+  <div class="space-y-4">
+    <!-- Simulador de pruebas -->
+    <BotTestingWidget client:load />
+
+    <!-- Sugerencias de auto-aprendizaje -->
+    <RuleSuggestionsWidget client:load />
+
+    <!-- Panel principal de auto-respuestas -->
+    <AutoRepliesAdmin client:load />
+  </div>
 </AppLayout>
 
