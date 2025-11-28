@@ -106,7 +106,7 @@ async function hasRecentAgentActivity(
 /**
  * Busca una regla de auto-respuesta usando keywords (método tradicional)
  */
-async function findMatchingRuleByKeywords(messageText: string): Promise<AutoReplyRule | null> {
+export async function findMatchingRuleByKeywords(messageText: string): Promise<AutoReplyRule | null> {
   const [rows] = await pool.query(
     'SELECT * FROM auto_replies WHERE is_active = TRUE ORDER BY priority DESC'
   );
