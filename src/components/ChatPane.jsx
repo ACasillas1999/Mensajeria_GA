@@ -551,14 +551,14 @@ function pickMime() {
 
       if (toAdd.length === 0) return prev;
 
-      // Reemplazar mensajes temporales con los reales si tienen wa_msg_id
+      // Reemplazar mensajes temporales con los reales
       const updated = prev.map(m => {
-        if (String(m.id).startsWith('tmp_') && m.status === 'sending') {
+        if (String(m.id).startsWith('tmp_')) {
           // Buscar si alguno de los nuevos mensajes corresponde a este temporal
           const match = toAdd.find(newMsg =>
             newMsg.sender === 'me' &&
-            newMsg.text === m.text &&
-            Math.abs(new Date(newMsg.created_at).getTime() - new Date(m.created_at).getTime()) < 10000
+            (newMsg.text || '').trim() === (m.text || '').trim() &&
+            Math.abs(new Date(newMsg.created_at).getTime() - new Date(m.created_at).getTime()) < 15000
           );
           if (match) {
             return { ...match }; // Reemplazar temporal con real
