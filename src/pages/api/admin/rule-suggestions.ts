@@ -10,12 +10,10 @@ import {
 /**
  * GET: Obtener sugerencias de reglas
  */
-export const GET: APIRoute = async ({ cookies, url }) => {
+export const GET: APIRoute = async ({ locals, url }) => {
   try {
-    const userId = cookies.get('user_id')?.value;
-    const userRole = cookies.get('user_role')?.value;
-
-    if (!userId || userRole !== 'admin') {
+    const user = locals?.user;
+    if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
       return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -62,12 +60,10 @@ export const GET: APIRoute = async ({ cookies, url }) => {
 /**
  * POST: Procesar mensajes no reconocidos y generar sugerencias
  */
-export const POST: APIRoute = async ({ cookies }) => {
+export const POST: APIRoute = async ({ locals }) => {
   try {
-    const userId = cookies.get('user_id')?.value;
-    const userRole = cookies.get('user_role')?.value;
-
-    if (!userId || userRole !== 'admin') {
+    const user = locals?.user;
+    if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
       return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -98,12 +94,10 @@ export const POST: APIRoute = async ({ cookies }) => {
 /**
  * PATCH: Aprobar o rechazar una sugerencia
  */
-export const PATCH: APIRoute = async ({ request, cookies }) => {
+export const PATCH: APIRoute = async ({ request, locals }) => {
   try {
-    const userId = cookies.get('user_id')?.value;
-    const userRole = cookies.get('user_role')?.value;
-
-    if (!userId || userRole !== 'admin') {
+    const user = locals?.user;
+    if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
       return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },

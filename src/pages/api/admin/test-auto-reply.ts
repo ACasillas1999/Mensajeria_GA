@@ -7,13 +7,11 @@ import { findSimilarRules, isEmbeddingServiceEnabled } from '../../../lib/embedd
  * Endpoint para simular el matching de reglas sin enviar mensajes reales
  * Útil para testing y debugging del bot
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Verificar autenticación de admin
-    const userId = cookies.get('user_id')?.value;
-    const userRole = cookies.get('user_role')?.value;
-
-    if (!userId || userRole !== 'admin') {
+    const user = locals?.user;
+    if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
       return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
