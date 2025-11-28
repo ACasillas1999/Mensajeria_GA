@@ -79,9 +79,9 @@ export default function ChatWorkspace({ initialId = null }) {
   const currentId = current?.id || initialId || null;
 
   return (
-    <section ref={containerRef} className="flex gap-0 h-[calc(100vh-3.5rem)] relative select-none">
+    <section ref={containerRef} className="flex gap-0 h-full relative select-none">
       {/* Panel izquierdo (conversaciones) */}
-      <aside style={{ width: `${leftWidth}px` }} className="flex-shrink-0">
+      <aside style={{ width: `${leftWidth}px` }} className="flex-shrink-0 h-full">
         <ConversationsPane onSelect={setCurrent} currentId={currentId} />
       </aside>
 
@@ -95,7 +95,7 @@ export default function ChatWorkspace({ initialId = null }) {
       />
 
       {/* Panel derecho (chat) */}
-      <section className="flex-1 min-w-0">
+      <section className="flex-1 min-w-0 h-full">
         <ChatPane conversation={current} />
       </section>
     </section>
