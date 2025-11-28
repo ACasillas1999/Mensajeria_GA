@@ -10,15 +10,11 @@ const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'grupo-ascencio-messaging-app'
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // Verificar autenticación
-    const user = (locals as any).user;
-    if (!user) {
-      console.error('❌ Upload: No user in locals');
-      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    // Opcional: Obtener usuario para logging (similar a send.ts)
+    const user = (locals as any).user as { id: number } | undefined;
+    const usuario_id = user?.id || null;
+
+    console.log('📤 Upload request from user:', usuario_id || 'anonymous');
 
     const form = await request.formData()
     const file = form.get('file') as File | null
