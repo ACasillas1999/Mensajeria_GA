@@ -1,0 +1,16 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+import PipelineView from '../components/PipelineView.jsx';
+
+// Protección: usuario autenticado
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/login');
+}
+---
+
+<AppLayout title="Pipeline">
+  <div class="p-6">
+    <PipelineView client:load />
+  </div>
+</AppLayout>

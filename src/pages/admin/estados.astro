@@ -1,0 +1,16 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import ConversationStatusesAdmin from '../../components/ConversationStatusesAdmin.jsx';
+
+// Protección: solo admin
+const user = Astro.locals.user;
+if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
+  return Astro.redirect('/');
+}
+---
+
+<AppLayout title="Gestión de Estados">
+  <div class="p-6 max-w-5xl mx-auto">
+    <ConversationStatusesAdmin client:load />
+  </div>
+</AppLayout>
