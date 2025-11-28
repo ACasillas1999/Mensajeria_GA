@@ -284,9 +284,9 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   });
 
   return (
-    <div className="bg-slate-950/70 border border-slate-800 rounded-xl overflow-hidden">
+    <div className="h-full flex flex-col bg-slate-950/70 border border-slate-800 rounded-xl overflow-hidden">
       {/* Header con filtros */}
-      <div className="px-3 py-2 border-b border-slate-800">
+      <div className="flex-shrink-0 px-3 py-2 border-b border-slate-800">
         <div className="flex items-center gap-2 mb-2">
           <span className="font-medium">Conversaciones</span>
           <button
@@ -349,7 +349,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
         </div>
       </div>
 
-      <div className="max-h-[calc(100vh-14rem)] overflow-y-auto thin-scroll">
+      <div className="flex-1 overflow-y-auto thin-scroll min-h-0">
         {loading && <div className="p-3 text-sm text-slate-400">Cargando…</div>}
         {!loading && sorted.length === 0 && <div className="p-3 text-sm text-slate-400">Sin resultados</div>}
 

@@ -863,8 +863,8 @@ function pickMime() {
   }
 
   return (
-    <div className="bg-slate-950/70 border border-slate-800 rounded-xl h-[calc(100vh-14rem)] flex flex-col">
-      <div className="h-12 px-4 flex items-center gap-3 border-b border-slate-800">
+    <div className="bg-slate-950/70 border border-slate-800 rounded-xl h-full flex flex-col">
+      <div className="flex-shrink-0 h-12 px-4 flex items-center gap-3 border-b border-slate-800">
         <div className="font-medium truncate">{conversation.title || `Chat ${conversation.id}`}</div>
         <div className="text-xs text-slate-400 truncate">{conversation.wa_user}</div>
         <div className="ml-auto flex items-center gap-2">
