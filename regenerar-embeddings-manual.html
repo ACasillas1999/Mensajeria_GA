@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Regenerar Embeddings</title>
+    <style>
+        body {
+            font-family: system-ui;
+            padding: 40px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #059669;
+        }
+        button:disabled {
+            background: #374151;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            overflow: auto;
+        }
+        .success {
+            background: #064e3b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #10b981;
+        }
+        .error {
+            background: #7f1d1d;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #ef4444;
+        }
+        .info {
+            background: #1e3a8a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Regenerar Embeddings para todas las reglas</h1>
+
+    <div class="info">
+        <strong>ℹ️ ¿Qué hace esto?</strong>
+        <p>Genera los vectores de IA (embeddings) para todas tus reglas activas.</p>
+        <p>Esto permite que el bot entienda mensajes similares aunque no tengan las palabras exactas.</p>
+        <p><strong>Ejemplo:</strong> Si tienes la keyword "hola", también entenderá "que tal", "buenas", "como estas", etc.</p>
+    </div>
+
+    <button id="checkBtn" onclick="checkService()">1️⃣ Verificar servicio de IA</button>
+    <button id="regenBtn" onclick="regenerateEmbeddings()" disabled>2️⃣ Regenerar todos los embeddings</button>
+
+    <div id="result"></div>
+
+    <script>
+        let serviceOk = false;
+
+        async function checkService() {
+            const result = document.getElementById('result');
+            const btn = document.getElementById('checkBtn');
+
+            result.innerHTML = '<p>⏳ Verificando servicio de IA...</p>';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/generate-embeddings', {
+                    credentials: 'same-origin'
+                });
+
+                const data = await res.json();
+
+                if (data.ok && data.healthy) {
+                    serviceOk = true;
+                    result.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Servicio de IA operacional</h3>
+                            <p><strong>Estado:</strong> ${data.status}</p>
+                            <p><strong>Habilitado:</strong> ${data.enabled ? 'Sí' : 'No'}</p>
+                            <p>✅ Listo para regenerar embeddings</p>
+                        </div>
+                    `;
+                    document.getElementById('regenBtn').disabled = false;
+                } else {
+                    result.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Servicio de IA no disponible</h3>
+                            <p>${data.error || 'El servicio no está corriendo o no responde'}</p>
+                            <p><strong>Verifica:</strong></p>
+                            <ul>
+                                <li>El servicio está corriendo en el servidor (puerto 5001)</li>
+                                <li>La configuración en auto_reply_settings está habilitada</li>
+                            </ul>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                result.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error de conexión</h3>
+                        <p>${err.message}</p>
+                        <p>No se pudo conectar con la API</p>
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function regenerateEmbeddings() {
+            const result = document.getElementById('result');
+            const btn = document.getElementById('regenBtn');
+
+            if (!confirm('¿Regenerar embeddings para TODAS las reglas activas?\n\nEsto puede tardar unos segundos.')) {
+                return;
+            }
+
+            result.innerHTML = '<p>⏳ Generando embeddings... Por favor espera.</p>';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/generate-embeddings', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await res.json();
+
+                if (data.ok) {
+                    result.innerHTML = `
+                        <div class="success">
+                            <h3>✅ ¡Embeddings generados exitosamente!</h3>
+                            <p><strong>Reglas actualizadas:</strong> ${data.updated}</p>
+                            <p>${data.message}</p>
+                            <hr style="margin: 15px 0; border-color: #10b981;">
+                            <p><strong>✨ Ahora puedes probar el bot</strong></p>
+                            <p>El bot ahora entenderá mensajes similares aunque no tengan las palabras exactas:</p>
+                            <ul>
+                                <li>"hola" → también entenderá "que tal", "buenas", "como estas"</li>
+                                <li>"tienen delivery?" → también "hacen envios?", "entregan a domicilio?"</li>
+                            </ul>
+                            <a href="/admin/auto-respuestas" style="color: #10b981;">← Volver al panel de auto-respuestas</a>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Error al generar embeddings</h3>
+                            <p>${data.error}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                result.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error de red</h3>
+                        <p>${err.message}</p>
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Auto-verificar al cargar
+        window.addEventListener('load', () => {
+            console.log('Página cargada, puedes hacer las pruebas');
+        });
+    </script>
+</body>
+</html>
