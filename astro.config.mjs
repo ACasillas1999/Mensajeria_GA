@@ -8,4 +8,7 @@ export default defineConfig({
   output: "server",
   integrations: [react(), tailwind()],
   // Removido base: "/mensajeria" para usar en subdominio raíz
+  security: {
+    checkOrigin: false // Deshabilita verificación CSRF para permitir uploads de FormData
+  }
 });

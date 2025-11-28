@@ -239,7 +239,10 @@ function pickMime() {
       const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), {
         method: 'POST',
         body: fd,
-        credentials: 'include' // ✅ IMPORTANTE: enviar cookies de autenticación
+        credentials: 'include', // ✅ IMPORTANTE: enviar cookies de autenticación
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest', // Identifica como petición AJAX
+        }
       });
 
       // Verificar si la respuesta es JSON
