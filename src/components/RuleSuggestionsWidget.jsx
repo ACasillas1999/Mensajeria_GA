@@ -36,6 +36,7 @@ export default function RuleSuggestionsWidget() {
       const res = await fetch(`${BASE}/api/admin/rule-suggestions`.replace(/\/\//g, '/'), {
         method: 'POST',
         credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Error al procesar sugerencias');
