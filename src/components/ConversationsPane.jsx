@@ -287,16 +287,17 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     <div className="h-full flex flex-col bg-slate-950/70 border border-slate-800 rounded-xl overflow-hidden">
       {/* Header con filtros */}
       <div className="flex-shrink-0 px-3 py-2 border-b border-slate-800">
-        <div className="flex items-center gap-2 mb-2">
+        {/* Primera fila: Título + acciones */}
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="font-medium">Conversaciones</span>
           <button
             onClick={() => setShowNewChat(true)}
-            className="px-2 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+            className="px-2 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium whitespace-nowrap"
             title="Nueva conversación"
           >
             + Nueva
           </button>
-          <select value={estado} onChange={(e)=>setEstado(e.target.value)} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs">
+          <select value={estado} onChange={(e)=>setEstado(e.target.value)} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs min-w-0">
             <option value="">Todas</option>
             {statuses.map(s => (
               <option key={s.id} value={s.id}>
@@ -304,14 +305,18 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Segunda fila: Búsqueda (siempre full-width) */}
+        <div className="flex items-center gap-2 mb-2">
           <input
             value={q}
             onChange={(e)=>setQ(e.target.value)}
             onKeyDown={(e)=> e.key==="Enter" && load(q)}
             placeholder="Buscar..."
-            className="ml-auto bg-slate-900 border border-slate-700 rounded px-3 py-1 text-xs outline-none focus:border-emerald-400"
+            className="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-1 text-xs outline-none focus:border-emerald-400"
           />
-          <button onClick={()=>load(q)} className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700">🔎</button>
+          <button onClick={()=>load(q)} className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 flex-shrink-0">🔎</button>
         </div>
 
         {/* Pestañas de vista */}

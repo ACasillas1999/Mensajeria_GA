@@ -78,24 +78,63 @@ export default function ChatWorkspace({ initialId = null }) {
 
   const currentId = current?.id || initialId || null;
 
+  // Función para volver a la lista en móvil
+  const handleBackToList = () => {
+    setCurrent(null);
+  };
+
   return (
     <section ref={containerRef} className="flex gap-0 h-full relative select-none">
-      {/* Panel izquierdo (conversaciones) */}
-      <aside style={{ width: `${leftWidth}px` }} className="flex-shrink-0 h-full">
+      {/* MOBILE: Panel izquierdo (conversaciones) - se oculta cuando hay conversación seleccionada */}
+      <aside
+        className={`md:hidden w-full h-full ${current ? 'hidden' : 'block'}`}
+      >
         <ConversationsPane onSelect={setCurrent} currentId={currentId} />
       </aside>
 
-      {/* Divisor redimensionable */}
+      {/* MOBILE: Panel derecho (chat) - se oculta cuando no hay conversación seleccionada */}
+      <section
+        className={`md:hidden w-full h-full ${current ? 'block' : 'hidden'}`}
+      >
+        {current && (
+          <div className="h-full flex flex-col">
+            {/* Botón para volver a la lista en móvil */}
+            <div className="flex-shrink-0 h-12 px-3 flex items-center gap-2 bg-slate-950 border-b border-slate-800">
+              <button
+                onClick={handleBackToList}
+                className="p-2 hover:bg-slate-800 rounded-lg transition"
+                title="Volver a conversaciones"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div className="font-medium truncate">{current.title || `Chat ${current.id}`}</div>
+            </div>
+            <div className="flex-1 min-h-0">
+              <ChatPane conversation={current} />
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* DESKTOP: Layout con divisor redimensionable */}
+      <aside
+        style={{ width: `${leftWidth}px` }}
+        className="hidden md:block flex-shrink-0 h-full"
+      >
+        <ConversationsPane onSelect={setCurrent} currentId={currentId} />
+      </aside>
+
       <div
         onMouseDown={handleMouseDown}
-        className={`w-1 cursor-col-resize hover:bg-emerald-500/50 transition-colors flex-shrink-0 ${
+        className={`hidden md:block w-1 cursor-col-resize hover:bg-emerald-500/50 transition-colors flex-shrink-0 ${
           isDragging ? 'bg-emerald-500' : 'bg-slate-700/30'
         }`}
         title="Arrastra para redimensionar"
       />
 
-      {/* Panel derecho (chat) */}
-      <section className="flex-1 min-w-0 h-full">
+      <section className="hidden md:block flex-1 min-w-0 h-full">
         <ChatPane conversation={current} />
       </section>
     </section>
