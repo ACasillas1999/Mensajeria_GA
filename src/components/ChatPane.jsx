@@ -615,12 +615,19 @@ function pickMime() {
     return () => clearInterval(id);
   }, [conversation?.id, searchQ]);
 
+  // Resetear contador cuando cambia la conversación
+  useEffect(() => {
+    const incoming = items.filter(m => m.sender === "them");
+    prevIncomingCountRef.current = incoming.length;
+  }, [conversation?.id]);
+
   // notificaciones + sonido al recibir entrantes nuevos
   useEffect(() => {
     const incoming = items.filter(m => m.sender === "them");
     const prev = prevIncomingCountRef.current;
 
-    if (incoming.length > prev) {
+    // Solo notificar si hay MÁS mensajes que antes (no cuando se carga por primera vez)
+    if (prev > 0 && incoming.length > prev) {
       // sonido
       try {
         if (ding) {
@@ -639,7 +646,7 @@ function pickMime() {
     }
 
     prevIncomingCountRef.current = incoming.length;
-  }, [items.length, conversation?.id]);
+  }, [items.length]);
 
   // enviar texto/archivo
   async function send(e) {
