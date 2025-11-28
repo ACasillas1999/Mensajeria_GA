@@ -4,11 +4,10 @@ import react from "@astrojs/react";
 import tailwind from "@astrojs/tailwind";
 
 export default defineConfig({
-  adapter: node({ mode: "standalone" }),
   output: "server",
+  adapter: node({ mode: "standalone" }),
   integrations: [react(), tailwind()],
-  // Removido base: "/mensajeria" para usar en subdominio raíz
   security: {
-    checkOrigin: false // Deshabilita verificación CSRF para permitir uploads de FormData
+    checkOrigin: false
   }
 });
