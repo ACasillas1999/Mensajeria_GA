@@ -16,7 +16,8 @@ export default function RuleSuggestionsWidget() {
     setError('');
     try {
       const res = await fetch(
-        `${BASE}/api/admin/rule-suggestions?minOccurrences=${minOccurrences}`.replace(/\/\//g, '/')
+        `${BASE}/api/admin/rule-suggestions?minOccurrences=${minOccurrences}`.replace(/\/\//g, '/'),
+        { credentials: 'same-origin' }
       );
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Error al cargar sugerencias');
@@ -34,6 +35,7 @@ export default function RuleSuggestionsWidget() {
     try {
       const res = await fetch(`${BASE}/api/admin/rule-suggestions`.replace(/\/\//g, '/'), {
         method: 'POST',
+        credentials: 'same-origin',
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Error al procesar sugerencias');
@@ -56,6 +58,7 @@ export default function RuleSuggestionsWidget() {
     try {
       const res = await fetch(`${BASE}/api/admin/rule-suggestions`.replace(/\/\//g, '/'), {
         method: 'PATCH',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: suggestion.id,
@@ -84,6 +87,7 @@ export default function RuleSuggestionsWidget() {
     try {
       const res = await fetch(`${BASE}/api/admin/rule-suggestions`.replace(/\/\//g, '/'), {
         method: 'PATCH',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: suggestion.id,

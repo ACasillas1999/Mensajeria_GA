@@ -19,6 +19,7 @@ export default function BotTestingWidget() {
     try {
       const res = await fetch(`${BASE}/api/admin/test-auto-reply`.replace(/\/\//g, '/'), {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: testMessage }),
       });
