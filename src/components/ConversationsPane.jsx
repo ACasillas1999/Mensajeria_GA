@@ -207,6 +207,10 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             last_text: conv.ultimo_msg,
             last_at: conv.ultimo_ts,
             estado: conv.estado,
+            status_id: conv.status_id,
+            status_name: conv.status_name,
+            status_color: conv.status_color,
+            status_icon: conv.status_icon,
             title: conv.wa_profile_name || conv.wa_user,
             asignado_a: conv.asignado_a,
             asignado_nombre: conv.asignado_nombre,
@@ -218,6 +222,10 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             wa_user: conv.wa_user,
             title: conv.wa_profile_name || conv.wa_user,
             estado: conv.estado,
+            status_id: conv.status_id,
+            status_name: conv.status_name,
+            status_color: conv.status_color,
+            status_icon: conv.status_icon,
             last_text: conv.ultimo_msg,
             last_at: conv.ultimo_ts,
             asignado_a: conv.asignado_a,
@@ -388,9 +396,17 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
 
               {/* Fila inferior: Badges (estado + agente) */}
               <div className="flex items-center gap-2">
-                <span className="text-[10px] px-2 py-0.5 rounded-full border border-slate-700/80 text-emerald-300 bg-emerald-900/20">
-                  {c.estado || '-'}
-                </span>
+                {c.status_name && (
+                  <span
+                    className="text-[10px] px-2 py-0.5 rounded-full border text-white"
+                    style={{
+                      backgroundColor: (c.status_color || '#64748b') + '40',
+                      borderColor: c.status_color || '#64748b'
+                    }}
+                  >
+                    {c.status_icon} {c.status_name}
+                  </span>
+                )}
                 {c.asignado_nombre && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full border border-sky-700/80 text-sky-400 bg-sky-900/20 flex items-center gap-1">
                     <span>👤</span>
