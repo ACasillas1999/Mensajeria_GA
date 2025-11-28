@@ -61,6 +61,7 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
         <a href={href("/")}              class={`${linkBase} ${isActive("/")}`}><i data-feather="home"></i><span class="sr-only">Inicio</span></a>
         <a href={href("/dashboard")}     class={`${linkBase} ${isActive("/dashboard")}`}><i data-feather="bar-chart-2"></i><span class="sr-only">Dashboard</span></a>
         <a href={href("/mensajes")}      class={`${linkBase} ${isActive("/mensajes")}`}><i data-feather="message-square"></i><span class="sr-only">Mensajes</span></a>
+        <a href={href("/pipeline")}      class={`${linkBase} ${isActive("/pipeline")}`} title="Pipeline / CRM"><i data-feather="trello"></i><span class="sr-only">Pipeline</span></a>
         <a href={href("/clientes")}      class={`${linkBase} ${isActive("/clientes")}`}><i data-feather="users"></i><span class="sr-only">Clientes</span></a>
                {isAdmin && (
           <>
@@ -76,6 +77,9 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
             </a>
             <a href={href("/admin/mensajes-no-reconocidos")} class={`${linkBase} ${isActive("/admin/mensajes-no-reconocidos")}`} title="Mensajes no reconocidos">
               <i data-feather="help-circle"></i><span class="sr-only">Mensajes no reconocidos</span>
+            </a>
+            <a href={href("/admin/estados")} class={`${linkBase} ${isActive("/admin/estados")}`} title="Gestión de Estados">
+              <i data-feather="tag"></i><span class="sr-only">Estados</span>
             </a>
             <a href={href("/admin/diagrama")} class={`${linkBase} ${isActive("/admin/diagrama")}`}>
               <i data-feather="git-branch"></i><span class="sr-only">Diagrama</span>
