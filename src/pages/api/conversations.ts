@@ -6,7 +6,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
   try {
     const url = new URL(request.url);
     const search = url.searchParams.get("search")?.trim() || "";
-    const estado = url.searchParams.get("estado")?.trim().toUpperCase() || ""; // NUEVA|ABIERTA|RESUELTA
+    const estado = url.searchParams.get("estado")?.trim().toUpperCase() || ""; // NUEVA|ABIERTA|RESUELTA (legacy)
+    const statusId = url.searchParams.get("status_id") || ""; // Nuevo sistema
     const limit  = Math.min(Number(url.searchParams.get("limit") || 50), 200);
     const offset = Math.max(Number(url.searchParams.get("offset") || 0), 0);
 
@@ -18,8 +19,14 @@ export const GET: APIRoute = async ({ request, locals }) => {
       params.push(search, search);
     }
 
-    if (estado && ["NUEVA","ABIERTA","RESUELTA"].includes(estado)) {
-      where += " AND estado = ?";
+    // Filtro por status_id (nuevo sistema)
+    if (statusId) {
+      where += " AND c.status_id = ?";
+      params.push(statusId);
+    }
+    // Fallback: filtro por estado legacy
+    else if (estado && ["NUEVA","ABIERTA","RESUELTA"].includes(estado)) {
+      where += " AND c.estado = ?";
       params.push(estado);
     }
 
@@ -41,6 +48,10 @@ export const GET: APIRoute = async ({ request, locals }) => {
         COALESCE(c.ultimo_msg, '') AS last_text,
         COALESCE(c.ultimo_ts, UNIX_TIMESTAMP(c.creado_en)) AS last_at,
         c.estado,
+        c.status_id,
+        cs.name AS status_name,
+        cs.color AS status_color,
+        cs.icon AS status_icon,
         c.asignado_a,
         u.nombre AS asignado_nombre,
         c.dentro_ventana_24h,
@@ -48,6 +59,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
         COALESCE(cus.is_favorite, FALSE) AS is_favorite
       FROM conversaciones c
       LEFT JOIN usuarios u ON u.id = c.asignado_a
+      LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
       LEFT JOIN conversation_user_status cus ON cus.conversacion_id = c.id AND cus.usuario_id = ?
       ${where}
       ORDER BY last_at DESC

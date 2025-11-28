@@ -37,10 +37,25 @@ export const POST: APIRoute = async ({ request, locals }) => {
        VALUES (?,?,?,?,?,?,?,?,?)`,
       [conversacion_id, 1, kind, caption || `[${kind}]`, msgId, now, 'sent', url, usuario_id]
     )
-    await pool.query(
-      'UPDATE conversaciones SET ultimo_msg=?, ultimo_ts=?, estado="ABIERTA" WHERE id=?',
-      [caption || `[${kind}]`, now, conversacion_id]
-    )
+
+    // Set default status if conversation doesn't have one
+    const [statusCheck] = await pool.query(
+      `SELECT status_id FROM conversaciones WHERE id=?`,
+      [conversacion_id]
+    );
+    const currentStatusId = (statusCheck as any[])[0]?.status_id;
+
+    if (currentStatusId) {
+      await pool.query(
+        'UPDATE conversaciones SET ultimo_msg=?, ultimo_ts=? WHERE id=?',
+        [caption || `[${kind}]`, now, conversacion_id]
+      );
+    } else {
+      await pool.query(
+        'UPDATE conversaciones SET ultimo_msg=?, ultimo_ts=?, status_id=(SELECT id FROM conversation_statuses WHERE is_default=TRUE LIMIT 1) WHERE id=?',
+        [caption || `[${kind}]`, now, conversacion_id]
+      );
+    }
 
     return new Response(JSON.stringify({ ok:true, data }), { status:200 })
   } catch (err:any) {

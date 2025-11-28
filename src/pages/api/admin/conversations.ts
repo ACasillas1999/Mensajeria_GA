@@ -8,7 +8,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ ok:false, error:'Forbidden' }), { status: 403 });
   }
   const url = new URL(request.url);
-  const estado = url.searchParams.get("estado") || "";      // "ABIERTA", "NUEVA", etc.
+  const estado = url.searchParams.get("estado") || "";      // Legacy: "ABIERTA", "NUEVA", etc.
+  const statusId = url.searchParams.get("status_id") || ""; // Nuevo sistema
   const asignado = url.searchParams.get("asignado") || "";  // "null", "any", userId
   const search = url.searchParams.get("search")?.trim() || "";
   const limit  = Math.min(Number(url.searchParams.get("limit") || 100), 300);
@@ -17,7 +18,16 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const params:any[] = [];
   let where = "WHERE 1=1";
 
-  if (estado) { where += " AND c.estado = ?"; params.push(estado); }
+  // Filtro por status_id (nuevo sistema)
+  if (statusId) {
+    where += " AND c.status_id = ?";
+    params.push(statusId);
+  }
+  // Fallback: filtro por estado legacy
+  else if (estado) {
+    where += " AND c.estado = ?";
+    params.push(estado);
+  }
 
   if (asignado === "null")      { where += " AND c.asignado_a IS NULL"; }
   else if (asignado === "any")  { /* nada */ }
@@ -32,9 +42,14 @@ export const GET: APIRoute = async ({ request, locals }) => {
     `
     SELECT c.id, c.wa_user, c.wa_profile_name,
            c.ultimo_msg, c.ultimo_ts, c.estado, c.asignado_a,
+           c.status_id,
+           cs.name AS status_name,
+           cs.color AS status_color,
+           cs.icon AS status_icon,
            u.nombre AS asignado_nombre
     FROM conversaciones c
     LEFT JOIN usuarios u ON u.id = c.asignado_a
+    LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
     ${where}
     ORDER BY COALESCE(c.ultimo_ts, UNIX_TIMESTAMP(c.creado_en)) DESC
     LIMIT ? OFFSET ?

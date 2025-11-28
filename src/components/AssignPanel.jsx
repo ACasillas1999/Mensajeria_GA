@@ -6,8 +6,9 @@ export default function AssignPanel() {
   const [conv, setConv] = useState([]);
   const [agents, setAgents] = useState([]);
   const [sucursales, setSucursales] = useState([]);
+  const [statuses, setStatuses] = useState([]); // Estados dinámicos
 
-  const [fltEstado, setFltEstado] = useState("ABIERTA");
+  const [fltEstado, setFltEstado] = useState(""); // Cambiado a vacío (todos)
   const [fltAsignado, setFltAsignado] = useState("null"); // null = sin asignar
   const [fltSuc, setFltSuc] = useState("");
   const [search, setSearch] = useState("");
@@ -15,12 +16,27 @@ export default function AssignPanel() {
   const [fltAgent, setFltAgent] = useState(""); // filtro por agente
   const [groupByAgent, setGroupByAgent] = useState(true);
 
+  async function loadStatuses() {
+    try {
+      const r = await fetch(`${BASE}/api/admin/conversation-statuses?active=1`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) setStatuses(j.items || []);
+    } catch (e) {
+      console.error('Error loading statuses:', e);
+    }
+  }
+
   async function load() {
     setLoading(true);
     try {
       const asignadoParam = (fltAsignado === 'null') ? 'null' : (fltAgent ? String(fltAgent) : 'any');
+      const params = new URLSearchParams();
+      if (fltEstado) params.set('status_id', fltEstado);
+      params.set('asignado', asignadoParam);
+      if (search) params.set('search', search);
+
       const [c, a, s] = await Promise.all([
-        fetch(`${BASE}/api/admin/conversations?estado=${fltEstado}&asignado=${asignadoParam}&search=${encodeURIComponent(search)}`.replace(/\/\//g, '/')).then(r=>r.json()),
+        fetch(`${BASE}/api/admin/conversations?${params.toString()}`.replace(/\/\//g, '/')).then(r=>r.json()),
         fetch(`${BASE}/api/admin/agents?sucursal_id=${fltSuc}`.replace(/\/\//g, '/')).then(r=>r.json()),
         fetch(`${BASE}/api/admin/sucursales`.replace(/\/\//g, '/')).then(r=>r.json()),
       ]);
@@ -31,6 +47,8 @@ export default function AssignPanel() {
       setLoading(false);
     }
   }
+
+  useEffect(() => { loadStatuses(); }, []);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [fltEstado, fltAsignado, fltSuc, search, fltAgent]);
 
   async function assign(conversacion_id, user_id) {
@@ -72,10 +90,12 @@ export default function AssignPanel() {
         <div className="sticky top-14 z-10 bg-slate-950/90 backdrop-blur px-3 py-2 rounded-lg border border-slate-800 flex flex-wrap gap-2 items-center">
           <select value={fltEstado} onChange={e=>setFltEstado(e.target.value)}
             className="px-3 py-2 rounded bg-slate-900 border border-slate-700">
-            <option value="">Todos</option>
-            <option value="NUEVA">Nuevas</option>
-            <option value="ABIERTA">Abiertas</option>
-            <option value="RESUELTA">Resueltas</option>
+            <option value="">Todos los estados</option>
+            {statuses.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.icon} {s.name}
+              </option>
+            ))}
           </select>
 
           <select value={fltAsignado} onChange={e=>setFltAsignado(e.target.value)}

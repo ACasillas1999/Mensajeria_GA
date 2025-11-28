@@ -23,7 +23,8 @@ function formatRelativeTime(timestamp) {
 export default function ConversationsPane({ onSelect, currentId = null }) {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
-  const [estado, setEstado] = useState(""); // '', NUEVA, ABIERTA, RESUELTA
+  const [estado, setEstado] = useState(""); // ID del estado o '' para todas
+  const [statuses, setStatuses] = useState([]); // Estados dinámicos
   const [view, setView] = useState("active"); // 'active', 'favorites', 'archived'
   const [loading, setLoading] = useState(false);
   const [seen, setSeen] = useState({});
@@ -33,6 +34,16 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [sending, setSending] = useState(false);
 
+  async function loadStatuses() {
+    try {
+      const r = await fetch(`${BASE}/api/admin/conversation-statuses?active=1`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) setStatuses(j.items || []);
+    } catch (e) {
+      console.error('Error loading statuses:', e);
+    }
+  }
+
   async function load(search = "", st = estado) {
     setLoading(true);
     try {
@@ -40,7 +51,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
         search,
         limit: String(50),
       });
-      if (st) qs.set('estado', st);
+      if (st) qs.set('status_id', st); // Cambiado de 'estado' a 'status_id'
       const r = await fetch(`${BASE}/api/conversations?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
       if (j.ok) setItems(j.items || []);
@@ -93,7 +104,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
         search,
         limit: String(50),
       });
-      if (st) qs.set('estado', st);
+      if (st) qs.set('status_id', st); // Cambiado de 'estado' a 'status_id'
       const r = await fetch(`${BASE}/api/conversations?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
       if (j.ok) setItems(j.items || []);
@@ -101,6 +112,11 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
       // ignorar errores puntuales
     }
   }
+
+  // Cargar estados al inicio
+  useEffect(() => {
+    loadStatuses();
+  }, []);
 
   // Carga inicial y cuando cambia el filtro de estado
   useEffect(() => {
@@ -274,9 +290,11 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
           </button>
           <select value={estado} onChange={(e)=>setEstado(e.target.value)} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs">
             <option value="">Todas</option>
-            <option value="NUEVA">Nuevas</option>
-            <option value="ABIERTA">Abiertas</option>
-            <option value="RESUELTA">Resueltas</option>
+            {statuses.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.icon} {s.name}
+              </option>
+            ))}
           </select>
           <input
             value={q}

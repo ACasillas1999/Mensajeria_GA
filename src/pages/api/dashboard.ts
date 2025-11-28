@@ -10,22 +10,37 @@ export const GET: APIRoute = async ({ locals }) => {
     // Counts scoped to user (mine) and global if admin
     const myId = user.id;
 
+    // Get basic stats
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT
-         SUM(estado = 'NUEVA'   AND (asignado_a = ?)) AS mine_nuevas,
-         SUM(estado = 'ABIERTA' AND (asignado_a = ?)) AS mine_abiertas,
-         SUM(estado = 'RESUELTA'AND (asignado_a = ?)) AS mine_resueltas,
-         SUM(estado = 'NUEVA')                        AS all_nuevas,
-         SUM(estado = 'ABIERTA')                      AS all_abiertas,
-         SUM(estado = 'RESUELTA')                     AS all_resueltas,
          COUNT(*)                                     AS total_conversaciones,
          SUM(asignado_a IS NULL)                      AS sin_asignar,
+         SUM(asignado_a = ?)                          AS mine_total,
          SUM(DATE(creado_en) = CURDATE())             AS conversaciones_hoy
        FROM conversaciones`,
-      [myId, myId, myId]
+      [myId]
     );
 
     const base = (rows as any[])[0] || {};
+
+    // Get status counts (dynamic, using new system)
+    const [statusRows] = await pool.query<RowDataPacket[]>(
+      `SELECT
+         cs.id,
+         cs.name,
+         cs.color,
+         cs.icon,
+         COUNT(c.id) AS total,
+         SUM(c.asignado_a = ?) AS mine
+       FROM conversation_statuses cs
+       LEFT JOIN conversaciones c ON c.status_id = cs.id
+       WHERE cs.is_active = TRUE
+       GROUP BY cs.id, cs.name, cs.color, cs.icon
+       ORDER BY cs.display_order`,
+      [myId]
+    );
+
+    base.statuses = statusRows;
 
     // Extra global metrics from other tables
     const [rows2] = await pool.query<RowDataPacket[]>(

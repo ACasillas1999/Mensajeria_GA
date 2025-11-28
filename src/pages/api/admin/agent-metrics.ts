@@ -20,9 +20,6 @@ export const GET: APIRoute = async ({ locals }) => {
 
         -- Conversaciones asignadas
         COUNT(DISTINCT c.id) AS total_conversaciones,
-        SUM(CASE WHEN c.estado = 'NUEVA' THEN 1 ELSE 0 END) AS conversaciones_nuevas,
-        SUM(CASE WHEN c.estado = 'ABIERTA' THEN 1 ELSE 0 END) AS conversaciones_abiertas,
-        SUM(CASE WHEN c.estado = 'RESUELTA' THEN 1 ELSE 0 END) AS conversaciones_resueltas,
 
         -- Mensajes enviados
         COUNT(DISTINCT m.id) AS mensajes_enviados_total,
@@ -41,13 +38,17 @@ export const GET: APIRoute = async ({ locals }) => {
       ORDER BY u.nombre
     `);
 
-    // Conversaciones activas en este momento (con actividad en los últimos 5 minutos)
+    // Conversaciones activas en este momento (con actividad reciente)
     const [activeChats] = await pool.query<RowDataPacket[]>(`
       SELECT
         c.id AS conversacion_id,
         c.wa_user,
         c.wa_profile_name,
         c.estado,
+        c.status_id,
+        cs.name AS status_name,
+        cs.color AS status_color,
+        cs.icon AS status_icon,
         c.asignado_a,
         u.nombre AS agente_nombre,
         c.ultimo_msg,
@@ -55,8 +56,8 @@ export const GET: APIRoute = async ({ locals }) => {
         CASE WHEN c.ultimo_ts >= UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 5 MINUTE)) THEN 1 ELSE 0 END AS activo_ahora
       FROM conversaciones c
       LEFT JOIN usuarios u ON u.id = c.asignado_a
+      LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
       WHERE c.asignado_a IS NOT NULL
-        AND c.estado IN ('NUEVA', 'ABIERTA')
         AND c.ultimo_ts >= UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 1 HOUR))
       ORDER BY c.ultimo_ts DESC
     `);
