@@ -241,6 +241,16 @@ function pickMime() {
         body: fd,
         credentials: 'include' // ✅ IMPORTANTE: enviar cookies de autenticación
       });
+
+      // Verificar si la respuesta es JSON
+      const contentType = up.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await up.text();
+        console.error('❌ Respuesta no es JSON:', { status: up.status, contentType, text: text.substring(0, 200) });
+        alert(`Error del servidor (${up.status}):\n\n${text.substring(0, 300)}`);
+        return;
+      }
+
       const uj = await up.json();
       console.log('✅ Respuesta upload:', uj);
 
