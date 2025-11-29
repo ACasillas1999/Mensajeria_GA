@@ -634,12 +634,12 @@ function pickMime() {
     enabled: !!conversation,
   });
 
-  // Fallback: Polling cada 10s como respaldo si SSE falla
+  // Fallback: Polling cada 30s como respaldo si SSE falla
   useEffect(() => {
     if (!conversation) return;
     const id = setInterval(() => {
       refreshMessages();
-    }, 10000); // cada 10 segundos (reducido porque SSE es el principal)
+    }, 30000); // cada 30 segundos (SSE maneja las actualizaciones en tiempo real)
     return () => clearInterval(id);
   }, [conversation?.id, searchQ]);
 
