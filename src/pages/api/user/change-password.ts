@@ -3,15 +3,17 @@ import { pool } from '../../../lib/db';
 import bcrypt from 'bcryptjs';
 
 // PATCH: Cambiar contraseña del usuario
-export const PATCH: APIRoute = async ({ request, cookies }) => {
+export const PATCH: APIRoute = async ({ request, locals }) => {
   try {
-    const userId = cookies.get('userId')?.value;
-    if (!userId) {
+    const user = (locals as any).user;
+    if (!user) {
       return new Response(JSON.stringify({ ok: false, error: 'No autenticado' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    const userId = user.id;
 
     const body = await request.json();
     const { currentPassword, newPassword } = body;

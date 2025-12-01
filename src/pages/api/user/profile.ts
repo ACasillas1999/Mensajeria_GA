@@ -1,17 +1,18 @@
 import type { APIRoute } from 'astro';
 import { pool } from '../../../lib/db';
-import bcrypt from 'bcryptjs';
 
 // GET: Obtener datos del perfil del usuario
-export const GET: APIRoute = async ({ cookies }) => {
+export const GET: APIRoute = async ({ locals }) => {
   try {
-    const userId = cookies.get('userId')?.value;
-    if (!userId) {
+    const user = (locals as any).user;
+    if (!user) {
       return new Response(JSON.stringify({ ok: false, error: 'No autenticado' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    const userId = user.id;
 
     const [rows] = await pool.query(
       `SELECT u.id, u.nombre, u.email, u.rol, u.activo, s.nombre as sucursal
@@ -44,15 +45,17 @@ export const GET: APIRoute = async ({ cookies }) => {
 };
 
 // PATCH: Actualizar datos del perfil (nombre y email)
-export const PATCH: APIRoute = async ({ request, cookies }) => {
+export const PATCH: APIRoute = async ({ request, locals }) => {
   try {
-    const userId = cookies.get('userId')?.value;
-    if (!userId) {
+    const user = (locals as any).user;
+    if (!user) {
       return new Response(JSON.stringify({ ok: false, error: 'No autenticado' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    const userId = user.id;
 
     const body = await request.json();
     const { nombre, email } = body;
