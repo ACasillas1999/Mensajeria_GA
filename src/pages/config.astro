@@ -1,21 +1,31 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
+import UserSettings from "../components/UserSettings.jsx";
 ---
 
 <AppLayout title="Configuración">
   <section class="grid grid-cols-12 gap-4">
     <div class="col-span-12 lg:col-span-8">
-      <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/70">
-        <h2 class="text-lg font-semibold mb-2">Preferencias</h2>
-        <p class="text-sm text-slate-400">Próximamente: opciones de notificaciones, temas, y datos del usuario.</p>
-      </div>
+      <UserSettings client:load />
     </div>
     <aside class="col-span-12 lg:col-span-4 space-y-3">
       <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/70">
         <h3 class="font-medium mb-2">Sesión</h3>
         <form onsubmit={`event.preventDefault(); (function(){ const base='${import.meta.env.BASE_URL || '/'}'; fetch((base + '/api/logout').replace(/\\/\\/+/g,'/'), { method:'POST', credentials:'include' }).finally(() => { location.href = (base + '/login').replace(/\\/\\/+/g,'/'); }); })();`}>
-          <button class="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700">Cerrar sesión</button>
+          <button class="w-full px-3 py-2 rounded bg-red-600 hover:bg-red-500 text-white font-semibold transition">
+            Cerrar sesión
+          </button>
         </form>
+      </div>
+      <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/70 text-sm text-slate-400">
+        <div class="mb-2">
+          <strong class="text-slate-300">Ayuda</strong>
+        </div>
+        <ul class="space-y-1 text-xs">
+          <li>• Puedes cambiar tu nombre y email</li>
+          <li>• La contraseña debe tener mínimo 8 caracteres</li>
+          <li>• Tu email es tu nombre de usuario</li>
+        </ul>
       </div>
       <div class="p-4 rounded-xl border border-slate-800 bg-slate-950/70 text-sm text-slate-400">
         <div>Entorno: {import.meta.env.MODE}</div>
