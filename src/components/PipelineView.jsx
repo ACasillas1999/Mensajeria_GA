@@ -194,7 +194,6 @@ export default function PipelineView() {
               <div className="text-2xl font-bold text-slate-100">{s.count}</div>
             </div>
           ))}
-          </div>
         </div>
       )}
 
