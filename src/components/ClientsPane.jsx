@@ -238,6 +238,17 @@ export default function ClientsPane() {
                 {/* Botón de acción */}
                 <a
                   href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
+                  onMouseEnter={(e) => {
+                    // Prefetch cuando pasa el mouse sobre el botón
+                    const href = e.currentTarget.href;
+                    if (!document.querySelector(`link[href="${href}"]`)) {
+                      const link = document.createElement('link');
+                      link.rel = 'prefetch';
+                      link.href = href;
+                      link.as = 'document';
+                      document.head.appendChild(link);
+                    }
+                  }}
                   className="block w-full px-3 py-2 text-center rounded-lg bg-emerald-600/10 border border-emerald-600/30 text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all font-medium text-sm"
                 >
                   Abrir conversación →

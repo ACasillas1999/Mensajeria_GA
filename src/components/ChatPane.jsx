@@ -117,6 +117,11 @@ export default function ChatPane({ conversation }) {
   // selector de reacciones
   const [reactionPicker, setReactionPicker] = useState({ show: false, msgId: null });
 
+  // paginación de mensajes
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalMessages, setTotalMessages] = useState(0);
+
   // composer
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
@@ -348,11 +353,18 @@ function pickMime() {
     if (!conversation) return;
     setLoading(true);
     try {
-      const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(300) });
+      const limit = 50; // Cargar solo 50 mensajes inicialmente
+      const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(limit) });
       if (searchQ.trim()) qs.set('q', searchQ.trim());
       const r = await fetch(`${BASE}/api/messages?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
-      if (j.ok) setItems(j.items || []);
+      if (j.ok) {
+        const messages = j.items || [];
+        setItems(messages);
+        setTotalMessages(j.total || messages.length);
+        // Hay más si la cantidad recibida es igual al límite
+        setHasMore(messages.length === limit);
+      }
     } finally {
       setLoading(false);
       // Scroll múltiple para asegurar que llegue al fondo incluso con imágenes cargando
@@ -362,11 +374,37 @@ function pickMime() {
     }
   }
 
+  async function loadMore() {
+    if (!conversation || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const limit = 50;
+      const offset = items.length;
+      const qs = new URLSearchParams({
+        conversation_id: String(conversation.id),
+        limit: String(limit),
+        offset: String(offset)
+      });
+      if (searchQ.trim()) qs.set('q', searchQ.trim());
+      const r = await fetch(`${BASE}/api/messages?${qs.toString()}`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) {
+        const newMessages = j.items || [];
+        setItems(prev => [...newMessages, ...prev]); // Agregar al inicio (mensajes más antiguos)
+        setHasMore(newMessages.length === limit);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   // refresco silencioso para que el chat se actualice sin parpadeos
   async function refreshMessages() {
     if (!conversation) return;
     try {
-      const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(300) });
+      // Mantener la cantidad actual de mensajes cargados
+      const currentCount = items.length || 50;
+      const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(currentCount) });
       if (searchQ.trim()) qs.set('q', searchQ.trim());
       const r = await fetch(`${BASE}/api/messages?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
@@ -972,6 +1010,27 @@ function pickMime() {
       {/* Mensajes */}
       <div ref={scrollerRef} className="flex-1 overflow-y-auto thin-scroll p-4 space-y-2">
         {loading && <div className="text-sm text-slate-400">Cargando…</div>}
+
+        {/* Botón para cargar más mensajes antiguos */}
+        {!loading && hasMore && (
+          <div className="flex justify-center py-2">
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="px-4 py-2 text-sm rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition disabled:opacity-50"
+            >
+              {loadingMore ? (
+                <>
+                  <span className="inline-block animate-spin mr-2">⏳</span>
+                  Cargando...
+                </>
+              ) : (
+                <>↑ Cargar mensajes anteriores ({items.length}/{totalMessages})</>
+              )}
+            </button>
+          </div>
+        )}
+
         {items.map(m => (
           <div key={m.id}
                className={`max-w-[75%] px-3 py-2 rounded-lg border
