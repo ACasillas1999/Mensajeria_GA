@@ -8,7 +8,7 @@ const isAdmin = ((Astro.locals as any).user?.rol || '').toLowerCase() === 'admin
 ---
 
 <AppLayout title="Panel principal">
-  {isAdmin && <BotHealthWidget client:load />}
-  <MagicBento client:load isAdmin={isAdmin} />
+  {isAdmin && <BotHealthWidget client:idle />}
+  <MagicBento client:idle isAdmin={isAdmin} />
 </AppLayout>
 

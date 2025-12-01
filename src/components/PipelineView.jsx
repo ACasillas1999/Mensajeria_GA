@@ -201,18 +201,18 @@ export default function PipelineView() {
       {loading ? (
         <div className="p-12 text-center text-slate-400">Cargando pipeline...</div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="grid gap-3 pb-4" style={{ gridTemplateColumns: `repeat(${pipeline.length}, minmax(280px, 1fr))` }}>
           {pipeline.map((column) => (
             <div
               key={column.status.id}
-              className="flex-shrink-0 w-80"
+              className="flex flex-col"
               onDragOver={(e) => handleDragOver(e, column.status.id)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, column.status.id)}
             >
               {/* Column Header */}
               <div
-                className="p-3 rounded-t-lg border-t-4 flex items-center justify-between"
+                className="p-3 rounded-t-lg border-t-4 flex items-center justify-between flex-shrink-0"
                 style={{
                   borderTopColor: column.status.color,
                   backgroundColor: `${column.status.color}15`,
@@ -227,13 +227,14 @@ export default function PipelineView() {
                 </span>
               </div>
 
-              {/* Column Body */}
+              {/* Column Body with scroll */}
               <div
-                className={`min-h-[200px] p-2 space-y-2 rounded-b-lg border border-t-0 transition-colors ${
+                className={`p-2 space-y-2 rounded-b-lg border border-t-0 transition-colors overflow-y-auto ${
                   dragOverColumn === column.status.id
                     ? 'bg-emerald-950/30 border-emerald-600'
                     : 'bg-slate-900/40 border-slate-700'
                 }`}
+                style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '200px' }}
               >
                 {column.conversations.length === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-500">
