@@ -132,7 +132,7 @@ export default function PipelineView() {
   }
 
   function openConversation(conversationId) {
-    window.location.href = `${BASE}/mensajes?c=${conversationId}`.replace(/\/\//g, '/');
+    window.location.href = `${BASE}/mensajes?conversation_id=${conversationId}`.replace(/\/\//g, '/');
   }
 
   function formatTimestamp(ts) {
