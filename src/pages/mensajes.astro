@@ -8,7 +8,7 @@ const initialId = Number(qp.get('conversation_id') || 0) || null;
 
 <AppLayout title="Mensajes">
   <div class="-m-4 h-[calc(100vh-3.5rem)]">
-    <ChatWorkspace client:load initialId={initialId} />
+    <ChatWorkspace client:idle initialId={initialId} />
   </div>
 </AppLayout>
 

@@ -100,7 +100,7 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
     </aside>
 
     <!-- Contenido -->
-    <main id="page-root" class="pt-14 pl-16 min-h-screen opacity-0 transition-opacity duration-300">
+    <main id="page-root" class="pt-14 pl-16 min-h-screen opacity-0 transition-opacity duration-150">
       <div class="max-w-[1500px] mx-auto p-4">
         <slot />
       </div>
@@ -139,13 +139,19 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
             return;
           }
           e.preventDefault();
-          root.addEventListener(
-            "transitionend",
-            () => {
+
+          // Navegación más rápida: añadir timeout de seguridad
+          let navigated = false;
+          const navigate = () => {
+            if (!navigated) {
+              navigated = true;
               window.location.href = href;
-            },
-            { once: true }
-          );
+            }
+          };
+
+          root.addEventListener("transitionend", navigate, { once: true });
+          // Timeout de seguridad: navegar después de 200ms aunque la transición no termine
+          setTimeout(navigate, 200);
           root.classList.add("opacity-0");
         });
       });

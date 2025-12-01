@@ -1,17 +1,32 @@
 export default function MagicBento({ isAdmin = false }) {
-  const Tile = ({ href, title, subtitle, className = "", icon = null }) => (
-    <a href={href}
-       className={`relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 hover:bg-slate-900/60 transition group ${className}`}>
-      <div className="absolute -inset-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-tr from-emerald-500/10 via-sky-500/10 to-amber-500/10 blur-2xl" />
-      <div className="relative h-full p-4 flex flex-col justify-between">
-        <div className="text-sm text-slate-400">{subtitle}</div>
-        <div className="flex items-end justify-between gap-3">
-          <div className="text-xl font-semibold text-slate-100 drop-shadow">{title}</div>
-          {icon}
+  const Tile = ({ href, title, subtitle, className = "", icon = null }) => {
+    const handleMouseEnter = () => {
+      // Prefetch con prioridad baja cuando el usuario hace hover
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = href;
+      link.as = 'document';
+      // Solo agregar si no existe ya
+      if (!document.querySelector(`link[href="${href}"]`)) {
+        document.head.appendChild(link);
+      }
+    };
+
+    return (
+      <a href={href}
+         onMouseEnter={handleMouseEnter}
+         className={`relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 hover:bg-slate-900/60 transition group ${className}`}>
+        <div className="absolute -inset-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-tr from-emerald-500/10 via-sky-500/10 to-amber-500/10 blur-2xl" />
+        <div className="relative h-full p-4 flex flex-col justify-between">
+          <div className="text-sm text-slate-400">{subtitle}</div>
+          <div className="flex items-end justify-between gap-3">
+            <div className="text-xl font-semibold text-slate-100 drop-shadow">{title}</div>
+            {icon}
+          </div>
         </div>
-      </div>
-    </a>
-  );
+      </a>
+    );
+  };
 
   return (
     <section className="mt-6 grid grid-cols-12 gap-3 auto-rows-[120px] md:auto-rows-[150px]">
