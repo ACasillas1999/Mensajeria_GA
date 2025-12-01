@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
+import { useAppData } from "../contexts/AppDataContext.jsx";
 
 const BASE = import.meta.env.BASE_URL || '';
 const SEEN_KEY = "mensajeria_seen_v1";
@@ -21,10 +22,10 @@ function formatRelativeTime(timestamp) {
 }
 
 export default function ConversationsPane({ onSelect, currentId = null }) {
+  const { statuses } = useAppData();
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState(""); // ID del estado o '' para todas
-  const [statuses, setStatuses] = useState([]); // Estados dinámicos
   const [view, setView] = useState("active"); // 'active', 'favorites', 'archived'
   const [loading, setLoading] = useState(false);
   const [seen, setSeen] = useState({});
@@ -33,16 +34,6 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [sending, setSending] = useState(false);
-
-  async function loadStatuses() {
-    try {
-      const r = await fetch(`${BASE}/api/admin/conversation-statuses?active=1`.replace(/\/\//g, '/'));
-      const j = await r.json();
-      if (j.ok) setStatuses(j.items || []);
-    } catch (e) {
-      console.error('Error loading statuses:', e);
-    }
-  }
 
   async function load(search = "", st = estado) {
     setLoading(true);
@@ -113,18 +104,15 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     }
   }
 
-  // Carga inicial optimizada - cargar todo en paralelo
+  // Carga inicial - solo cargar conversaciones (estados vienen del contexto)
   useEffect(() => {
-    // Cargar estados y conversaciones en paralelo
-    Promise.all([
-      loadStatuses(),
-      load("")
-    ]);
+    load("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Recargar cuando cambia el filtro de estado (no en la carga inicial)
+  // Recargar cuando cambia el filtro de estado
   useEffect(() => {
-    if (statuses.length > 0) { // Solo si ya cargó inicialmente
+    if (statuses.length > 0) { // Solo si ya cargaron los estados
       load("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

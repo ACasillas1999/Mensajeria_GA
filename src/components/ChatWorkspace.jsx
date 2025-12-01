@@ -1,13 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import ConversationsPane from "./ConversationsPane.jsx";
 import ChatPane from "./ChatPane.jsx";
+import { AppDataProvider } from "../contexts/AppDataContext.jsx";
 
 const BASE = import.meta.env.BASE_URL || '';
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 600;
 const DEFAULT_WIDTH = 380;
 
-export default function ChatWorkspace({ initialId = null }) {
+function ChatWorkspaceInner({ initialId = null }) {
   const [current, setCurrent] = useState(null); // {id,title,wa_user,...}
   const [leftWidth, setLeftWidth] = useState(() => {
     // Cargar ancho guardado de localStorage
@@ -138,5 +139,14 @@ export default function ChatWorkspace({ initialId = null }) {
         <ChatPane conversation={current} />
       </section>
     </section>
+  );
+}
+
+// Wrapper con Provider
+export default function ChatWorkspace({ initialId = null }) {
+  return (
+    <AppDataProvider>
+      <ChatWorkspaceInner initialId={initialId} />
+    </AppDataProvider>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import MediaModal from "./MediaModal.jsx";
 import QuickReplies from "./QuickReplies.jsx";
 import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
+import { useAppData } from "../contexts/AppDataContext.jsx";
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -92,10 +93,10 @@ function StatusBadge({ s }) {
 }
 
 export default function ChatPane({ conversation }) {
+  const { statuses, quickReplies: allQuickReplies, reloadQuickReplies } = useAppData();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQ, setSearchQ] = useState("");
-  const [statuses, setStatuses] = useState([]); // Estados dinámicos
 
   // notificaciones
   const prevIncomingCountRef = useRef(0);
@@ -127,8 +128,8 @@ export default function ChatPane({ conversation }) {
   const [file, setFile] = useState(null);
   const [insideWindow, setInsideWindow] = useState(true);
 
-  // atajos de respuestas rápidas
-  const [shortcuts, setShortcuts] = useState([]);
+  // atajos de respuestas rápidas (usar el caché del contexto)
+  const shortcuts = allQuickReplies.filter(i => i.atajo);
   // menú de sugerencias de atajos
   const [shortcutSuggestions, setShortcutSuggestions] = useState([]);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
@@ -318,35 +319,6 @@ function pickMime() {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
     }
-  }, []);
-
-  // cargar estados dinámicos
-  useEffect(() => {
-    async function loadStatuses() {
-      try {
-        const r = await fetch(`${BASE}/api/admin/conversation-statuses?active=1`.replace(/\/\//g, '/'));
-        const j = await r.json();
-        if (j.ok) setStatuses(j.items || []);
-      } catch (e) {
-        console.error('Error loading statuses:', e);
-      }
-    }
-    loadStatuses();
-  }, []);
-
-  // cargar atajos de respuestas rápidas
-  useEffect(() => {
-    async function loadShortcuts() {
-      try {
-        const r = await fetch(`${BASE}/api/quick-replies`.replace(/\/\//g, '/'));
-        const j = await r.json();
-        if (j.ok && j.items) {
-          // Solo guardar los que tienen atajo definido
-          setShortcuts(j.items.filter(i => i.atajo));
-        }
-      } catch {}
-    }
-    loadShortcuts();
   }, []);
 
   async function load() {
@@ -1261,11 +1233,8 @@ function pickMime() {
           onSelect={handleQuickReplySelect}
           onClose={() => {
             setShowQuickReplies(false);
-            // Recargar atajos por si crearon uno nuevo
-            fetch(`${BASE}/api/quick-replies`.replace(/\/\//g, '/'))
-              .then(r => r.json())
-              .then(j => { if (j.ok && j.items) setShortcuts(j.items.filter(i => i.atajo)); })
-              .catch(() => {});
+            // Recargar atajos por si crearon uno nuevo (usar caché del contexto)
+            reloadQuickReplies();
           }}
         />
       )}

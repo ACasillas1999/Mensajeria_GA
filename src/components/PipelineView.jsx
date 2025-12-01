@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { AppDataProvider } from '../contexts/AppDataContext.jsx';
 
 const BASE = import.meta.env.BASE_URL || '';
 
-export default function PipelineView() {
+function PipelineViewInner() {
   const [pipeline, setPipeline] = useState([]);
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -293,5 +294,14 @@ export default function PipelineView() {
         </div>
       )}
     </div>
+  );
+}
+
+// Wrapper con Provider
+export default function PipelineView() {
+  return (
+    <AppDataProvider>
+      <PipelineViewInner />
+    </AppDataProvider>
   );
 }
