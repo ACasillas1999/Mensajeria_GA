@@ -194,6 +194,7 @@ export default function PipelineView() {
               <div className="text-2xl font-bold text-slate-100">{s.count}</div>
             </div>
           ))}
+          </div>
         </div>
       )}
 
@@ -201,11 +202,12 @@ export default function PipelineView() {
       {loading ? (
         <div className="p-12 text-center text-slate-400">Cargando pipeline...</div>
       ) : (
-        <div className="grid gap-3 pb-4" style={{ gridTemplateColumns: `repeat(${pipeline.length}, minmax(280px, 1fr))` }}>
-          {pipeline.map((column) => (
-            <div
-              key={column.status.id}
-              className="flex flex-col"
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-3 min-w-min flex-nowrap">
+            {pipeline.map((column) => (
+              <div
+                key={column.status.id}
+                className="flex flex-col w-80 flex-shrink-0"
               onDragOver={(e) => handleDragOver(e, column.status.id)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, column.status.id)}
@@ -288,6 +290,7 @@ export default function PipelineView() {
               </div>
             </div>
           ))}
+          </div>
         </div>
       )}
     </div>
