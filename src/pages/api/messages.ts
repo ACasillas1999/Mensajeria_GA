@@ -17,7 +17,8 @@ export const GET: APIRoute = async ({ request }) => {
     const params: any[] = [cid];
     let where = "WHERE m.conversacion_id = ?";
     if (before) {
-      const b = /^\d+$/.test(before) ? Number(before) : Math.floor(new Date(before).getTime()/1000);
+      const b = /^\d+$/.test(before) ? Number(before) : Math.floor(new Date(before).getTime() / 1000);
+      // Traer mensajes ANTERIORES a ese timestamp
       where += " AND COALESCE(UNIX_TIMESTAMP(m.creado_en), m.ts) < ?";
       params.push(b);
     }
@@ -26,36 +27,43 @@ export const GET: APIRoute = async ({ request }) => {
       params.push(q);
     }
 
+    // Traer SIEMPRE los mensajes más recientes primero (por timestamp)
+    // y luego reordenarlos ascendente para mostrarlos en orden de chat.
     const [rows] = await pool.query<RowDataPacket[]>(
       `
-      SELECT
-        m.id,
-        m.conversacion_id,
-        m.cuerpo,
-        m.is_auto_reply,
-        m.from_me,
-        m.tipo,
-        m.media_id,
-        m.media_url,
-        m.mime_type,
-        m.wa_msg_id,
-        m.status,
-        m.status_ts,
-        m.agent_reaction_emoji,
-        m.client_reaction_emoji,
-        m.usuario_id,
-        u.nombre AS usuario_nombre,
-        COALESCE(m.creado_en, FROM_UNIXTIME(m.ts)) AS creado_en
-      FROM mensajes m
-      LEFT JOIN usuarios u ON u.id = m.usuario_id
-      ${where}
-      ORDER BY COALESCE(m.creado_en, FROM_UNIXTIME(m.ts)) ASC
-      LIMIT ?
+      SELECT *
+      FROM (
+        SELECT
+          m.id,
+          m.conversacion_id,
+          m.cuerpo,
+          m.is_auto_reply,
+          m.from_me,
+          m.tipo,
+          m.media_id,
+          m.media_url,
+          m.mime_type,
+          m.wa_msg_id,
+          m.status,
+          m.status_ts,
+          m.agent_reaction_emoji,
+          m.client_reaction_emoji,
+          m.usuario_id,
+          u.nombre AS usuario_nombre,
+          COALESCE(m.creado_en, FROM_UNIXTIME(m.ts)) AS creado_en,
+          COALESCE(UNIX_TIMESTAMP(m.creado_en), m.ts) AS sort_ts
+        FROM mensajes m
+        LEFT JOIN usuarios u ON u.id = m.usuario_id
+        ${where}
+        ORDER BY sort_ts DESC
+        LIMIT ?
+      ) AS recent
+      ORDER BY recent.sort_ts ASC
       `,
       [...params, limit]
     );
 
-      const items = rows.map(r => {
+    const items = rows.map(r => {
       let text = r.cuerpo ?? "";
       if ((!text || String(text).trim()==="") && r.tipo && r.tipo!=="text") text = `[${r.tipo}]`;
       return {
