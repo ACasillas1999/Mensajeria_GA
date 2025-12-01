@@ -7,8 +7,31 @@ const initialId = Number(qp.get('conversation_id') || 0) || null;
 ---
 
 <AppLayout title="Mensajes">
-  <div class="-m-4 h-[calc(100vh-3.5rem)]">
-    <ChatWorkspace client:idle initialId={initialId} />
+  <div class="-m-4 h-[calc(100vh-3.5rem)] relative">
+    <!-- Loading placeholder -->
+    <div id="messages-loader" class="absolute inset-0 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm z-50">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mb-4"></div>
+        <div class="text-slate-300 font-medium">Cargando mensajes...</div>
+      </div>
+    </div>
+
+    <ChatWorkspace client:visible initialId={initialId} />
   </div>
+
+  <script>
+    // Ocultar loader cuando el componente esté listo
+    document.addEventListener('DOMContentLoaded', () => {
+      // Esperar a que React se hidrate
+      setTimeout(() => {
+        const loader = document.getElementById('messages-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.transition = 'opacity 0.3s ease-out';
+          setTimeout(() => loader.remove(), 300);
+        }
+      }, 500);
+    });
+  </script>
 </AppLayout>
 

@@ -113,14 +113,20 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     }
   }
 
-  // Cargar estados al inicio
+  // Carga inicial optimizada - cargar todo en paralelo
   useEffect(() => {
-    loadStatuses();
+    // Cargar estados y conversaciones en paralelo
+    Promise.all([
+      loadStatuses(),
+      load("")
+    ]);
   }, []);
 
-  // Carga inicial y cuando cambia el filtro de estado
+  // Recargar cuando cambia el filtro de estado (no en la carga inicial)
   useEffect(() => {
-    load("");
+    if (statuses.length > 0) { // Solo si ya cargó inicialmente
+      load("");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estado]);
 
@@ -243,12 +249,12 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     enabled: true,
   });
 
-  // Fallback: Polling cada 10s como respaldo si SSE falla
+  // Fallback: Polling cada 15s como respaldo si SSE falla
   useEffect(() => {
     const id = setInterval(() => {
       // reutiliza el último texto de búsqueda y estado seleccionados
       refresh();
-    }, 10000); // cada 10 segundos (reducido porque SSE es el principal)
+    }, 15000); // cada 15 segundos (reducido porque SSE es el principal)
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, estado]);
