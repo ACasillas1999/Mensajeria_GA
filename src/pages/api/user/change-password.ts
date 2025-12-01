@@ -47,10 +47,10 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    const user = users[0];
+    const userData = users[0];
 
     // Verificar contraseña actual
-    const validPassword = await bcrypt.compare(currentPassword, user.password_hash);
+    const validPassword = await bcrypt.compare(currentPassword, userData.password_hash);
     if (!validPassword) {
       return new Response(JSON.stringify({ ok: false, error: 'Contraseña actual incorrecta' }), {
         status: 400,

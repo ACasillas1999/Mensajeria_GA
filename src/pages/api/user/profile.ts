@@ -30,8 +30,8 @@ export const GET: APIRoute = async ({ locals }) => {
       });
     }
 
-    const user = users[0];
-    return new Response(JSON.stringify({ ok: true, user }), {
+    const userData = users[0];
+    return new Response(JSON.stringify({ ok: true, user: userData }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
