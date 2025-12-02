@@ -398,7 +398,17 @@ function pickMime() {
     for (const m of items) {
       if (m.sender === "them") {
         const raw = m.created_at || m.ts || m.timestamp || m.time;
-        const t = raw ? new Date(raw).getTime() : NaN;
+        let t = NaN;
+        if (raw) {
+          // Si es un timestamp Unix en segundos (10 dígitos), convertir a ms
+          if (typeof raw === 'number' && raw < 10000000000) {
+            t = raw * 1000;
+          } else if (typeof raw === 'number') {
+            t = raw; // Ya está en ms
+          } else {
+            t = new Date(raw).getTime(); // String de fecha
+          }
+        }
         if (!Number.isNaN(t) && t > lastInbound) lastInbound = t;
       }
     }
