@@ -127,6 +127,8 @@ export default function ChatPane({ conversation }) {
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [insideWindow, setInsideWindow] = useState(true);
+  const [timeRemaining, setTimeRemaining] = useState(null); // tiempo restante en ms
+  const [lastInboundTime, setLastInboundTime] = useState(null); // timestamp del último mensaje entrante
 
   // atajos de respuestas rápidas (usar el caché del contexto)
   const shortcuts = allQuickReplies.filter(i => i.atajo);
@@ -402,11 +404,40 @@ function pickMime() {
     }
     if (!lastInbound) {
       setInsideWindow(true);
+      setTimeRemaining(null);
+      setLastInboundTime(null);
     } else {
       const diffMs = Date.now() - lastInbound;
-      setInsideWindow(diffMs <= 24 * 3600 * 1000);
+      const windowMs = 24 * 3600 * 1000; // 24 horas en ms
+      const remaining = windowMs - diffMs;
+      setInsideWindow(diffMs <= windowMs);
+      setTimeRemaining(remaining > 0 ? remaining : 0);
+      setLastInboundTime(lastInbound);
     }
   }, [items]);
+
+  // Actualizar el contador cada minuto
+  useEffect(() => {
+    if (!lastInboundTime) return;
+
+    const interval = setInterval(() => {
+      const diffMs = Date.now() - lastInboundTime;
+      const windowMs = 24 * 3600 * 1000;
+      const remaining = windowMs - diffMs;
+      setInsideWindow(diffMs <= windowMs);
+      setTimeRemaining(remaining > 0 ? remaining : 0);
+    }, 60000); // actualizar cada minuto
+
+    return () => clearInterval(interval);
+  }, [lastInboundTime]);
+
+  // Formatear tiempo restante de forma legible
+  function formatTimeRemaining(ms) {
+    if (!ms || ms <= 0) return "0h 0m";
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  }
 
   async function runSearch() { await load(); }
   async function openAttachments() {
@@ -890,6 +921,30 @@ function pickMime() {
       <div className="flex-shrink-0 h-12 px-4 flex items-center gap-3 border-b border-slate-800">
         <div className="font-medium truncate">{conversation.title || `Chat ${conversation.id}`}</div>
         <div className="text-xs text-slate-400 truncate">{conversation.wa_user}</div>
+
+        {/* Indicador de ventana de 24h */}
+        {insideWindow && timeRemaining ? (
+          <div
+            className={`text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+              timeRemaining <= 2 * 60 * 60 * 1000
+                ? 'bg-amber-900/30 border-amber-600/50 text-amber-300'
+                : 'bg-emerald-900/30 border-emerald-600/50 text-emerald-300'
+            }`}
+            title={`Tiempo restante para enviar mensajes libres: ${formatTimeRemaining(timeRemaining)}`}
+          >
+            <span>{timeRemaining <= 2 * 60 * 60 * 1000 ? '⏰' : '✓'}</span>
+            <span>{formatTimeRemaining(timeRemaining)}</span>
+          </div>
+        ) : !insideWindow ? (
+          <div
+            className="text-[10px] px-2 py-0.5 rounded-full border bg-red-900/30 border-red-600/50 text-red-300 flex items-center gap-1"
+            title="Fuera de la ventana de 24h - Solo plantillas"
+          >
+            <span>🔒</span>
+            <span>Fuera de ventana</span>
+          </div>
+        ) : null}
+
         <div className="ml-auto flex items-center gap-2">
           {/* Botón favorito */}
           <button
@@ -1116,20 +1171,59 @@ function pickMime() {
         </div>
       )}
 
+      {/* Banner de advertencia cuando quedan menos de 2 horas */}
+      {insideWindow && timeRemaining && timeRemaining <= 2 * 60 * 60 * 1000 && timeRemaining > 0 && (
+        <div className="px-3 py-2 border-t border-amber-600/30 bg-amber-900/20">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-amber-400">⏰</span>
+            <span className="text-amber-300">
+              Ventana de 24h cerrando pronto: quedan <strong>{formatTimeRemaining(timeRemaining)}</strong>
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Composer o aviso de ventana 24h */}
       {!insideWindow ? (
-        <div className="p-3 border-t border-slate-800 bg-amber-950/20">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 text-sm text-amber-300">
-              ⚠️ Envia un mensaje de plantilla para poder iniciar una conversacion.
+        <div className="border-t border-slate-800">
+          {/* Mensaje explicativo mejorado */}
+          <div className="p-4 bg-gradient-to-br from-amber-950/40 to-red-950/30 border-b border-amber-800/30">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-900/50 flex items-center justify-center text-xl">
+                🔒
+              </div>
+              <div className="flex-1">
+                <h3 className="text-amber-200 font-semibold mb-1">Fuera de la ventana de 24 horas</h3>
+                <p className="text-sm text-amber-300/80 leading-relaxed">
+                  Han pasado más de 24 horas desde el último mensaje del cliente.
+                  Solo puedes enviar plantillas pre-aprobadas por WhatsApp hasta que el cliente te escriba nuevamente.
+                </p>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => { loadTemplates(); setShowTemplates(true); }}
-              className="px-4 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400"
-            >
-              📋 Enviar Plantilla
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => { loadTemplates(); setShowTemplates(true); }}
+                className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-semibold hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-lg"
+              >
+                📋 Enviar Plantilla Aprobada
+              </button>
+            </div>
+          </div>
+          {/* Campo de texto deshabilitado para mostrar que no se puede escribir */}
+          <div className="p-3 bg-slate-900/50">
+            <div className="flex items-center gap-2 opacity-40">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800">📎</div>
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800">⚡</div>
+              <input
+                type="text"
+                disabled
+                placeholder="No puedes enviar mensajes libres fuera de la ventana de 24h"
+                className="resize-none flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 cursor-not-allowed"
+              />
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800">🎤</div>
+              <div className="px-4 py-2 rounded bg-slate-700 text-slate-500 cursor-not-allowed">Enviar</div>
+            </div>
           </div>
         </div>
       ) : (
