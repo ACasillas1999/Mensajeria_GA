@@ -54,9 +54,9 @@ const syncTemplates: APIRoute = async ({ locals }) => {
         }
       }
 
-      // Si no se encontró, usar el Business ID del .env
-      if (!wabaAccountId && WABA_BUSINESS_ID) {
-        wabaAccountId = WABA_BUSINESS_ID;
+      // Si no se encontró, usar el Account ID del .env
+      if (!wabaAccountId && WABA_ACCOUNT_ID) {
+        wabaAccountId = WABA_ACCOUNT_ID;
       }
 
       if (!wabaAccountId) {
