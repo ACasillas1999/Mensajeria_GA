@@ -131,10 +131,8 @@ export default function ChatPane({ conversation }) {
   const [lastInboundTime, setLastInboundTime] = useState(null); // timestamp del último mensaje entrante
 
   // llamadas
-  const [callPermission, setCallPermission] = useState(null); // 'pending', 'approved', 'rejected', 'revoked', null
   const [showCallHistory, setShowCallHistory] = useState(false);
   const [callHistory, setCallHistory] = useState([]);
-  const [initiatingCall, setInitiatingCall] = useState(false);
 
   // atajos de respuestas rápidas (usar el caché del contexto)
   const shortcuts = allQuickReplies.filter(i => i.atajo);
@@ -938,66 +936,6 @@ function pickMime() {
   }
 
   // Funciones de llamadas
-  async function requestCallPermission() {
-    if (!conversation) return;
-    try {
-      const r = await fetch(`${BASE}/api/calls/request-permission`.replace(/\/\//g, '/'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversation.id,
-          to: conversation.wa_user
-        })
-      });
-      const j = await r.json();
-      if (j.ok) {
-        alert('✅ Solicitud de permiso enviada. El usuario recibirá un mensaje para aprobar las llamadas.');
-        setCallPermission('pending');
-      } else {
-        alert(j.error || 'Error al solicitar permiso');
-      }
-    } catch (err) {
-      alert('Error al solicitar permiso: ' + err.message);
-    }
-  }
-
-  async function initiateCall() {
-    if (!conversation) return;
-
-    if (!confirm(`¿Iniciar llamada a ${conversation.wa_profile_name || conversation.wa_user}?`)) {
-      return;
-    }
-
-    setInitiatingCall(true);
-    try {
-      const r = await fetch(`${BASE}/api/calls/initiate`.replace(/\/\//g, '/'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversation.id,
-          to: conversation.wa_user
-        })
-      });
-      const j = await r.json();
-      if (j.ok) {
-        alert('📞 Llamada iniciada. El usuario recibirá la llamada en WhatsApp.');
-        setCallPermission('approved'); // Marcar como aprobado después de una llamada exitosa
-      } else {
-        if (j.code === 'PERMISSION_REQUIRED') {
-          alert('⚠️ ' + j.error + '\n\nNota: El usuario debe haber interactuado contigo en las últimas 24 horas o haber dado permiso explícito.');
-        } else if (j.code === 'DAILY_LIMIT_REACHED') {
-          alert('⚠️ Se ha alcanzado el límite diario de llamadas para este usuario.');
-        } else {
-          alert(j.error || 'Error al iniciar llamada');
-        }
-      }
-    } catch (err) {
-      alert('Error al iniciar llamada: ' + err.message);
-    } finally {
-      setInitiatingCall(false);
-    }
-  }
-
   async function loadCallHistory() {
     if (!conversation) return;
     try {
@@ -1080,20 +1018,6 @@ function pickMime() {
           >
             📦
           </button>
-          {/* Botón de llamada */}
-          <button
-            type="button"
-            onClick={initiateCall}
-            disabled={initiatingCall}
-            title={callPermission === 'approved' ? "Iniciar llamada" : "Solicitar permiso y llamar"}
-            className={`h-8 px-2 rounded text-xs transition ${
-              callPermission === 'approved'
-                ? 'bg-emerald-600/20 border border-emerald-600/60 text-emerald-300 hover:bg-emerald-600/30'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            {initiatingCall ? '⏳' : '📞'}
-          </button>
           {/* Botón historial de llamadas */}
           <button
             type="button"
@@ -1101,7 +1025,7 @@ function pickMime() {
             title="Ver historial de llamadas"
             className="h-8 px-2 rounded text-xs bg-slate-800 hover:bg-slate-700 text-slate-400"
           >
-            📋
+            📞
           </button>
           {conversation.status_name && (
             <span
