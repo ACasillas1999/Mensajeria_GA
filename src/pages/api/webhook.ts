@@ -166,8 +166,11 @@ export const POST: APIRoute = async ({ request }) => {
       const changes = e?.changes ?? [];
       for (const c of changes) {
         // Procesar eventos de llamadas
-        if (c.field === 'calls') {
-          await processCallEvent(c.value);
+        const calls = c?.value?.calls;
+        if (Array.isArray(calls) && calls.length > 0) {
+          for (const call of calls) {
+            await processCallEvent({ ...c.value, call });
+          }
           continue;
         }
 
