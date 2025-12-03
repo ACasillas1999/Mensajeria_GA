@@ -3,6 +3,92 @@ import 'dotenv/config';
 import { pool } from '../../lib/db';
 import crypto from 'crypto';
 import { processAutoReply } from '../../lib/autoReply';
+import type { RowDataPacket } from 'mysql2/promise';
+
+/**
+ * Procesa eventos de llamadas de WhatsApp Business
+ */
+async function processCallEvent(value: any) {
+  try {
+    const call = value?.call;
+    if (!call) return;
+
+    const callId = call.id;
+    const from = call.from;
+    const to = call.to;
+    const timestamp = Number(call.timestamp || Date.now() / 1000);
+    const status = call.status; // 'initiated', 'ringing', 'in_progress', 'completed', 'failed', etc.
+
+    // Determinar dirección de la llamada
+    const direction = call.is_customer_initiated ? 'inbound' : 'outbound';
+
+    // Buscar o crear conversación
+    let convId: number;
+    const [found] = await pool.query<RowDataPacket[]>(
+      'SELECT id FROM conversaciones WHERE wa_user=? LIMIT 1',
+      [from]
+    );
+
+    if (found.length) {
+      convId = found[0].id;
+    } else {
+      const [ins] = await pool.query(
+        'INSERT INTO conversaciones (wa_user, estado) VALUES (?, "ABIERTA")',
+        [from]
+      );
+      convId = (ins as any).insertId;
+    }
+
+    // Insertar o actualizar el registro de llamada
+    const [existing] = await pool.query<RowDataPacket[]>(
+      'SELECT id, duration_seconds FROM whatsapp_calls WHERE wa_call_id=? LIMIT 1',
+      [callId]
+    );
+
+    if (existing.length) {
+      // Actualizar llamada existente
+      const duration = call.duration_seconds || existing[0].duration_seconds || 0;
+      const endTime = (status === 'completed' || status === 'failed') ? new Date(timestamp * 1000) : null;
+
+      await pool.query(
+        `UPDATE whatsapp_calls
+         SET status=?, duration_seconds=?, end_time=?, metadata=?, actualizado_en=CURRENT_TIMESTAMP
+         WHERE wa_call_id=?`,
+        [status, duration, endTime, JSON.stringify(call), callId]
+      );
+    } else {
+      // Crear nuevo registro de llamada
+      await pool.query(
+        `INSERT INTO whatsapp_calls
+         (conversacion_id, wa_call_id, direction, from_number, to_number, status, start_time, metadata)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [convId, callId, direction, from, to, status, new Date(timestamp * 1000), JSON.stringify(call)]
+      );
+    }
+
+    // Actualizar permisos si es una llamada iniciada por negocio
+    if (direction === 'outbound' && (status === 'no_answer' || status === 'rejected' || status === 'missed')) {
+      await pool.query(
+        `UPDATE call_permissions
+         SET consecutive_unanswered = consecutive_unanswered + 1
+         WHERE conversacion_id=?`,
+        [convId]
+      );
+    } else if (direction === 'outbound' && status === 'completed') {
+      // Resetear contador si la llamada fue completada
+      await pool.query(
+        `UPDATE call_permissions
+         SET consecutive_unanswered = 0
+         WHERE conversacion_id=?`,
+        [convId]
+      );
+    }
+
+    console.log('Call event processed:', { callId, direction, status });
+  } catch (err) {
+    console.error('Error processing call event:', err);
+  }
+}
 
 /**
  * Valida la firma X-Hub-Signature-256 de Meta/WhatsApp
@@ -67,7 +153,13 @@ export const POST: APIRoute = async ({ request }) => {
     for (const e of entries) {
       const changes = e?.changes ?? [];
       for (const c of changes) {
-        // (opcional) ignorar otros campos
+        // Procesar eventos de llamadas
+        if (c.field === 'calls') {
+          await processCallEvent(c.value);
+          continue;
+        }
+
+        // (opcional) ignorar otros campos que no sean messages
         if (c.field && c.field !== 'messages') {
           continue;
         }

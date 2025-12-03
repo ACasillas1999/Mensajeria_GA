@@ -130,6 +130,12 @@ export default function ChatPane({ conversation }) {
   const [timeRemaining, setTimeRemaining] = useState(null); // tiempo restante en ms
   const [lastInboundTime, setLastInboundTime] = useState(null); // timestamp del último mensaje entrante
 
+  // llamadas
+  const [callPermission, setCallPermission] = useState(null); // 'pending', 'approved', 'rejected', 'revoked', null
+  const [showCallHistory, setShowCallHistory] = useState(false);
+  const [callHistory, setCallHistory] = useState([]);
+  const [initiatingCall, setInitiatingCall] = useState(false);
+
   // atajos de respuestas rápidas (usar el caché del contexto)
   const shortcuts = allQuickReplies.filter(i => i.atajo);
   // menú de sugerencias de atajos
@@ -931,6 +937,92 @@ function pickMime() {
     }
   }
 
+  // Funciones de llamadas
+  async function requestCallPermission() {
+    if (!conversation) return;
+    try {
+      const r = await fetch(`${BASE}/api/calls/request-permission`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversation.id,
+          to: conversation.wa_user
+        })
+      });
+      const j = await r.json();
+      if (j.ok) {
+        alert('✅ Solicitud de permiso enviada. El usuario recibirá un mensaje para aprobar las llamadas.');
+        setCallPermission('pending');
+      } else {
+        alert(j.error || 'Error al solicitar permiso');
+      }
+    } catch (err) {
+      alert('Error al solicitar permiso: ' + err.message);
+    }
+  }
+
+  async function initiateCall() {
+    if (!conversation) return;
+    if (callPermission !== 'approved') {
+      if (confirm('El usuario no ha dado permiso para llamadas. ¿Deseas solicitar permiso primero?')) {
+        await requestCallPermission();
+      }
+      return;
+    }
+
+    if (!confirm(`¿Iniciar llamada a ${conversation.wa_profile_name || conversation.wa_user}?`)) {
+      return;
+    }
+
+    setInitiatingCall(true);
+    try {
+      const r = await fetch(`${BASE}/api/calls/initiate`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversation.id,
+          to: conversation.wa_user
+        })
+      });
+      const j = await r.json();
+      if (j.ok) {
+        alert('📞 Llamada iniciada. El usuario recibirá la llamada en WhatsApp.');
+      } else {
+        if (j.code === 'PERMISSION_REQUIRED') {
+          if (confirm('Se requiere permiso del usuario. ¿Deseas solicitarlo ahora?')) {
+            await requestCallPermission();
+          }
+        } else if (j.code === 'DAILY_LIMIT_REACHED') {
+          alert('⚠️ Se ha alcanzado el límite diario de llamadas para este usuario.');
+        } else {
+          alert(j.error || 'Error al iniciar llamada');
+        }
+      }
+    } catch (err) {
+      alert('Error al iniciar llamada: ' + err.message);
+    } finally {
+      setInitiatingCall(false);
+    }
+  }
+
+  async function loadCallHistory() {
+    if (!conversation) return;
+    try {
+      const r = await fetch(
+        `${BASE}/api/calls/history?conversation_id=${conversation.id}`.replace(/\/\//g, '/')
+      );
+      const j = await r.json();
+      if (j.ok) {
+        setCallHistory(j.calls || []);
+        setShowCallHistory(true);
+      } else {
+        alert(j.error || 'Error cargando historial');
+      }
+    } catch (err) {
+      console.error('Error loading call history:', err);
+    }
+  }
+
   if (!conversation) {
     return (
       <div className="bg-slate-950/70 border border-slate-800 rounded-xl h-[calc(100vh-14rem)] flex items-center justify-center">
@@ -994,6 +1086,29 @@ function pickMime() {
             }`}
           >
             📦
+          </button>
+          {/* Botón de llamada */}
+          <button
+            type="button"
+            onClick={initiateCall}
+            disabled={initiatingCall}
+            title={callPermission === 'approved' ? "Iniciar llamada" : "Solicitar permiso y llamar"}
+            className={`h-8 px-2 rounded text-xs transition ${
+              callPermission === 'approved'
+                ? 'bg-emerald-600/20 border border-emerald-600/60 text-emerald-300 hover:bg-emerald-600/30'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {initiatingCall ? '⏳' : '📞'}
+          </button>
+          {/* Botón historial de llamadas */}
+          <button
+            type="button"
+            onClick={loadCallHistory}
+            title="Ver historial de llamadas"
+            className="h-8 px-2 rounded text-xs bg-slate-800 hover:bg-slate-700 text-slate-400"
+          >
+            📋
           </button>
           {conversation.status_name && (
             <span
@@ -1357,6 +1472,80 @@ function pickMime() {
       )}
 
       {/* Modal Plantillas */}
+      {/* Modal de historial de llamadas */}
+      {showCallHistory && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCallHistory(false)}>
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[70vh] overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center mb-4">
+              <h3 className="font-semibold text-lg">📞 Historial de Llamadas</h3>
+              <button className="ml-auto px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm" onClick={() => setShowCallHistory(false)}>✕</button>
+            </div>
+            {callHistory.length === 0 ? (
+              <div className="text-slate-400 text-sm py-8 text-center">
+                No hay llamadas registradas para esta conversación.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {callHistory.map((call) => (
+                  <div
+                    key={call.id}
+                    className="p-4 rounded-lg border border-slate-800 bg-slate-900/50"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-lg ${call.direction === 'outbound' ? 'text-emerald-400' : 'text-sky-400'}`}>
+                            {call.direction === 'outbound' ? '📞→' : '📞←'}
+                          </span>
+                          <span className="font-medium text-slate-200">
+                            {call.direction === 'outbound' ? 'Llamada saliente' : 'Llamada entrante'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          {new Date(call.start_time).toLocaleString('es-ES')}
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs px-2 py-1 rounded border ${
+                          call.status === 'completed'
+                            ? 'bg-emerald-900/30 border-emerald-700 text-emerald-300'
+                            : call.status === 'missed' || call.status === 'no_answer'
+                            ? 'bg-amber-900/30 border-amber-700 text-amber-300'
+                            : call.status === 'failed' || call.status === 'rejected'
+                            ? 'bg-red-900/30 border-red-700 text-red-300'
+                            : 'bg-slate-800 border-slate-700 text-slate-400'
+                        }`}
+                      >
+                        {call.status === 'completed' ? '✓ Completada' :
+                         call.status === 'missed' ? '⊗ Perdida' :
+                         call.status === 'no_answer' ? '⊗ Sin respuesta' :
+                         call.status === 'rejected' ? '✕ Rechazada' :
+                         call.status === 'failed' ? '✕ Fallida' :
+                         call.status === 'in_progress' ? '⏳ En curso' :
+                         call.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                      {call.duration_seconds > 0 && (
+                        <span>⏱ Duración: {Math.floor(call.duration_seconds / 60)}:{(call.duration_seconds % 60).toString().padStart(2, '0')}</span>
+                      )}
+                      {call.agent_name && (
+                        <span>👤 Agente: {call.agent_name}</span>
+                      )}
+                    </div>
+                    {call.notes && (
+                      <div className="mt-2 text-sm text-slate-400 bg-slate-800/50 p-2 rounded">
+                        {call.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showTemplates && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowTemplates(false)}>
           <div className="bg-slate-950 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[70vh] overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
