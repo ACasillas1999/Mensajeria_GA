@@ -606,6 +606,11 @@ function pickMime() {
   // SSE: Recibir mensajes en tiempo real
   const handleRealtimeMessages = useCallback((newMessages) => {
     if (!Array.isArray(newMessages)) return;
+
+    // Verificar si el usuario está en el fondo del scroll antes de actualizar
+    const sc = scrollerRef.current;
+    const wasAtBottom = !sc || (sc.scrollHeight - sc.scrollTop - sc.clientHeight < 100);
+
     setItems((prev) => {
       const existingWaIds = new Set(prev.map(m => m.wa_msg_id).filter(Boolean));
       const existingDbIds = new Set(prev.map(m => m.id).filter(id => !String(id).startsWith('tmp_')));
@@ -629,6 +634,11 @@ function pickMime() {
         }));
 
       if (toAdd.length === 0) return prev;
+
+      // Solo hacer scroll si estaba en el fondo
+      if (wasAtBottom) {
+        requestAnimationFrame(() => scrollToBottom());
+      }
 
       // Reemplazar mensajes temporales con los reales
       const updated = prev.map(m => {
