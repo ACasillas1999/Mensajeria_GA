@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { pool } from '../../lib/db';
 import crypto from 'crypto';
 import { processAutoReply } from '../../lib/autoReply';
+import { broadcastToConversation } from './events';
 import type { RowDataPacket } from 'mysql2/promise';
 
 /**
@@ -83,6 +84,17 @@ async function processCallEvent(value: any) {
         [convId]
       );
     }
+
+    // Emitir evento en tiempo real para notificar a los clientes conectados
+    broadcastToConversation(convId, 'call', {
+      conversation_id: convId,
+      call_id: callId,
+      direction,
+      from,
+      to,
+      status,
+      timestamp
+    });
 
     console.log('Call event processed:', { callId, direction, status });
   } catch (err) {

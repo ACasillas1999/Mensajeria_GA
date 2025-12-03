@@ -133,6 +133,7 @@ export default function ChatPane({ conversation }) {
   // llamadas
   const [showCallHistory, setShowCallHistory] = useState(false);
   const [callHistory, setCallHistory] = useState([]);
+  const [incomingCall, setIncomingCall] = useState(null); // {call_id, from, to, status}
 
   // atajos de respuestas rápidas (usar el caché del contexto)
   const shortcuts = allQuickReplies.filter(i => i.atajo);
@@ -693,12 +694,44 @@ function pickMime() {
     });
   }, []);
 
+  // Manejar eventos de llamadas en tiempo real
+  const handleRealtimeCall = useCallback((callData) => {
+    if (!callData) return;
+
+    // Solo mostrar notificación para llamadas entrantes
+    if (callData.direction === 'inbound' && (callData.status === 'initiated' || callData.status === 'ringing')) {
+      setIncomingCall(callData);
+
+      // Reproducir sonido si está disponible
+      if (ding) {
+        ding.play().catch(() => {});
+      }
+
+      // Auto-ocultar después de 30 segundos o cuando cambie el estado
+      setTimeout(() => {
+        setIncomingCall(prev => {
+          if (prev?.call_id === callData.call_id) return null;
+          return prev;
+        });
+      }, 30000);
+    }
+
+    // Si la llamada termina, ocultar la notificación
+    if (callData.status === 'completed' || callData.status === 'failed' || callData.status === 'no_answer' || callData.status === 'rejected') {
+      setIncomingCall(prev => {
+        if (prev?.call_id === callData.call_id) return null;
+        return prev;
+      });
+    }
+  }, []);
+
   // Conectar SSE para esta conversación
   useRealtimeChat({
     conversationId: conversation?.id,
     onMessage: handleRealtimeMessages,
     onStatus: handleRealtimeStatus,
     onComments: handleRealtimeComments,
+    onCall: handleRealtimeCall,
     enabled: !!conversation,
   });
 
@@ -1459,6 +1492,50 @@ function pickMime() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Notificación de llamada entrante */}
+      {incomingCall && (
+        <div className="fixed top-4 right-4 z-50 animate-bounce-subtle">
+          <div className="bg-gradient-to-r from-emerald-600 to-sky-600 border-2 border-white rounded-2xl p-6 shadow-2xl max-w-sm">
+            <div className="flex items-start gap-4">
+              <div className="text-5xl animate-pulse">📞</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-xl text-white mb-1">Llamada Entrante</h3>
+                <p className="text-emerald-50 text-sm mb-2">
+                  {conversation.wa_profile_name || conversation.wa_user}
+                </p>
+                <p className="text-white/80 text-xs">
+                  {incomingCall.status === 'initiated' && 'Iniciando llamada...'}
+                  {incomingCall.status === 'ringing' && 'Sonando...'}
+                </p>
+              </div>
+              <button
+                onClick={() => setIncomingCall(null)}
+                className="text-white/80 hover:text-white text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => {
+                  loadCallHistory();
+                  setIncomingCall(null);
+                }}
+                className="flex-1 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                Ver Detalles
+              </button>
+              <button
+                onClick={() => setIncomingCall(null)}
+                className="flex-1 bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

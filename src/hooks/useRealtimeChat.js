@@ -10,6 +10,7 @@ const BASE = import.meta.env.BASE_URL || '';
  * @param {function} options.onStatus - Callback cuando cambian estados de mensajes
  * @param {function} options.onConversations - Callback cuando se actualizan conversaciones
  * @param {function} options.onComments - Callback cuando se crean nuevos comentarios internos
+ * @param {function} options.onCall - Callback cuando llega una llamada
  * @param {boolean} options.enabled - Si está habilitado (default: true)
  */
 export function useRealtimeChat({
@@ -18,6 +19,7 @@ export function useRealtimeChat({
   onStatus,
   onConversations,
   onComments,
+  onCall,
   enabled = true,
 } = {}) {
   const eventSourceRef = useRef(null);
@@ -91,10 +93,18 @@ export function useRealtimeChat({
         } catch {}
       });
 
+      // Escuchar eventos de llamadas
+      es.addEventListener('call', (e) => {
+        try {
+          const callData = JSON.parse(e.data);
+          onCall?.(callData);
+        } catch {}
+      });
+
     } catch (err) {
       console.error('[SSE] Error al crear conexión:', err);
     }
-  }, [conversationId, enabled, onMessage, onStatus, onConversations, onComments]);
+  }, [conversationId, enabled, onMessage, onStatus, onConversations, onComments, onCall]);
 
   useEffect(() => {
     connect();
