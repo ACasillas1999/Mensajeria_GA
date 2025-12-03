@@ -4,6 +4,7 @@ import { pool } from '../../lib/db';
 
 const WABA_TOKEN = process.env.WABA_TOKEN;
 const WABA_BUSINESS_ID = process.env.WABA_BUSINESS_ID;
+const WABA_PHONE_ID = process.env.WABA_PHONE_NUMBER_ID || process.env.WABA_PHONE_ID;
 const WABA_VERSION = process.env.WABA_VERSION || 'v20.0';
 
 const syncTemplates: APIRoute = async ({ locals }) => {
@@ -16,23 +17,49 @@ const syncTemplates: APIRoute = async ({ locals }) => {
       );
     }
 
-    if (!WABA_TOKEN || !WABA_BUSINESS_ID) {
+    if (!WABA_TOKEN) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Faltan credenciales WABA_TOKEN o WABA_BUSINESS_ID' }),
+        JSON.stringify({ ok: false, error: 'Falta WABA_TOKEN en las variables de entorno' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Obtener plantillas de Meta
-    const response = await axios.get(
-      `https://graph.facebook.com/${WABA_VERSION}/${WABA_BUSINESS_ID}/message_templates`,
-      {
-        headers: { Authorization: `Bearer ${WABA_TOKEN}` },
-        params: {
-          limit: 100, // Ajusta según necesites
-        },
+    // Intentar primero con Business ID, si falla usar Phone Number ID
+    let response;
+    let templatesUrl;
+
+    try {
+      // Opción 1: Usar Business Account ID (requiere permisos específicos)
+      if (WABA_BUSINESS_ID) {
+        templatesUrl = `https://graph.facebook.com/${WABA_VERSION}/${WABA_BUSINESS_ID}/message_templates`;
+        console.log('Intentando sincronizar con Business ID:', templatesUrl);
+        response = await axios.get(templatesUrl, {
+          headers: { Authorization: `Bearer ${WABA_TOKEN}` },
+          params: { limit: 100 },
+        });
       }
-    );
+    } catch (businessError: any) {
+      console.error('Error con Business ID, intentando con Phone Number ID...', businessError?.response?.data);
+
+      // Opción 2: Usar WhatsApp Business Phone Number ID (más común)
+      if (WABA_PHONE_ID) {
+        templatesUrl = `https://graph.facebook.com/${WABA_VERSION}/${WABA_PHONE_ID}/message_templates`;
+        console.log('Intentando sincronizar con Phone Number ID:', templatesUrl);
+        response = await axios.get(templatesUrl, {
+          headers: { Authorization: `Bearer ${WABA_TOKEN}` },
+          params: { limit: 100 },
+        });
+      } else {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: 'No se pudo acceder a las plantillas. Verifica WABA_BUSINESS_ID o WABA_PHONE_NUMBER_ID en el .env',
+            details: businessError?.response?.data?.error?.message
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     const templates = response.data?.data || [];
     let synced = 0;
