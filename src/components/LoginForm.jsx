@@ -46,7 +46,7 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className={formClass}>
-      <h2 className="text-xl font-semibold mb-4">Iniciar sesión</h2>
+      <h2 className="text-xl font-semibold mb-4">Iniciar preuba sesión</h2>
 
       <input
         type="email"
