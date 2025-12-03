@@ -29,11 +29,16 @@ function sendEvent(clientId: string, event: string, data: any) {
 
 // Función para broadcast a todos los clientes de una conversación
 export function broadcastToConversation(conversationId: number, event: string, data: any) {
+  console.log(`[SSE] Broadcasting ${event} to conversation ${conversationId}, total clients:`, clients.size);
+  let sentCount = 0;
   clients.forEach((client, clientId) => {
     if (client.conversationId === conversationId) {
+      console.log(`[SSE] Sending ${event} to client ${clientId}`);
       sendEvent(clientId, event, data);
+      sentCount++;
     }
   });
+  console.log(`[SSE] Sent ${event} to ${sentCount} clients for conversation ${conversationId}`);
 }
 
 // Función para broadcast a todos los clientes

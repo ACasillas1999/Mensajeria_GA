@@ -86,6 +86,7 @@ async function processCallEvent(value: any) {
     }
 
     // Emitir evento en tiempo real para notificar a los clientes conectados
+    console.log('Broadcasting call event to conversation:', convId);
     broadcastToConversation(convId, 'call', {
       conversation_id: convId,
       call_id: callId,
