@@ -500,17 +500,20 @@ function pickMime() {
     }
   }
 
-  // Cargar plantillas disponibles (usamos una sola plantilla fija)
-  function loadTemplates() {
-    setTemplates([
-      {
-        id: "ga_notificarchofer",
-        nombre: "ga_notificarchofer",
-        idioma: "en_US",
-        categoria: "UTILITY",
-        body_text: "Notificación al chofer.",
-      },
-    ]);
+  // Cargar plantillas disponibles desde la base de datos
+  async function loadTemplates() {
+    try {
+      const res = await fetch(`${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/'));
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.items)) {
+        setTemplates(data.items);
+      } else {
+        setTemplates([]);
+      }
+    } catch (err) {
+      console.error('Error cargando plantillas:', err);
+      setTemplates([]);
+    }
   }
 
   // Enviar plantilla
@@ -1364,21 +1367,38 @@ function pickMime() {
             {templates.length === 0 ? (
               <div className="text-slate-400 text-sm py-8 text-center">
                 No hay plantillas aprobadas disponibles.<br/>
-                <span className="text-xs">Las plantillas deben ser aprobadas por Meta antes de poder usarse.</span>
+                <span className="text-xs mt-2 block">Las plantillas deben ser aprobadas por Meta antes de poder usarse.</span>
+                <span className="text-xs mt-2 block text-emerald-400">Ve a Admin → Plantillas para sincronizar desde Meta.</span>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {templates.map((tpl) => (
                   <button
                     key={tpl.id}
                     onClick={() => sendTemplate(tpl)}
-                    className="w-full text-left p-3 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800/70 hover:border-emerald-700/50 transition"
+                    className="w-full text-left p-4 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800/70 hover:border-emerald-700/50 transition group"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-200">{tpl.nombre}</span>
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400">{tpl.categoria}</span>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold text-slate-200 group-hover:text-emerald-400 transition">{tpl.nombre}</span>
+                      <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-emerald-800/50">{tpl.categoria}</span>
+                      <span className="text-xs text-slate-500 ml-auto">{tpl.idioma}</span>
                     </div>
-                    <div className="text-sm text-slate-400 mt-1 line-clamp-2">{tpl.body_text}</div>
+                    {tpl.header_text && (
+                      <div className="text-xs font-medium text-slate-300 mb-1">📋 {tpl.header_text}</div>
+                    )}
+                    <div className="text-sm text-slate-400 whitespace-pre-wrap">{tpl.body_text}</div>
+                    {tpl.footer_text && (
+                      <div className="text-xs text-slate-500 mt-2 italic">{tpl.footer_text}</div>
+                    )}
+                    {tpl.buttons && tpl.buttons.length > 0 && (
+                      <div className="flex gap-2 mt-2">
+                        {tpl.buttons.map((btn, i) => (
+                          <div key={i} className="text-xs px-2 py-1 rounded bg-slate-800/50 text-slate-400 border border-slate-700">
+                            {btn.text || btn}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
