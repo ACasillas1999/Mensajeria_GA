@@ -21,7 +21,10 @@ async function processCallEvent(value: any) {
     const status = call.status; // 'initiated', 'ringing', 'in_progress', 'completed', 'failed', etc.
 
     // Determinar dirección de la llamada
-    const direction = call.is_customer_initiated ? 'inbound' : 'outbound';
+    // Si el 'from' NO es nuestro número de negocio, es una llamada entrante del cliente
+    const BUSINESS_PHONE = process.env.WABA_PHONE_NUMBER_ID || process.env.WABA_PHONE_ID;
+    const isInbound = from && from !== BUSINESS_PHONE;
+    const direction = isInbound ? 'inbound' : 'outbound';
 
     // Buscar o crear conversación
     let convId: number;
