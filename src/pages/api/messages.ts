@@ -50,7 +50,7 @@ export const GET: APIRoute = async ({ request }) => {
           m.client_reaction_emoji,
           m.usuario_id,
           u.nombre AS usuario_nombre,
-          COALESCE(m.creado_en, FROM_UNIXTIME(m.ts)) AS creado_en,
+          COALESCE(UNIX_TIMESTAMP(m.creado_en), m.ts) AS ts,
           COALESCE(UNIX_TIMESTAMP(m.creado_en), m.ts) AS sort_ts
         FROM mensajes m
         LEFT JOIN usuarios u ON u.id = m.usuario_id
@@ -70,7 +70,8 @@ export const GET: APIRoute = async ({ request }) => {
         id: r.id,
         conversation_id: r.conversacion_id,
         text,
-        created_at: r.creado_en,
+        ts: (r as any).ts, // Timestamp Unix en segundos
+        created_at: new Date((r as any).ts * 1000).toISOString(), // ISO string para compatibilidad
         sender: r.from_me ? "me" : "them",
         is_auto_reply: !!(r as any).is_auto_reply,
         tipo: r.tipo,
