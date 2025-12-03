@@ -44,7 +44,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // Verificar permisos de llamada
+    // Verificar permisos de llamada (opcional - solo advertir si hay problemas)
     const [perm] = await pool.query<RowDataPacket[]>(
       `SELECT permission_status, consecutive_unanswered, permission_expires_at
        FROM call_permissions
@@ -52,38 +52,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       [conversation_id]
     );
 
-    if (!perm.length || perm[0].permission_status !== 'approved') {
+    // Verificar límite de llamadas consecutivas sin respuesta si existe el registro
+    if (perm.length && perm[0].consecutive_unanswered >= 4) {
       return new Response(
         JSON.stringify({
           ok: false,
-          error: 'El usuario no ha dado permiso para recibir llamadas',
-          code: 'PERMISSION_REQUIRED'
-        }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Verificar si el permiso ha expirado
-    if (perm[0].permission_expires_at) {
-      const expiresAt = new Date(perm[0].permission_expires_at);
-      if (expiresAt < new Date()) {
-        return new Response(
-          JSON.stringify({
-            ok: false,
-            error: 'El permiso para llamar ha expirado',
-            code: 'PERMISSION_EXPIRED'
-          }),
-          { status: 403, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    // Verificar límite de llamadas consecutivas sin respuesta
-    if (perm[0].consecutive_unanswered >= 4) {
-      return new Response(
-        JSON.stringify({
-          ok: false,
-          error: 'Se ha alcanzado el límite de llamadas sin respuesta. El permiso será revocado.',
+          error: 'Se ha alcanzado el límite de llamadas sin respuesta consecutivas.',
           code: 'TOO_MANY_UNANSWERED'
         }),
         { status: 429, headers: { 'Content-Type': 'application/json' } }

@@ -963,12 +963,6 @@ function pickMime() {
 
   async function initiateCall() {
     if (!conversation) return;
-    if (callPermission !== 'approved') {
-      if (confirm('El usuario no ha dado permiso para llamadas. ¿Deseas solicitar permiso primero?')) {
-        await requestCallPermission();
-      }
-      return;
-    }
 
     if (!confirm(`¿Iniciar llamada a ${conversation.wa_profile_name || conversation.wa_user}?`)) {
       return;
@@ -987,11 +981,10 @@ function pickMime() {
       const j = await r.json();
       if (j.ok) {
         alert('📞 Llamada iniciada. El usuario recibirá la llamada en WhatsApp.');
+        setCallPermission('approved'); // Marcar como aprobado después de una llamada exitosa
       } else {
         if (j.code === 'PERMISSION_REQUIRED') {
-          if (confirm('Se requiere permiso del usuario. ¿Deseas solicitarlo ahora?')) {
-            await requestCallPermission();
-          }
+          alert('⚠️ ' + j.error + '\n\nNota: El usuario debe haber interactuado contigo en las últimas 24 horas o haber dado permiso explícito.');
         } else if (j.code === 'DAILY_LIMIT_REACHED') {
           alert('⚠️ Se ha alcanzado el límite diario de llamadas para este usuario.');
         } else {
