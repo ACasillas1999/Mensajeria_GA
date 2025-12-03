@@ -95,6 +95,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const response = await axios.post(
       callUrl,
       {
+        messaging_product: 'whatsapp',
         to,
         type: 'voice'
       },
