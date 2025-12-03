@@ -68,23 +68,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     // Enviar solicitud de permiso a través de la API de WhatsApp
-    const messageUrl = `https://graph.facebook.com/${WABA_VERSION}/${WABA_PHONE_ID}/messages`;
+    // Usamos el endpoint específico para solicitar permisos de llamada
+    const permissionUrl = `https://graph.facebook.com/${WABA_VERSION}/${WABA_PHONE_ID}/call_permissions`;
 
     const response = await axios.post(
-      messageUrl,
+      permissionUrl,
       {
         messaging_product: 'whatsapp',
-        to,
-        type: 'interactive',
-        interactive: {
-          type: 'call_permission_request',
-          body: {
-            text: 'Nos gustaría poder llamarte por WhatsApp para brindarte un mejor servicio. ¿Nos autorizas a hacerlo?'
-          },
-          action: {
-            name: 'request_call_permission'
-          }
-        }
+        to
       },
       {
         headers: {
