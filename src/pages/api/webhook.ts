@@ -18,7 +18,7 @@ async function processCallEvent(value: any) {
     const from = call.from;
     const to = call.to;
     const timestamp = Number(call.timestamp || Date.now() / 1000);
-    const status = call.status; // 'initiated', 'ringing', 'in_progress', 'completed', 'failed', etc.
+    const status = call.status ? call.status.toLowerCase() : 'initiated'; // Normalizar a minúsculas
 
     // Determinar dirección de la llamada
     // Si el 'from' NO es nuestro número de negocio, es una llamada entrante del cliente

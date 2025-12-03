@@ -698,8 +698,14 @@ function pickMime() {
   const handleRealtimeCall = useCallback((callData) => {
     if (!callData) return;
 
-    // Solo mostrar notificación para llamadas entrantes
-    if (callData.direction === 'inbound' && (callData.status === 'initiated' || callData.status === 'ringing')) {
+    console.log('[Call] Received call event:', callData);
+
+    // Solo mostrar notificación para llamadas entrantes activas
+    const activeStatuses = ['initiated', 'ringing', 'in_progress'];
+    const endedStatuses = ['completed', 'failed', 'no_answer', 'rejected', 'missed'];
+
+    if (callData.direction === 'inbound' && activeStatuses.includes(callData.status)) {
+      console.log('[Call] Showing incoming call notification');
       setIncomingCall(callData);
 
       // Reproducir sonido si está disponible
@@ -717,7 +723,8 @@ function pickMime() {
     }
 
     // Si la llamada termina, ocultar la notificación
-    if (callData.status === 'completed' || callData.status === 'failed' || callData.status === 'no_answer' || callData.status === 'rejected') {
+    if (endedStatuses.includes(callData.status)) {
+      console.log('[Call] Hiding call notification - call ended');
       setIncomingCall(prev => {
         if (prev?.call_id === callData.call_id) return null;
         return prev;
