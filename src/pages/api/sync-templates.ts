@@ -3,7 +3,7 @@ import axios from 'axios';
 import { pool } from '../../lib/db';
 
 const WABA_TOKEN = process.env.WABA_TOKEN;
-const WABA_BUSINESS_ID = process.env.WABA_BUSINESS_ID;
+const WABA_ACCOUNT_ID = process.env.WABA_ACCOUNT_ID || process.env.WABA_BUSINESS_ID;
 const WABA_PHONE_ID = process.env.WABA_PHONE_NUMBER_ID || process.env.WABA_PHONE_ID;
 const WABA_VERSION = process.env.WABA_VERSION || 'v20.0';
 
