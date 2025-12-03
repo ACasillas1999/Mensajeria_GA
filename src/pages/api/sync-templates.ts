@@ -24,48 +24,66 @@ const syncTemplates: APIRoute = async ({ locals }) => {
       );
     }
 
-    // Intentar primero con Business ID, si falla usar Phone Number ID
-    let response;
-    let templatesUrl;
+    // Primero obtener el WABA ID desde el Phone Number
+    let wabaAccountId;
 
     try {
-      // Opción 1: Usar Business Account ID (requiere permisos específicos)
-      if (WABA_BUSINESS_ID) {
-        templatesUrl = `https://graph.facebook.com/${WABA_VERSION}/${WABA_BUSINESS_ID}/message_templates`;
-        console.log('Intentando sincronizar con Business ID:', templatesUrl);
-        response = await axios.get(templatesUrl, {
-          headers: { Authorization: `Bearer ${WABA_TOKEN}` },
-          params: { limit: 100 },
-        });
-      }
-    } catch (businessError: any) {
-      console.error('Error con Business ID, intentando con Phone Number ID...', businessError?.response?.data);
-
-      // Opción 2: Usar WhatsApp Business Phone Number ID (más común)
       if (WABA_PHONE_ID) {
-        templatesUrl = `https://graph.facebook.com/${WABA_VERSION}/${WABA_PHONE_ID}/message_templates`;
-        console.log('Intentando sincronizar con Phone Number ID:', templatesUrl);
-        response = await axios.get(templatesUrl, {
-          headers: { Authorization: `Bearer ${WABA_TOKEN}` },
-          params: { limit: 100 },
-        });
-      } else {
+        console.log('Obteniendo WABA Account ID desde Phone Number...');
+        const phoneInfo = await axios.get(
+          `https://graph.facebook.com/${WABA_VERSION}/${WABA_PHONE_ID}`,
+          {
+            headers: { Authorization: `Bearer ${WABA_TOKEN}` },
+            params: { fields: 'id,verified_name,code_verification_status,display_phone_number,quality_rating,account_mode' },
+          }
+        );
+
+        // Intentar obtener el WABA parent
+        try {
+          const wabaInfo = await axios.get(
+            `https://graph.facebook.com/${WABA_VERSION}/${WABA_PHONE_ID}`,
+            {
+              headers: { Authorization: `Bearer ${WABA_TOKEN}` },
+              params: { fields: 'whatsapp_business_account' },
+            }
+          );
+          wabaAccountId = wabaInfo.data?.whatsapp_business_account?.id;
+          console.log('WABA Account ID encontrado:', wabaAccountId);
+        } catch (e) {
+          console.log('No se pudo obtener WABA desde phone, intentando con Business ID directo...');
+        }
+      }
+
+      // Si no se encontró, usar el Business ID del .env
+      if (!wabaAccountId && WABA_BUSINESS_ID) {
+        wabaAccountId = WABA_BUSINESS_ID;
+      }
+
+      if (!wabaAccountId) {
         return new Response(
           JSON.stringify({
             ok: false,
-            error: 'No se pudo acceder a las plantillas. Verifica WABA_BUSINESS_ID o WABA_PHONE_NUMBER_ID en el .env',
-            details: businessError?.response?.data?.error?.message
+            error: 'No se pudo obtener el WhatsApp Business Account ID. Verifica tu configuración.',
+            help: 'Necesitas agregar WABA_ACCOUNT_ID en el .env o asegurar que tu token tenga permisos para leer la cuenta.'
           }),
           { status: 500, headers: { 'Content-Type': 'application/json' } }
         );
       }
-    }
 
-    const templates = response.data?.data || [];
-    let synced = 0;
-    let errors = 0;
+      // Obtener plantillas del WABA Account
+      const templatesUrl = `https://graph.facebook.com/${WABA_VERSION}/${wabaAccountId}/message_templates`;
+      console.log('Obteniendo plantillas desde:', templatesUrl);
 
-    for (const tpl of templates) {
+      const response = await axios.get(templatesUrl, {
+        headers: { Authorization: `Bearer ${WABA_TOKEN}` },
+        params: { limit: 100 },
+      });
+
+      const templates = response.data?.data || [];
+      let synced = 0;
+      let errors = 0;
+
+      for (const tpl of templates) {
       try {
         const nombre = tpl.name;
         const idioma = tpl.language || 'es';
@@ -123,16 +141,26 @@ const syncTemplates: APIRoute = async ({ locals }) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        message: `Sincronizadas ${synced} plantillas (${errors} errores)`,
-        total: templates.length,
-        synced,
-        errors,
-      }),
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          message: `Sincronizadas ${synced} plantillas (${errors} errores)`,
+          total: templates.length,
+          synced,
+          errors,
+        }),
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+    } catch (innerErr: any) {
+      console.error('Error obteniendo plantillas:', innerErr?.response?.data || innerErr?.message);
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: innerErr?.response?.data?.error?.message || innerErr?.message || 'Error obteniendo plantillas'
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
   } catch (err: any) {
     console.error('Error en sync-templates:', err?.response?.data || err?.message);
     const errorMsg = err?.response?.data?.error?.message || err?.message || 'Error sincronizando plantillas';
