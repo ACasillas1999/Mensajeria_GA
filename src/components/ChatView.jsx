@@ -16,19 +16,48 @@ export default function ChatView({ conversation }) {
   const [recSecs, setRecSecs] = useState(0)
   const recTimerRef = useRef(null)
 
-  // Cargar y refrescar mensajes cada 5s
+  // Cargar mensajes iniciales y conectar SSE para actualizaciones en tiempo real
   useEffect(() => {
     if (!conversation) return
     let cancel = false
+    let eventSource = null
 
     async function load() {
       const r = await fetch(`${BASE}/api/messages?conversation_id=${conversation.id}`.replace(/\/\//g, '/'))
       const data = await r.json()
-      if (!cancel) setMsgs(data)
+      if (!cancel && data.ok) {
+        setMsgs(data.items || [])
+
+        // Conectar SSE para actualizaciones en tiempo real
+        eventSource = new EventSource(`${BASE}/api/events?conversation_id=${conversation.id}`.replace(/\/\//g, '/'))
+
+        eventSource.addEventListener('messages', (e) => {
+          const newMessages = JSON.parse(e.data)
+          setMsgs(prev => {
+            const existing = new Set(prev.map(m => m.id))
+            const toAdd = newMessages.filter(m => !existing.has(m.id))
+            return toAdd.length > 0 ? [...prev, ...toAdd] : prev
+          })
+        })
+
+        eventSource.addEventListener('status', (e) => {
+          const updates = JSON.parse(e.data)
+          setMsgs(prev => prev.map(m => {
+            const upd = updates.find(u => u.id === m.id)
+            return upd ? { ...m, status: upd.status } : m
+          }))
+        })
+
+        eventSource.onerror = () => {
+          console.warn('SSE connection error, will retry automatically')
+        }
+      }
     }
     load()
-    const t = setInterval(load, 5000)
-    return () => { cancel = true; clearInterval(t) }
+    return () => {
+      cancel = true
+      if (eventSource) eventSource.close()
+    }
   }, [conversation])
 
   // Auto-scroll al último
