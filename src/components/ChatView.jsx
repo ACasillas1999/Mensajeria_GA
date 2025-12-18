@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import TemplatePicker from './TemplatePicker.jsx'
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -7,6 +8,7 @@ export default function ChatView({ conversation }) {
   const [text, setText] = useState('')
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false)
 
   // ---- Grabación ----
   const recRef = useRef(null)           // MediaRecorder
@@ -327,12 +329,29 @@ export default function ChatView({ conversation }) {
               accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
               onChange={attachAndSend}
             />
-            <button onClick={pickFile} className="px-3 py-2 border rounded">📎</button>
-            <button onClick={startRec} className="px-3 py-2 border rounded">🎙</button>
+            <button onClick={pickFile} className="px-3 py-2 border rounded" title="Adjuntar archivo">📎</button>
+            <button onClick={startRec} className="px-3 py-2 border rounded" title="Grabar nota de voz">🎙</button>
+            <button onClick={() => setShowTemplatePicker(true)} className="px-3 py-2 border rounded bg-blue-50 hover:bg-blue-100" title="Enviar plantilla">📋</button>
             <button onClick={send} className="px-4 py-2 bg-green-600 text-white rounded">Enviar</button>
           </>
         )}
       </div>
+
+      {/* Modal de plantillas */}
+      {showTemplatePicker && (
+        <TemplatePicker
+          conversation={conversation}
+          onClose={() => setShowTemplatePicker(false)}
+          onSent={() => {
+            // Recargar mensajes después de enviar plantilla
+            setTimeout(async () => {
+              const r = await fetch(`${BASE}/api/messages?conversation_id=${conversation.id}`.replace(/\/\//g, '/'))
+              const data = await r.json()
+              if (data.ok) setMsgs(data.items || [])
+            }, 500)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro'
+
+const user = Astro.locals.user
+if (!user) return Astro.redirect('/login')
+---
+
+<Layout title="Plantillas WhatsApp">
+  <div id="root"></div>
+</Layout>
+
+<script>
+  import { createRoot } from 'react-dom/client'
+  import { createElement } from 'react'
+  import TemplatesManager from '../components/TemplatesManager.jsx'
+
+  const root = createRoot(document.getElementById('root')!)
+  root.render(createElement(TemplatesManager))
+</script>
