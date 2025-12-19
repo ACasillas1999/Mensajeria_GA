@@ -149,11 +149,24 @@ export default function ChatView({ conversation }) {
 
   // ---- Grabación de nota de voz ----
  function pickBestAudioMime() {
-  // Solo aceptamos OGG/Opus; si no hay soporte, no grabamos.
-  const ogg = 'audio/ogg;codecs=opus'
-  if (window.MediaRecorder && MediaRecorder.isTypeSupported?.(ogg)) {
-    return { mime: ogg, ext: 'ogg' }
+  // Intentar diferentes formatos de audio soportados
+  const formats = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/mp4',
+    'audio/mpeg'
+  ]
+
+  for (const format of formats) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported?.(format)) {
+      const ext = format.includes('webm') ? 'webm' :
+                  format.includes('ogg') ? 'ogg' :
+                  format.includes('mp4') ? 'mp4' : 'webm'
+      return { mime: format, ext }
+    }
   }
+
   return { mime: '', ext: '' } // sin soporte
 }
 
@@ -162,7 +175,7 @@ export default function ChatView({ conversation }) {
     if (!conversation) return
     const pref = pickBestAudioMime()
     if (!pref.mime) {
-      alert('Tu navegador no soporta grabación OGG/Opus. Usa Chrome/Firefox/Edge recientes o envía un audio cargando un .mp3/.ogg.')
+      alert('Tu navegador no soporta grabación de audio. Usa Chrome, Firefox o Edge recientes.')
       return
     }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -203,9 +216,16 @@ export default function ChatView({ conversation }) {
 
   async function finalizeRecording(mr) {
   try {
-    const type = 'audio/ogg;codecs=opus'
+    // Usar el tipo MIME real del MediaRecorder
+    const type = mr.mimeType || 'audio/webm'
     const blob = new Blob(recChunksRef.current, { type })
-    const file = new File([blob], `voice-${Date.now()}.ogg`, { type })
+
+    // Determinar extensión del archivo
+    const ext = type.includes('webm') ? 'webm' :
+                type.includes('ogg') ? 'ogg' :
+                type.includes('mp4') ? 'mp4' : 'webm'
+
+    const file = new File([blob], `voice-${Date.now()}.${ext}`, { type })
 
     // subir
     const fd = new FormData()

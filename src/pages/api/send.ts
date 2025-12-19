@@ -34,45 +34,54 @@ async function uploadBufferToWABA({
   return data?.id as string;
 }
 
-// Convierte audio WEBM a OGG/OPUS para compatibilidad con WhatsApp
+// Convierte audio WEBM/OGG a MP3 para compatibilidad con WhatsApp
 async function ensureAudioCompatible(file: File): Promise<{ buffer: Buffer; filename: string; mime: string }> {
   const origMime = (file.type || "").toLowerCase();
-  // Si no es audio/webm, regresamos el buffer original
-  if (!(origMime.startsWith("audio/") && origMime.includes("webm"))) {
+
+  // Si ya es MP3, retornar tal cual
+  if (origMime === "audio/mpeg" || origMime === "audio/mp3") {
     const buf = Buffer.from(await file.arrayBuffer());
-    return { buffer: buf, filename: file.name || "audio", mime: origMime || "application/octet-stream" };
+    return { buffer: buf, filename: file.name || "audio.mp3", mime: "audio/mpeg" };
   }
 
-  // Transcodificar a OGG/OPUS usando ffmpeg-static
-  const ffmpegPath = (await import("ffmpeg-static")).default as unknown as string;
-  const ffmpeg = (await import("fluent-ffmpeg")).default;
-  // @ts-ignore
-  ffmpeg.setFfmpegPath(ffmpegPath);
+  // Si es audio (WEBM, OGG, etc.), convertir a MP3
+  if (origMime.startsWith("audio/")) {
+    const ffmpegPath = (await import("ffmpeg-static")).default as unknown as string;
+    const ffmpeg = (await import("fluent-ffmpeg")).default;
+    // @ts-ignore
+    ffmpeg.setFfmpegPath(ffmpegPath);
 
-  const tmpIn = path.join(os.tmpdir(), `in-${Date.now()}-${Math.random().toString(36).slice(2)}.webm`);
-  const tmpOut = path.join(os.tmpdir(), `out-${Date.now()}-${Math.random().toString(36).slice(2)}.ogg`);
-  const inputBuf = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(tmpIn, inputBuf);
+    const ext = origMime.includes("webm") ? "webm" : origMime.includes("ogg") ? "ogg" : "webm";
+    const tmpIn = path.join(os.tmpdir(), `in-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`);
+    const tmpOut = path.join(os.tmpdir(), `out-${Date.now()}-${Math.random().toString(36).slice(2)}.mp3`);
+    const inputBuf = Buffer.from(await file.arrayBuffer());
+    await fs.writeFile(tmpIn, inputBuf);
 
-  await new Promise<void>((resolve, reject) => {
-    ffmpeg()
-      .input(tmpIn)
-      .audioCodec("libopus")
-      .format("ogg")
-      .on("end", resolve)
-      .on("error", reject)
-      .save(tmpOut);
-  });
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(tmpIn)
+        .audioCodec("libmp3lame")
+        .audioBitrate("128k")
+        .format("mp3")
+        .on("end", resolve)
+        .on("error", reject)
+        .save(tmpOut);
+    });
 
-  const outBuf = await fs.readFile(tmpOut);
-  try {
-    await fs.unlink(tmpIn);
-  } catch {}
-  try {
-    await fs.unlink(tmpOut);
-  } catch {}
-  const base = (file.name || "audio").replace(/\.[^.]*$/, "");
-  return { buffer: outBuf, filename: `${base}.ogg`, mime: "audio/ogg" };
+    const outBuf = await fs.readFile(tmpOut);
+    try {
+      await fs.unlink(tmpIn);
+    } catch {}
+    try {
+      await fs.unlink(tmpOut);
+    } catch {}
+    const base = (file.name || "audio").replace(/\.[^.]*$/, "");
+    return { buffer: outBuf, filename: `${base}.mp3`, mime: "audio/mpeg" };
+  }
+
+  // Si no es audio, retornar original
+  const buf = Buffer.from(await file.arrayBuffer());
+  return { buffer: buf, filename: file.name || "file", mime: origMime || "application/octet-stream" };
 }
 
 async function sendMediaWABA({
