@@ -76,28 +76,22 @@ export default function ChatView({ conversation }) {
     return <span className={`${base} text-gray-400`}>✓</span>
   }
 
-  // ---- Adjuntar archivo (ya lo tenías) ----
+  // ---- Adjuntar archivo ----
   async function attachAndSend(e) {
     const file = e.target.files?.[0]
     if (!file || !conversation) return
 
+    const caption = prompt('Agregar comentario/caption? (opcional)') || ''
+
     const fd = new FormData()
     fd.append('file', file)
-    const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), { method:'POST', body: fd })
-    const uj = await up.json()
-    if (!uj.ok) { alert('Error al subir archivo'); return }
+    fd.append('conversacion_id', conversation.id)
+    fd.append('to', conversation.wa_user)
+    if (caption) fd.append('text', caption)
 
-    const caption = prompt('Agregar comentario/caption? (opcional)') || ''
-    const sm = await fetch(`${BASE}/api/send-media`.replace(/\/\//g, '/'), {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({
-        conversacion_id: conversation.id,
-        to: conversation.wa_user,
-        kind: uj.kind,
-        url: uj.url,
-        caption
-      })
+    const sm = await fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), {
+      method: 'POST',
+      body: fd
     })
     const sj = await sm.json()
 
@@ -124,9 +118,14 @@ export default function ChatView({ conversation }) {
 
     if (!sm.ok || !sj.ok) { alert(`No se envió: ${sj?.error?.message || sj?.error?.title || 'Error'}`); return }
 
+    // Determinar tipo de archivo
+    const tipo = file.type.startsWith('image/') ? 'image' :
+                 file.type.startsWith('video/') ? 'video' :
+                 file.type.startsWith('audio/') ? 'audio' : 'document'
+
     setMsgs(m => [...m, {
-      id: Date.now(), from_me: 1, tipo: uj.kind, cuerpo: caption || `[${uj.kind}]`,
-      ts: Math.floor(Date.now()/1000), status: 'sent', media_url: uj.url
+      id: Date.now(), from_me: 1, tipo, cuerpo: caption || `[${tipo}]`,
+      ts: Math.floor(Date.now()/1000), status: 'sent'
     }])
     e.target.value = ''
   }
@@ -227,39 +226,38 @@ export default function ChatView({ conversation }) {
 
     const file = new File([blob], `voice-${Date.now()}.${ext}`, { type })
 
-    // subir
+    // Enviar directamente a /api/send (se convertirá a MP3 en el backend)
     const fd = new FormData()
     fd.append('file', file)
-    const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), { method:'POST', body: fd })
-    const uj = await up.json()
-    if (!uj.ok) { alert('Error al subir nota de voz'); cleanupRec(); return }
+    fd.append('conversacion_id', conversation.id)
+    fd.append('to', conversation.wa_user)
 
-    // enviar por link como audio
-    const sm = await fetch(`${BASE}/api/send-media`.replace(/\/\//g, '/'), {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({
-        conversacion_id: conversation.id,
-        to: conversation.wa_user,
-        kind: 'audio',
-        url: uj.url,
-        caption: ''
-      })
+    const sm = await fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), {
+      method: 'POST',
+      body: fd
     })
     const sj = await sm.json()
-    // (mismo manejo de 409 / plantilla que ya tienes...)
-    if (sm.status === 409 && sj?.requires_template) { /* ... */ return }
 
-    if (!sm.ok || !sj.ok) { alert(`No se envió: ${sj?.error?.message || sj?.error?.title || 'Error'}`); cleanupRec(); return }
+    if (sm.status === 409 && sj?.requires_template) {
+      alert('Esta conversación está fuera de la ventana de 24h. Usa una plantilla aprobada.')
+      cleanupRec()
+      return
+    }
+
+    if (!sm.ok || !sj.ok) {
+      alert(`No se envió: ${sj?.error?.message || sj?.error?.title || 'Error'}`)
+      cleanupRec()
+      return
+    }
 
     setMsgs(m => [...m, {
       id: Date.now(), from_me: 1, tipo: 'audio', cuerpo: '[Audio]',
-      ts: Math.floor(Date.now()/1000), status: 'sent', media_url: uj.url
+      ts: Math.floor(Date.now()/1000), status: 'sent'
     }])
   } finally {
     cleanupRec()
   }
-  
+
 }
 
 
