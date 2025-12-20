@@ -14,5 +14,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
     "UPDATE conversaciones SET asignado_a = ? WHERE id = ?",
     [user_id ?? null, conversacion_id]
   );
+
+  // Si se asignó a un usuario (no se desasignó), crear notificación
+  if (user_id && res.affectedRows > 0) {
+    try {
+      await pool.execute(
+        `INSERT INTO agent_notifications (usuario_id, conversacion_id, tipo, leida)
+         VALUES (?, ?, 'asignacion', FALSE)`,
+        [user_id, conversacion_id]
+      );
+    } catch (e) {
+      console.error('Error creating assignment notification:', e);
+      // No fallar la asignación si falla la notificación
+    }
+  }
+
   return new Response(JSON.stringify({ ok:true, affected: res.affectedRows }), { headers: { "Content-Type":"application/json" }});
 };

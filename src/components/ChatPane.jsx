@@ -100,6 +100,7 @@ export default function ChatPane({ conversation }) {
 
   // notificaciones
   const prevIncomingCountRef = useRef(0);
+  const initialLoadDone = useRef(false); // Flag para saber si ya pasó la carga inicial
 
   // modal media
   const [modal, setModal] = useState({ open: false, kind: null, src: null });
@@ -735,6 +736,7 @@ function pickMime() {
   useEffect(() => {
     const incoming = items.filter(m => m.sender === "them");
     prevIncomingCountRef.current = incoming.length;
+    initialLoadDone.current = false; // Marcar que es carga inicial de esta conversación
   }, [conversation?.id]);
 
   // notificaciones + sonido al recibir entrantes nuevos
@@ -742,8 +744,15 @@ function pickMime() {
     const incoming = items.filter(m => m.sender === "them");
     const prev = prevIncomingCountRef.current;
 
-    // Solo notificar si hay MÁS mensajes que antes (no cuando se carga por primera vez)
-    if (prev > 0 && incoming.length > prev) {
+    // Marcar que la carga inicial ya terminó después del primer render con mensajes
+    if (!initialLoadDone.current && items.length > 0) {
+      initialLoadDone.current = true;
+      prevIncomingCountRef.current = incoming.length;
+      return; // No notificar en la carga inicial
+    }
+
+    // Solo notificar si ya pasó la carga inicial Y hay MÁS mensajes que antes
+    if (initialLoadDone.current && prev > 0 && incoming.length > prev) {
       // sonido
       try {
         if (ding) {
@@ -762,7 +771,7 @@ function pickMime() {
     }
 
     prevIncomingCountRef.current = incoming.length;
-  }, [items.length]);
+  }, [items.length, conversation]);
 
   // enviar texto/archivo
   async function send(e) {

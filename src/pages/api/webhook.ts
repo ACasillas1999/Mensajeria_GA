@@ -306,7 +306,7 @@ export const POST: APIRoute = async ({ request }) => {
               cuerpo = `[${tipo}]`;
           }
 
-          await pool.query(
+          const [insertResult] = await pool.query(
             `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, media_id, mime_type)
              VALUES (?,?,?,?,?,?,?,?)
              ON DUPLICATE KEY UPDATE
@@ -317,12 +317,34 @@ export const POST: APIRoute = async ({ request }) => {
             [convId, 0, tipo, cuerpo, m.id, ts, media_id, mime_type]
           );
 
+          const mensajeId = (insertResult as any).insertId;
+
           await pool.query(
             `UPDATE conversaciones
                SET wa_profile_name=?, ultimo_msg=?, ultimo_ts=?, estado=IF(estado='NUEVA','ABIERTA',estado)
              WHERE id=?`,
             [profileName, cuerpo, ts, convId]
           );
+
+          // Crear notificación si la conversación está asignada a un agente
+          if (mensajeId) {
+            const [convInfo] = await pool.query<RowDataPacket[]>(
+              'SELECT asignado_a FROM conversaciones WHERE id=? AND asignado_a IS NOT NULL',
+              [convId]
+            );
+            if (convInfo.length > 0 && convInfo[0].asignado_a) {
+              try {
+                await pool.query(
+                  `INSERT INTO agent_notifications (usuario_id, conversacion_id, mensaje_id, tipo, leida)
+                   VALUES (?, ?, ?, 'nuevo_mensaje', FALSE)`,
+                  [convInfo[0].asignado_a, convId, mensajeId]
+                );
+              } catch (e) {
+                console.error('Error creating message notification:', e);
+                // No fallar el webhook si falla la notificación
+              }
+            }
+          }
 
           // Procesar auto-respuesta solo para mensajes de texto entrantes
           if (tipo === 'text' && cuerpo) {

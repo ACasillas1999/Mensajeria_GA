@@ -3,7 +3,6 @@ import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 import { useAppData } from "../contexts/AppDataContext.jsx";
 
 const BASE = import.meta.env.BASE_URL || '';
-const SEEN_KEY = "mensajeria_seen_v1";
 
 // Formato de tiempo relativo estilo WhatsApp
 function formatRelativeTime(timestamp) {
@@ -28,7 +27,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   const [estado, setEstado] = useState(""); // ID del estado o '' para todas
   const [view, setView] = useState("active"); // 'active', 'favorites', 'archived'
   const [loading, setLoading] = useState(false);
-  const [seen, setSeen] = useState({});
+  const [unreadCounts, setUnreadCounts] = useState({}); // { conversacion_id: count }
   const [showNewChat, setShowNewChat] = useState(false);
   const [newPhone, setNewPhone] = useState("");
   const [templates, setTemplates] = useState([]);
@@ -51,41 +50,52 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     }
   }
 
-  // cargar mapa de vistos desde localStorage (por navegador)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // Cargar contadores de notificaciones no leídas
+  async function loadUnreadCounts() {
     try {
-      const raw = window.localStorage.getItem(SEEN_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        const norm = {};
-        for (const [k, v] of Object.entries(parsed)) {
-          const id = Number(k);
-          if (!Number.isNaN(id)) norm[id] = Number(v) || 0;
+      const r = await fetch(`${BASE}/api/notifications?leida=false`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok && Array.isArray(j.items)) {
+        const counts = {};
+        for (const notif of j.items) {
+          counts[notif.conversacion_id] = (counts[notif.conversacion_id] || 0) + 1;
         }
-        setSeen(norm);
+        setUnreadCounts(counts);
       }
-    } catch {}
-  }, []);
+    } catch (e) {
+      console.error('Error loading unread counts:', e);
+    }
+  }
 
-  // marcar como leída la conversación actualmente abierta
+  // Marcar conversación como leída
+  async function markConversationAsRead(conversacionId) {
+    if (!conversacionId) return;
+    try {
+      await fetch(`${BASE}/api/notifications`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: conversacionId })
+      });
+      // Actualizar localmente
+      setUnreadCounts(prev => {
+        const next = { ...prev };
+        delete next[conversacionId];
+        return next;
+      });
+    } catch (e) {
+      console.error('Error marking as read:', e);
+    }
+  }
+
+  // Marcar como leída cuando se abre una conversación
   useEffect(() => {
-    if (!currentId) return;
-    setSeen(prev => {
-      const next = { ...prev, [currentId]: Math.floor(Date.now() / 1000) };
-      try {
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(SEEN_KEY, JSON.stringify(next));
-        }
-      } catch {}
-      return next;
-    });
+    if (currentId) {
+      markConversationAsRead(currentId);
+    }
   }, [currentId]);
 
   const isUnread = (c) => {
-    const lastAt = Number(c.last_at || 0);
-    const seenAt = seen[c.id] || 0;
-    return lastAt > seenAt;
+    return (unreadCounts[c.id] || 0) > 0;
   };
 
   // refresco silencioso para el polling (no toca `loading`)
@@ -104,9 +114,10 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     }
   }
 
-  // Carga inicial - solo cargar conversaciones (estados vienen del contexto)
+  // Carga inicial - cargar conversaciones y notificaciones
   useEffect(() => {
     load("");
+    loadUnreadCounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -242,6 +253,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     const id = setInterval(() => {
       // reutiliza el último texto de búsqueda y estado seleccionados
       refresh();
+      loadUnreadCounts(); // También recargar notificaciones
     }, 15000); // cada 15 segundos (reducido porque SSE es el principal)
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -388,8 +400,10 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
                 <div className={`text-xs truncate flex-1 ${unread ? "text-slate-300 font-medium" : "text-slate-400"}`}>
                   {c.last_text || '-'}
                 </div>
-                {unread && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                {unread && unreadCounts[c.id] > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shrink-0 min-w-[20px] text-center">
+                    {unreadCounts[c.id]}
+                  </span>
                 )}
               </div>
 
