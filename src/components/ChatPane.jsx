@@ -247,57 +247,37 @@ function pickMime() {
       const ext = (recState.blob.type || '').includes('ogg') ? 'ogg' : 'webm';
       const fileName = `audio-${Date.now()}.${ext}`;
       fd.append('file', new File([recState.blob], fileName, { type: recState.blob.type || 'audio/webm' }));
+      fd.append('conversacion_id', conversation.id);
+      fd.append('to', conversation.wa_user);
 
-      console.log('⬆️ Subiendo audio al servidor...');
-      const up = await fetch(`${BASE}/api/upload`.replace(/\/\//g, '/'), {
-        method: 'POST',
-        body: fd,
-        credentials: 'include', // ✅ IMPORTANTE: enviar cookies de autenticación
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest', // Identifica como petición AJAX
-        }
-      });
-
-      // Verificar si la respuesta es JSON
-      const contentType = up.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await up.text();
-        console.error('❌ Respuesta no es JSON:', { status: up.status, contentType, text: text.substring(0, 200) });
-        alert(`Error del servidor (${up.status}):\n\n${text.substring(0, 300)}`);
-        return;
-      }
-
-      const uj = await up.json();
-      console.log('✅ Respuesta upload:', uj);
-
-      if (!up.ok || !uj.ok) {
-        const errorMsg = uj?.error || 'No se pudo subir el audio';
-        console.error('❌ Error en upload:', errorMsg);
-        alert(errorMsg);
-        return;
-      }
-
+      console.log('📨 Enviando audio directamente a /api/send...');
       const tempId = `temp-a-${Date.now()}`;
-      setItems(prev => ([...prev, { id: tempId, sender:'me', tipo:'audio', media_url: uj.url, created_at: new Date().toISOString(), status:'sending' }]));
+      setItems(prev => ([...prev, { id: tempId, sender:'me', tipo:'audio', cuerpo: '[Audio]', created_at: new Date().toISOString(), status:'sending' }]));
       requestAnimationFrame(() => scrollToBottom());
 
-      console.log('📨 Enviando a WhatsApp...', { url: uj.url });
-      const res = await fetch(`${BASE}/api/send-media`.replace(/\/\//g, '/'), {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({ conversacion_id: conversation.id, to: conversation.wa_user, kind:'audio', url: uj.url })
+      const res = await fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        body: fd
       });
-      const j = await res.json();
-      console.log('✅ Respuesta send-media:', j);
 
-      if (j.ok) {
-        setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'sent' } : m));
-      } else {
-        setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'failed' } : m));
-        const errorMsg = j.error?.message || 'No se pudo enviar el audio';
-        console.error('❌ Error en send-media:', j.error);
-        alert(errorMsg);
+      const j = await res.json();
+      console.log('✅ Respuesta send:', j);
+
+      if (res.status === 409 && j?.requires_template) {
+        alert('Esta conversación está fuera de la ventana de 24h. Usa una plantilla aprobada.');
+        setItems(prev => prev.filter(m => m.id !== tempId));
+        return;
       }
+
+      if (!res.ok || !j.ok) {
+        const errorMsg = j?.error?.message || j?.error?.title || 'No se pudo enviar el audio';
+        console.error('❌ Error en send:', j.error);
+        alert(errorMsg);
+        setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'failed' } : m));
+        return;
+      }
+
+      setItems(prev => prev.map(m => m.id === tempId ? { ...m, status:'sent' } : m));
     } catch (e) {
       console.error('❌ Error crítico enviando audio:', e);
       alert(`Error enviando audio:\n\n${e.message || e}`);
