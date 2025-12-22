@@ -101,6 +101,7 @@ export default function ChatPane({ conversation }) {
   // notificaciones
   const prevIncomingCountRef = useRef(0);
   const initialLoadDone = useRef(false); // Flag para saber si ya pasó la carga inicial
+  const isInitialLoad = useRef(true); // Flag para primera carga de conversación
 
   // modal media
   const [modal, setModal] = useState({ open: false, kind: null, src: null });
@@ -312,6 +313,7 @@ function pickMime() {
   async function load() {
     if (!conversation) return;
     setLoading(true);
+    isInitialLoad.current = true; // Marcar como carga inicial
     try {
       const limit = 50; // Cargar solo 50 mensajes inicialmente
       const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(limit) });
@@ -327,16 +329,24 @@ function pickMime() {
       }
     } finally {
       setLoading(false);
-      // Scroll múltiple para asegurar que llegue al fondo incluso con imágenes cargando
-      setTimeout(scrollToBottom, 0);
-      setTimeout(scrollToBottom, 100);
-      setTimeout(scrollToBottom, 300);
+      // Solo hacer scroll múltiple en la carga inicial
+      if (isInitialLoad.current) {
+        setTimeout(scrollToBottom, 0);
+        setTimeout(scrollToBottom, 100);
+        setTimeout(scrollToBottom, 300);
+        setTimeout(() => { isInitialLoad.current = false; }, 500);
+      }
     }
   }
 
   async function loadMore() {
     if (!conversation || loadingMore || !hasMore) return;
     setLoadingMore(true);
+
+    // Guardar la altura del scroll antes de cargar más mensajes
+    const sc = scrollerRef.current;
+    const scrollHeightBefore = sc?.scrollHeight || 0;
+
     try {
       const limit = 50;
       const offset = items.length;
@@ -352,6 +362,15 @@ function pickMime() {
         const newMessages = j.items || [];
         setItems(prev => [...newMessages, ...prev]); // Agregar al inicio (mensajes más antiguos)
         setHasMore(newMessages.length === limit);
+
+        // Restaurar posición de scroll después de agregar mensajes
+        setTimeout(() => {
+          if (sc) {
+            const scrollHeightAfter = sc.scrollHeight;
+            const scrollDiff = scrollHeightAfter - scrollHeightBefore;
+            sc.scrollTop = scrollDiff;
+          }
+        }, 0);
       }
     } finally {
       setLoadingMore(false);
@@ -572,25 +591,20 @@ function pickMime() {
     /* eslint-disable-next-line */
   }, [conversation?.id]);
 
-  // Autoscroll cuando cambian los mensajes
+  // Autoscroll cuando cambian los mensajes (solo si el usuario está en el fondo)
   useEffect(() => {
-    // Usar requestAnimationFrame para asegurar que el DOM se haya actualizado
-    requestAnimationFrame(() => {
-      scrollToBottom();
-    });
-  }, [items.length]);
+    const sc = scrollerRef.current;
+    if (!sc) return;
 
-  // Autoscroll cuando cambia la conversación (asegurar scroll inicial)
-  useEffect(() => {
-    if (conversation?.id && items.length > 0) {
-      // Esperar un tick adicional para asegurar render completo
+    // Solo hacer scroll automático si el usuario ya estaba cerca del fondo
+    const wasNearBottom = sc.scrollHeight - sc.scrollTop - sc.clientHeight < 150;
+
+    if (wasNearBottom) {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          scrollToBottom();
-        });
+        scrollToBottom();
       });
     }
-  }, [conversation?.id, items.length > 0]);
+  }, [items.length]);
 
   // SSE: Recibir mensajes en tiempo real
   const handleRealtimeMessages = useCallback((newMessages) => {
@@ -737,6 +751,7 @@ function pickMime() {
     const incoming = items.filter(m => m.sender === "them");
     prevIncomingCountRef.current = incoming.length;
     initialLoadDone.current = false; // Marcar que es carga inicial de esta conversación
+    isInitialLoad.current = true; // Reset flag de carga inicial
   }, [conversation?.id]);
 
   // notificaciones + sonido al recibir entrantes nuevos
