@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import StatusFieldsConfig from './StatusFieldsConfig.jsx';
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -6,6 +7,7 @@ export default function ConversationStatusesAdmin() {
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalStatus, setModalStatus] = useState(null);
+  const [configuringFieldsFor, setConfiguringFieldsFor] = useState(null);
 
   async function loadStatuses() {
     setLoading(true);
@@ -221,6 +223,19 @@ export default function ConversationStatusesAdmin() {
                   </button>
 
                   <button
+                    onClick={() => setConfiguringFieldsFor(s)}
+                    className="px-3 py-1 rounded text-xs bg-amber-900/30 hover:bg-amber-900/50 text-amber-200 border border-amber-700"
+                    title="Configurar campos personalizados que se solicitan al cambiar a este estado"
+                  >
+                    ⚙️ Campos
+                    {s.required_fields && JSON.parse(s.required_fields).length > 0 && (
+                      <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[10px]">
+                        {JSON.parse(s.required_fields).length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
                     onClick={() => openEditStatus(s)}
                     className="px-3 py-1 rounded text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
                   >
@@ -357,6 +372,18 @@ export default function ConversationStatusesAdmin() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal Configurar Campos */}
+      {configuringFieldsFor && (
+        <StatusFieldsConfig
+          status={configuringFieldsFor}
+          onClose={() => setConfiguringFieldsFor(null)}
+          onSave={() => {
+            loadStatuses();
+            setConfiguringFieldsFor(null);
+          }}
+        />
       )}
     </div>
   );

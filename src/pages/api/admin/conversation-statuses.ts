@@ -115,7 +115,7 @@ export const PATCH: APIRoute = async ({ request, locals, url }) => {
     }
 
     const body = await request.json();
-    const { name, color, icon, description, display_order, is_active, is_default } = body;
+    const { name, color, icon, description, display_order, is_active, is_default, required_fields } = body;
 
     const updates: string[] = [];
     const values: any[] = [];
@@ -151,6 +151,10 @@ export const PATCH: APIRoute = async ({ request, locals, url }) => {
       }
       updates.push('is_default = ?');
       values.push(is_default ? 1 : 0);
+    }
+    if (required_fields !== undefined) {
+      updates.push('required_fields = ?');
+      values.push(required_fields || null);
     }
 
     if (updates.length === 0) {

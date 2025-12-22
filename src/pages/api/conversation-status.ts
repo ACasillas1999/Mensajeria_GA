@@ -11,7 +11,8 @@ async function changeConversationStatus(
   newStatusId: number,
   userId: number,
   userName: string,
-  reason?: string
+  reason?: string,
+  fieldData?: string
 ) {
   // Obtener estado actual
   const [current] = await pool.query(
@@ -51,9 +52,9 @@ async function changeConversationStatus(
     // Registrar en histórico
     await pool.query(
       `INSERT INTO conversation_status_history
-       (conversation_id, old_status_id, new_status_id, changed_by, change_reason)
-       VALUES (?, ?, ?, ?, ?)`,
-      [conversationId, oldStatusId, newStatusId, userId, reason || null]
+       (conversation_id, old_status_id, new_status_id, changed_by, change_reason, field_data)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [conversationId, oldStatusId, newStatusId, userId, reason || null, fieldData || null]
     );
 
     // Registrar evento del sistema (visible en el chat)
@@ -166,7 +167,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
     }
 
     const body = await request.json();
-    const { conversation_id, status_id, reason } = body;
+    const { conversation_id, status_id, reason, field_data } = body;
 
     if (!conversation_id || !status_id) {
       return new Response(
@@ -175,7 +176,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    const statusName = await changeConversationStatus(conversation_id, status_id, user.id, user.nombre, reason);
+    const statusName = await changeConversationStatus(conversation_id, status_id, user.id, user.nombre, reason, field_data);
 
     return new Response(
       JSON.stringify({
