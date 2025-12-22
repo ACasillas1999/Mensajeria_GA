@@ -322,6 +322,7 @@ function pickMime() {
       const j = await r.json();
       if (j.ok) {
         const messages = j.items || [];
+        console.log(`[ChatPane] Cargados ${messages.length} mensajes para conversación ${conversation.id}`);
         setItems(messages);
         setTotalMessages(j.total || messages.length);
         // Hay más si la cantidad recibida es igual al límite
@@ -334,7 +335,10 @@ function pickMime() {
         setTimeout(scrollToBottom, 0);
         setTimeout(scrollToBottom, 100);
         setTimeout(scrollToBottom, 300);
-        setTimeout(() => { isInitialLoad.current = false; }, 500);
+        setTimeout(() => {
+          isInitialLoad.current = false;
+          console.log('[ChatPane] Carga inicial completada');
+        }, 500);
       }
     }
   }
@@ -381,13 +385,17 @@ function pickMime() {
   async function refreshMessages() {
     if (!conversation) return;
     try {
-      // Mantener la cantidad actual de mensajes cargados
-      const currentCount = items.length || 50;
+      // Mantener la cantidad actual de mensajes cargados (mínimo 50)
+      const currentCount = Math.max(items.length, 50);
       const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(currentCount) });
       if (searchQ.trim()) qs.set('q', searchQ.trim());
       const r = await fetch(`${BASE}/api/messages?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
-      if (j.ok) setItems(j.items || []);
+      if (j.ok) {
+        const newItems = j.items || [];
+        console.log(`[ChatPane] Refresh: ${newItems.length} mensajes (antes: ${items.length})`);
+        setItems(newItems);
+      }
     } catch {
       // ignorar errores puntuales
     }
@@ -591,12 +599,20 @@ function pickMime() {
     /* eslint-disable-next-line */
   }, [conversation?.id]);
 
-  // Autoscroll cuando cambian los mensajes (solo si el usuario está en el fondo)
+  // Autoscroll cuando cambian los mensajes (solo si el usuario está en el fondo o es carga inicial)
   useEffect(() => {
     const sc = scrollerRef.current;
     if (!sc) return;
 
-    // Solo hacer scroll automático si el usuario ya estaba cerca del fondo
+    // En la carga inicial, siempre hacer scroll al fondo
+    if (isInitialLoad.current) {
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+      return;
+    }
+
+    // Para actualizaciones, solo hacer scroll automático si el usuario ya estaba cerca del fondo
     const wasNearBottom = sc.scrollHeight - sc.scrollTop - sc.clientHeight < 150;
 
     if (wasNearBottom) {
