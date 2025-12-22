@@ -143,7 +143,12 @@ function StatusFieldsModal({ status, onClose, onSubmit }) {
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
 
-  const fields = status?.required_fields ? JSON.parse(status.required_fields) : [];
+  // required_fields puede venir como array (ya parseado por MySQL) o como string JSON
+  const fields = status?.required_fields
+    ? (Array.isArray(status.required_fields)
+        ? status.required_fields
+        : JSON.parse(status.required_fields))
+    : [];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -1370,41 +1375,26 @@ function pickMime() {
               const newStatusId = Number(e.target.value);
               const newStatus = statuses.find(s => s.id === newStatusId);
 
-              console.log('[ChatPane] Cambio de estado:', {
-                newStatusId,
-                newStatus,
-                required_fields: newStatus?.required_fields,
-                required_fields_type: typeof newStatus?.required_fields
-              });
-
               // Si el estado tiene campos requeridos, mostrar modal
               if (newStatus?.required_fields) {
                 try {
-                  // Verificar si es un string JSON válido y no null/vacío
-                  const fieldsStr = typeof newStatus.required_fields === 'string'
+                  // required_fields puede venir como array (MySQL lo parsea) o como string
+                  const fields = Array.isArray(newStatus.required_fields)
                     ? newStatus.required_fields
-                    : JSON.stringify(newStatus.required_fields);
+                    : JSON.parse(newStatus.required_fields);
 
-                  console.log('[ChatPane] fieldsStr:', fieldsStr);
-
-                  if (fieldsStr && fieldsStr !== 'null' && fieldsStr !== '[]') {
-                    const fields = JSON.parse(fieldsStr);
-                    console.log('[ChatPane] Campos parseados:', fields);
-                    if (Array.isArray(fields) && fields.length > 0) {
-                      console.log('[ChatPane] Mostrando modal de campos');
-                      setStatusChangeModal({ show: true, newStatusId, status: newStatus });
-                      // Resetear el select al valor actual
-                      e.target.value = conversation.status_id || '';
-                      return;
-                    }
+                  if (Array.isArray(fields) && fields.length > 0) {
+                    setStatusChangeModal({ show: true, newStatusId, status: newStatus });
+                    // Resetear el select al valor actual
+                    e.target.value = conversation.status_id || '';
+                    return;
                   }
                 } catch (err) {
-                  console.error('Error parsing required_fields:', err);
+                  console.error('Error validando required_fields:', err);
                 }
               }
 
               // Si no tiene campos requeridos, cambiar directamente
-              console.log('[ChatPane] Cambiando estado directamente (sin campos)');
               handleStatusChange(newStatusId, null);
             }}
             className="bg-slate-900 border border-slate-700 text-xs rounded px-2 py-1"

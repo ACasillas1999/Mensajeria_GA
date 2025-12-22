@@ -8,8 +8,13 @@ const BASE = import.meta.env.BASE_URL || '';
  * una conversación cambia a este estado
  */
 export default function StatusFieldsConfig({ status, onClose, onSave }) {
+  // required_fields puede venir como array (ya parseado por MySQL) o como string JSON
   const [fields, setFields] = useState(
-    status?.required_fields ? JSON.parse(status.required_fields) : []
+    status?.required_fields
+      ? (Array.isArray(status.required_fields)
+          ? status.required_fields
+          : JSON.parse(status.required_fields))
+      : []
   );
   const [editingField, setEditingField] = useState(null);
 

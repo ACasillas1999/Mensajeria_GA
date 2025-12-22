@@ -65,7 +65,6 @@ export function AppDataProvider({ children }) {
       const r = await fetch(`${BASE}/api/admin/conversation-statuses?active=1`.replace(/\/\//g, '/'));
       const j = await r.json();
       if (j.ok) {
-        console.log('[AppDataContext] Statuses recargados:', j.items);
         setStatuses(j.items || []);
       }
     } catch (e) {
