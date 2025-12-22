@@ -59,12 +59,27 @@ export function AppDataProvider({ children }) {
     }
   };
 
+  // Función para recargar estados (cuando se actualiza la configuración)
+  const reloadStatuses = async () => {
+    try {
+      const r = await fetch(`${BASE}/api/admin/conversation-statuses?active=1`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) {
+        console.log('[AppDataContext] Statuses recargados:', j.items);
+        setStatuses(j.items || []);
+      }
+    } catch (e) {
+      console.error('Error reloading statuses:', e);
+    }
+  };
+
   const value = {
     statuses,
     quickReplies,
     statusesLoaded,
     quickRepliesLoaded,
     reloadQuickReplies,
+    reloadStatuses,
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
