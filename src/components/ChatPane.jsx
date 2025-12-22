@@ -116,6 +116,28 @@ function SystemEvent({ evento }) {
   );
 }
 
+/* Componente para comentario interno en el timeline */
+function InlineComment({ comentario }) {
+  return (
+    <div className="flex justify-start my-3 px-2">
+      <div className="max-w-[70%] px-4 py-3 rounded-lg bg-amber-950/30 border border-amber-800/40">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-sm">💬</span>
+          <span className="text-xs font-semibold text-amber-300">
+            Comentario interno - {comentario.usuario_nombre || 'Usuario'}
+          </span>
+        </div>
+        <div className="text-sm text-amber-100/90 whitespace-pre-wrap">
+          {comentario.comentario}
+        </div>
+        <div className="text-[10px] text-amber-600/60 mt-2">
+          {new Date(comentario.creado_en).toLocaleString()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatPane({ conversation }) {
   const { statuses, quickReplies: allQuickReplies, reloadQuickReplies } = useAppData();
   const [items, setItems] = useState([]);
@@ -641,7 +663,7 @@ function pickMime() {
     /* eslint-disable-next-line */
   }, [conversation?.id]);
 
-  // Autoscroll cuando cambian los mensajes (solo si el usuario está en el fondo o es carga inicial)
+  // Autoscroll cuando cambian los mensajes, eventos o comentarios (solo si el usuario está en el fondo o es carga inicial)
   useEffect(() => {
     const sc = scrollerRef.current;
     if (!sc) return;
@@ -662,7 +684,7 @@ function pickMime() {
         scrollToBottom();
       });
     }
-  }, [items.length]);
+  }, [items.length, systemEvents.length, comments.length]);
 
   // SSE: Recibir mensajes en tiempo real
   const handleRealtimeMessages = useCallback((newMessages) => {
@@ -1217,16 +1239,24 @@ function pickMime() {
           </div>
         )}
 
-        {/* Mezclar mensajes con eventos del sistema ordenados por fecha */}
-        {[...items.map(m => ({ ...m, _type: 'message' })), ...systemEvents.map(e => ({ ...e, _type: 'event' }))]
+        {/* Mezclar mensajes con eventos del sistema y comentarios ordenados por fecha */}
+        {[
+          ...items.map(m => ({ ...m, _type: 'message' })),
+          ...systemEvents.map(e => ({ ...e, _type: 'event' })),
+          ...comments.map(c => ({ ...c, _type: 'comment' }))
+        ]
           .sort((a, b) => {
             const timeA = new Date(a.created_at || a.creado_en).getTime();
             const timeB = new Date(b.created_at || b.creado_en).getTime();
             return timeA - timeB;
           })
-          .map((item, idx) => {
+          .map((item) => {
             if (item._type === 'event') {
               return <SystemEvent key={`event-${item.id}`} evento={item} />;
+            }
+
+            if (item._type === 'comment') {
+              return <InlineComment key={`comment-${item.id}`} comentario={item} />;
             }
 
             const m = item;
