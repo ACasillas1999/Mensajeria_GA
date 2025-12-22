@@ -92,9 +92,34 @@ function StatusBadge({ s }) {
   return null;
 }
 
+/* Componente para evento del sistema (visible solo para agentes, no se envía al cliente) */
+function SystemEvent({ evento }) {
+  const iconos = {
+    'asignacion': '👤',
+    'reasignacion': '🔄',
+    'cambio_estado': '📌',
+    'nota_sistema': 'ℹ️'
+  };
+
+  return (
+    <div className="flex justify-center my-3">
+      <div className="max-w-md px-4 py-2 rounded-lg bg-slate-900/50 border border-slate-700/50 text-center">
+        <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+          <span className="text-base">{iconos[evento.tipo] || 'ℹ️'}</span>
+          <span>{evento.texto}</span>
+        </div>
+        <div className="text-[10px] text-slate-500 mt-1">
+          {new Date(evento.creado_en).toLocaleString()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatPane({ conversation }) {
   const { statuses, quickReplies: allQuickReplies, reloadQuickReplies } = useAppData();
   const [items, setItems] = useState([]);
+  const [systemEvents, setSystemEvents] = useState([]); // Eventos del sistema (asignaciones, cambios de estado)
   const [loading, setLoading] = useState(false);
   const [searchQ, setSearchQ] = useState("");
 
@@ -310,6 +335,20 @@ function pickMime() {
     }
   }, []);
 
+  // Cargar eventos del sistema
+  async function loadSystemEvents() {
+    if (!conversation) return;
+    try {
+      const r = await fetch(`${BASE}/api/conversation-events?conversacion_id=${conversation.id}`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) {
+        setSystemEvents(j.items || []);
+      }
+    } catch (e) {
+      console.error('Error loading system events:', e);
+    }
+  }
+
   async function load() {
     if (!conversation) return;
     setLoading(true);
@@ -328,6 +367,9 @@ function pickMime() {
         // Hay más si la cantidad recibida es igual al límite
         setHasMore(messages.length === limit);
       }
+
+      // Cargar eventos del sistema
+      await loadSystemEvents();
     } finally {
       setLoading(false);
       // Solo hacer scroll múltiple en la carga inicial
@@ -1122,6 +1164,8 @@ function pickMime() {
                     conversation.status_color = newStatus.color;
                     conversation.status_icon = newStatus.icon;
                   }
+                  // Recargar eventos del sistema para mostrar el cambio
+                  await loadSystemEvents();
                 }
               } catch (err) {
                 console.error('Error updating status:', err);
@@ -1173,7 +1217,20 @@ function pickMime() {
           </div>
         )}
 
-        {items.map(m => (
+        {/* Mezclar mensajes con eventos del sistema ordenados por fecha */}
+        {[...items.map(m => ({ ...m, _type: 'message' })), ...systemEvents.map(e => ({ ...e, _type: 'event' }))]
+          .sort((a, b) => {
+            const timeA = new Date(a.created_at || a.creado_en).getTime();
+            const timeB = new Date(b.created_at || b.creado_en).getTime();
+            return timeA - timeB;
+          })
+          .map((item, idx) => {
+            if (item._type === 'event') {
+              return <SystemEvent key={`event-${item.id}`} evento={item} />;
+            }
+
+            const m = item;
+            return (
           <div key={m.id}
                className={`max-w-[75%] px-3 py-2 rounded-lg border
                  ${m.sender === 'me'
@@ -1259,7 +1316,8 @@ function pickMime() {
               )}
             </div>
           </div>
-        ))}
+            );
+          })}
         <div ref={endRef} />
       </div>
 

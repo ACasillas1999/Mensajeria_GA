@@ -10,6 +10,7 @@ async function changeConversationStatus(
   conversationId: number,
   newStatusId: number,
   userId: number,
+  userName: string,
   reason?: string
 ) {
   // Obtener estado actual
@@ -26,6 +27,21 @@ async function changeConversationStatus(
 
   // Solo actualizar si realmente cambió
   if (oldStatusId !== newStatusId) {
+    // Obtener nombres de estados
+    const [oldStatus] = await pool.query(
+      'SELECT name, icon FROM conversation_statuses WHERE id = ?',
+      [oldStatusId]
+    );
+    const [newStatus] = await pool.query(
+      'SELECT name, icon FROM conversation_statuses WHERE id = ?',
+      [newStatusId]
+    );
+
+    const oldStatusName = (oldStatus as any[])[0]?.name || 'Sin estado';
+    const oldStatusIcon = (oldStatus as any[])[0]?.icon || '';
+    const newStatusName = (newStatus as any[])[0]?.name || `Estado ${newStatusId}`;
+    const newStatusIcon = (newStatus as any[])[0]?.icon || '';
+
     // Actualizar estado
     await pool.query('UPDATE conversaciones SET status_id = ? WHERE id = ?', [
       newStatusId,
@@ -38,6 +54,25 @@ async function changeConversationStatus(
        (conversation_id, old_status_id, new_status_id, changed_by, change_reason)
        VALUES (?, ?, ?, ?, ?)`,
       [conversationId, oldStatusId, newStatusId, userId, reason || null]
+    );
+
+    // Registrar evento del sistema (visible en el chat)
+    const texto = `${userName} cambió el estado de ${oldStatusIcon} ${oldStatusName} a ${newStatusIcon} ${newStatusName}`;
+    await pool.query(
+      `INSERT INTO conversation_events (conversacion_id, tipo, usuario_id, texto, evento_data)
+       VALUES (?, 'cambio_estado', ?, ?, ?)`,
+      [
+        conversationId,
+        userId,
+        texto,
+        JSON.stringify({
+          old_status_id: oldStatusId,
+          new_status_id: newStatusId,
+          old_status_name: oldStatusName,
+          new_status_name: newStatusName,
+          reason: reason || null
+        })
+      ]
     );
   }
 
@@ -55,7 +90,7 @@ async function changeConversationStatus(
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    const user = locals?.user;
+    const user = (locals as any).user as { id: number; rol: string; nombre: string } | undefined;
     if (!user) {
       return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
         status: 401,
@@ -102,7 +137,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    await changeConversationStatus(id, statusId, user.id);
+    await changeConversationStatus(id, statusId, user.id, user.nombre);
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { 'Content-Type': 'application/json' },
@@ -122,7 +157,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
  */
 export const PATCH: APIRoute = async ({ request, locals }) => {
   try {
-    const user = locals?.user;
+    const user = (locals as any).user as { id: number; rol: string; nombre: string } | undefined;
     if (!user) {
       return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
         status: 401,
@@ -140,7 +175,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    const statusName = await changeConversationStatus(conversation_id, status_id, user.id, reason);
+    const statusName = await changeConversationStatus(conversation_id, status_id, user.id, user.nombre, reason);
 
     return new Response(
       JSON.stringify({
@@ -163,7 +198,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
  */
 export const GET: APIRoute = async ({ locals, url }) => {
   try {
-    const user = locals?.user;
+    const user = (locals as any).user;
     if (!user) {
       return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
         status: 401,
