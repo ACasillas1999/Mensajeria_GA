@@ -344,12 +344,13 @@ export default function ChatPane({ conversation }) {
   const [systemEvents, setSystemEvents] = useState([]); // Eventos del sistema (asignaciones, cambios de estado)
   const [loading, setLoading] = useState(false);
   const [searchQ, setSearchQ] = useState("");
-  const loadingRef = useRef(false); // Flag para evitar cargas duplicadas
+  const [sseEnabled, setSseEnabled] = useState(false); // Habilitar SSE solo después de carga inicial
 
   // notificaciones
   const prevIncomingCountRef = useRef(0);
   const initialLoadDone = useRef(false); // Flag para saber si ya pasó la carga inicial
   const isInitialLoad = useRef(true); // Flag para primera carga de conversación
+  const abortControllerRef = useRef(null); // Para cancelar requests duplicados
 
   // modal media
   const [modal, setModal] = useState({ open: false, kind: null, src: null });
@@ -577,11 +578,24 @@ function pickMime() {
 
   async function load() {
     if (!conversation) return;
+
+    // Cancelar request anterior si existe
+    if (abortControllerRef.current) {
+      console.log(`[ChatPane] ⚠️ Cancelando carga anterior`);
+      abortControllerRef.current.abort();
+    }
+
     const loadStartTime = performance.now();
     console.log(`[ChatPane] 🔄 Iniciando carga para conversación ${conversation.id}`);
 
+    // Crear nuevo AbortController para este request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setLoading(true);
     isInitialLoad.current = true; // Marcar como carga inicial
+    setSseEnabled(false); // Deshabilitar SSE durante carga
+
     try {
       // 1. Cargar mensajes
       const messagesStartTime = performance.now();
@@ -589,7 +603,9 @@ function pickMime() {
       const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(limit) });
       if (searchQ.trim()) qs.set('q', searchQ.trim());
 
-      const r = await fetch(`${BASE}/api/messages?${qs.toString()}`.replace(/\/\//g, '/'));
+      const r = await fetch(`${BASE}/api/messages?${qs.toString()}`.replace(/\/\//g, '/'), {
+        signal: abortController.signal
+      });
       const j = await r.json();
       const messagesTime = performance.now() - messagesStartTime;
 
@@ -609,8 +625,16 @@ function pickMime() {
 
       const totalTime = performance.now() - loadStartTime;
       console.log(`[ChatPane] ✅ Carga total completada en ${totalTime.toFixed(0)}ms`);
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        console.log(`[ChatPane] ⏹️ Carga cancelada (nueva carga en proceso)`);
+        return; // No hacer nada si fue cancelado
+      }
+      console.error('[ChatPane] ❌ Error en carga:', err);
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
+
       // Solo hacer scroll múltiple en la carga inicial
       if (isInitialLoad.current) {
         setTimeout(scrollToBottom, 0);
@@ -619,6 +643,9 @@ function pickMime() {
         setTimeout(() => {
           isInitialLoad.current = false;
           console.log('[ChatPane] 🎯 Scroll inicial completado');
+          // Habilitar SSE DESPUÉS de la carga inicial
+          setSseEnabled(true);
+          console.log('[ChatPane] 🔌 SSE habilitado');
         }, 500);
       }
     }
@@ -880,7 +907,9 @@ function pickMime() {
     if (!conversation) return;
     const startTime = performance.now();
     try {
-      const r = await fetch(`${BASE}/api/comentarios?conversacion_id=${conversation.id}`.replace(/\/\//g, '/'));
+      const r = await fetch(`${BASE}/api/comentarios?conversacion_id=${conversation.id}`.replace(/\/\//g, '/'), {
+        signal: abortControllerRef.current?.signal
+      });
       const j = await r.json();
       const fetchTime = performance.now() - startTime;
       if (j.ok) {
@@ -888,6 +917,10 @@ function pickMime() {
         console.log(`[ChatPane] 💬 Comentarios cargados: ${(j.items || []).length} en ${fetchTime.toFixed(0)}ms`);
       }
     } catch (err) {
+      if (err.name === 'AbortError') {
+        console.log(`[ChatPane] ⏹️ Carga de comentarios cancelada`);
+        return;
+      }
       console.error('[ChatPane] ❌ Error cargando comentarios:', err);
     }
   }
@@ -917,27 +950,28 @@ function pickMime() {
   useEffect(() => {
     if (!conversation?.id) return;
 
-    // Evitar cargas duplicadas si ya hay una en proceso
-    if (loadingRef.current) {
-      console.log(`[ChatPane] ⚠️ Ya hay una carga en proceso, omitiendo...`);
-      return;
-    }
-
     console.log(`[ChatPane] 🚀 useEffect disparado para conversación ${conversation.id}`);
-    loadingRef.current = true;
     const effectStartTime = performance.now();
 
+    // Cargar datos (load() maneja la cancelación de requests duplicados internamente)
     Promise.all([load(), loadComments()]).then(() => {
       const effectTime = performance.now() - effectStartTime;
       console.log(`[ChatPane] ⚡ useEffect completado en ${effectTime.toFixed(0)}ms`);
-      loadingRef.current = false;
-    }).catch(() => {
-      loadingRef.current = false;
+    }).catch((err) => {
+      if (err.name !== 'AbortError') {
+        console.error('[ChatPane] Error en useEffect:', err);
+      }
     });
 
     return () => {
-      // Liberar flag al desmontar
-      loadingRef.current = false;
+      // Cancelar cualquier request en progreso al desmontar o cambiar conversación
+      if (abortControllerRef.current) {
+        console.log(`[ChatPane] 🧹 Limpiando: cancelando requests en progreso`);
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      // Deshabilitar SSE al desmontar
+      setSseEnabled(false);
     };
     /* eslint-disable-next-line */
   }, [conversation?.id]);
@@ -1086,14 +1120,14 @@ function pickMime() {
     }
   }, []);
 
-  // Conectar SSE para esta conversación
+  // Conectar SSE para esta conversación (solo después de carga inicial)
   useRealtimeChat({
     conversationId: conversation?.id,
     onMessage: handleRealtimeMessages,
     onStatus: handleRealtimeStatus,
     onComments: handleRealtimeComments,
     onCall: handleRealtimeCall,
-    enabled: !!conversation,
+    enabled: !!conversation && sseEnabled, // Solo habilitar después de carga inicial
   });
 
   // Fallback: Polling cada 30s como respaldo si SSE falla
