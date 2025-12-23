@@ -22,7 +22,8 @@ export const GET: APIRoute = async ({ request }) => {
         c.usuario_id,
         u.nombre AS usuario_nombre,
         c.comentario,
-        c.creado_en
+        c.creado_en,
+        UNIX_TIMESTAMP(c.creado_en) AS ts
       FROM comentarios_internos c
       LEFT JOIN usuarios u ON u.id = c.usuario_id
       WHERE c.conversacion_id = ?
