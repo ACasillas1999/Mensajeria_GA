@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AppDataProvider } from '../contexts/AppDataContext.jsx';
 import StatusFieldsModal from './StatusFieldsModal.jsx';
+import CycleHistoryModal from './CycleHistoryModal.jsx';
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -12,6 +13,7 @@ function PipelineViewInner() {
   const [dragOverColumn, setDragOverColumn] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' | 'assigned_to_me'
   const [statusChangeModal, setStatusChangeModal] = useState({ show: false, conversation: null, newStatusId: null, status: null });
+  const [cycleHistoryModal, setCycleHistoryModal] = useState({ show: false, conversationId: null, conversationName: null });
 
   async function loadPipeline() {
     setLoading(true);
@@ -298,8 +300,16 @@ function PipelineViewInner() {
                         <div className="flex items-center gap-1">
                           {conv.cycle_count > 0 && (
                             <span
-                              className="text-xs px-1.5 py-0.5 rounded bg-purple-900/40 text-purple-300 border border-purple-700/50"
-                              title={`Cliente recurrente - Ciclo #${conv.cycle_count + 1}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCycleHistoryModal({
+                                  show: true,
+                                  conversationId: conv.id,
+                                  conversationName: conv.wa_profile_name || conv.wa_user
+                                });
+                              }}
+                              className="text-xs px-1.5 py-0.5 rounded bg-purple-900/40 text-purple-300 border border-purple-700/50 cursor-pointer hover:bg-purple-900/60 transition-colors"
+                              title={`Cliente recurrente - Ciclo #${conv.cycle_count + 1} - Click para ver historial`}
                             >
                               🔄 {conv.cycle_count + 1}
                             </span>
@@ -384,6 +394,15 @@ function PipelineViewInner() {
             );
             setStatusChangeModal({ show: false, conversation: null, newStatusId: null, status: null });
           }}
+        />
+      )}
+
+      {/* Modal de historial de ciclos */}
+      {cycleHistoryModal.show && (
+        <CycleHistoryModal
+          conversationId={cycleHistoryModal.conversationId}
+          conversationName={cycleHistoryModal.conversationName}
+          onClose={() => setCycleHistoryModal({ show: false, conversationId: null, conversationName: null })}
         />
       )}
     </div>

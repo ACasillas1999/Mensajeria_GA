@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import TemplatePicker from './TemplatePicker.jsx'
+import CycleHistoryModal from './CycleHistoryModal.jsx'
 import { useRealtimeChat } from '../hooks/useRealtimeChat.js'
 
 const BASE = import.meta.env.BASE_URL || '';
@@ -10,6 +11,7 @@ export default function ChatView({ conversation }) {
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
+  const [showCycleHistory, setShowCycleHistory] = useState(false)
 
   // ---- Grabación ----
   const recRef = useRef(null)           // MediaRecorder
@@ -269,8 +271,17 @@ export default function ChatView({ conversation }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b font-semibold">
-        {conversation.wa_profile_name || conversation.wa_user}
+      <div className="px-4 py-3 border-b font-semibold flex items-center justify-between">
+        <span>{conversation.wa_profile_name || conversation.wa_user}</span>
+        {conversation.cycle_count > 0 && (
+          <span
+            onClick={() => setShowCycleHistory(true)}
+            className="text-xs px-2 py-1 rounded bg-purple-900/40 text-purple-300 border border-purple-700/50 cursor-pointer hover:bg-purple-900/60 transition-colors"
+            title={`Cliente recurrente - Ciclo #${conversation.cycle_count + 1} - Click para ver historial`}
+          >
+            🔄 Ciclo {conversation.cycle_count + 1}
+          </span>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
@@ -369,6 +380,15 @@ export default function ChatView({ conversation }) {
               if (data.ok) setMsgs(data.items || [])
             }, 500)
           }}
+        />
+      )}
+
+      {/* Modal de historial de ciclos */}
+      {showCycleHistory && (
+        <CycleHistoryModal
+          conversationId={conversation.id}
+          conversationName={conversation.wa_profile_name || conversation.wa_user}
+          onClose={() => setShowCycleHistory(false)}
         />
       )}
     </div>
