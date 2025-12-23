@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppDataProvider } from '../contexts/AppDataContext.jsx';
+import StatusFieldsModal from './StatusFieldsModal.jsx';
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -10,6 +11,7 @@ function PipelineViewInner() {
   const [draggedConversation, setDraggedConversation] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' | 'assigned_to_me'
+  const [statusChangeModal, setStatusChangeModal] = useState({ show: false, conversation: null, newStatusId: null, status: null });
 
   async function loadPipeline() {
     setLoading(true);
@@ -46,7 +48,7 @@ function PipelineViewInner() {
     return () => clearInterval(interval);
   }, [filter]);
 
-  async function changeConversationStatus(conversationId, newStatusId, oldStatusId) {
+  async function changeConversationStatus(conversationId, newStatusId, oldStatusId, fieldData) {
     if (oldStatusId === newStatusId) return;
 
     try {
@@ -58,6 +60,7 @@ function PipelineViewInner() {
           conversation_id: conversationId,
           status_id: newStatusId,
           reason: 'Movido desde Pipeline',
+          field_data: fieldData ? JSON.stringify(fieldData) : null,
         }),
       });
 
@@ -102,6 +105,36 @@ function PipelineViewInner() {
       return;
     }
 
+    // Verificar si el nuevo estado requiere campos personalizados
+    const targetColumn = pipeline.find(col => col.status.id === toStatusId);
+    if (targetColumn?.status?.required_fields) {
+      try {
+        const fields = Array.isArray(targetColumn.status.required_fields)
+          ? targetColumn.status.required_fields
+          : JSON.parse(targetColumn.status.required_fields);
+
+        if (Array.isArray(fields) && fields.length > 0) {
+          // Mostrar modal para capturar campos
+          setStatusChangeModal({
+            show: true,
+            conversation: draggedConversation,
+            newStatusId: toStatusId,
+            status: targetColumn.status,
+          });
+          setDraggedConversation(null);
+          return;
+        }
+      } catch (err) {
+        console.error('Error parsing required_fields:', err);
+      }
+    }
+
+    // Si no requiere campos, proceder con el cambio
+    performStatusChange(draggedConversation.id, toStatusId, fromStatusId, null);
+    setDraggedConversation(null);
+  }
+
+  function performStatusChange(conversationId, toStatusId, fromStatusId, fieldData) {
     // Actualización optimista
     setPipeline((prev) => {
       const newPipeline = prev.map((column) => {
@@ -109,17 +142,23 @@ function PipelineViewInner() {
         if (column.status.id === fromStatusId) {
           return {
             ...column,
-            conversations: column.conversations.filter((c) => c.id !== draggedConversation.id),
+            conversations: column.conversations.filter((c) => c.id !== conversationId),
             count: column.count - 1,
           };
         }
         // Agregar a columna destino
         if (column.status.id === toStatusId) {
-          return {
-            ...column,
-            conversations: [draggedConversation, ...column.conversations],
-            count: column.count + 1,
-          };
+          const conv = pipeline
+            .find(col => col.status.id === fromStatusId)
+            ?.conversations.find(c => c.id === conversationId);
+
+          if (conv) {
+            return {
+              ...column,
+              conversations: [{ ...conv, field_data: fieldData }, ...column.conversations],
+              count: column.count + 1,
+            };
+          }
         }
         return column;
       });
@@ -127,9 +166,7 @@ function PipelineViewInner() {
     });
 
     // Actualizar en servidor
-    changeConversationStatus(draggedConversation.id, toStatusId, fromStatusId);
-
-    setDraggedConversation(null);
+    changeConversationStatus(conversationId, toStatusId, fromStatusId, fieldData);
   }
 
   function openConversation(conversationId) {
@@ -274,6 +311,34 @@ function PipelineViewInner() {
                         </div>
                       )}
 
+                      {/* Mostrar campos personalizados si existen */}
+                      {conv.field_data && (() => {
+                        try {
+                          const fieldData = typeof conv.field_data === 'string'
+                            ? JSON.parse(conv.field_data)
+                            : conv.field_data;
+
+                          return Object.keys(fieldData).length > 0 && (
+                            <div className="mb-2 p-2 rounded bg-slate-800/50 border border-slate-700/50">
+                              <div className="text-[10px] text-slate-400 mb-1 font-semibold">Información:</div>
+                              <div className="space-y-0.5">
+                                {Object.entries(fieldData).map(([key, value]) => (
+                                  <div key={key} className="text-xs flex items-start gap-1">
+                                    <span className="text-slate-400">
+                                      {key.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}:
+                                    </span>
+                                    <span className="text-emerald-300 font-medium truncate">{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        } catch (err) {
+                          console.error('Error parsing field_data:', err);
+                          return null;
+                        }
+                      })()}
+
                       <div className="flex items-center justify-between text-xs">
                         {conv.assigned_to_name ? (
                           <span className="text-slate-500">👤 {conv.assigned_to_name}</span>
@@ -292,6 +357,24 @@ function PipelineViewInner() {
           ))}
           </div>
         </div>
+      )}
+
+      {/* Modal de campos personalizados al cambiar estado */}
+      {statusChangeModal.show && (
+        <StatusFieldsModal
+          status={statusChangeModal.status}
+          conversationName={statusChangeModal.conversation?.wa_profile_name || statusChangeModal.conversation?.wa_user}
+          onClose={() => setStatusChangeModal({ show: false, conversation: null, newStatusId: null, status: null })}
+          onSubmit={(fieldData) => {
+            performStatusChange(
+              statusChangeModal.conversation.id,
+              statusChangeModal.newStatusId,
+              statusChangeModal.conversation.fromStatusId,
+              fieldData
+            );
+            setStatusChangeModal({ show: false, conversation: null, newStatusId: null, status: null });
+          }}
+        />
       )}
     </div>
   );

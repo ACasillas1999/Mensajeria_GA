@@ -23,7 +23,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
       'SELECT * FROM conversation_statuses WHERE is_active = TRUE ORDER BY display_order ASC'
     );
 
-    // Construir query de conversaciones
+    // Construir query de conversaciones con field_data del historial más reciente
     let conversationsQuery = `
       SELECT
         c.id,
@@ -37,8 +37,18 @@ export const GET: APIRoute = async ({ locals, url }) => {
         cs.name AS status_name,
         cs.color AS status_color,
         cs.icon AS status_icon,
+        cs.required_fields,
         u.nombre AS assigned_to_name,
-        u.id AS assigned_to_id
+        u.id AS assigned_to_id,
+        (
+          SELECT csh.field_data
+          FROM conversation_status_history csh
+          WHERE csh.conversation_id = c.id
+            AND csh.new_status_id = c.status_id
+            AND csh.field_data IS NOT NULL
+          ORDER BY csh.id DESC
+          LIMIT 1
+        ) AS field_data
       FROM conversaciones c
       LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
       LEFT JOIN usuarios u ON c.asignado_a = u.id
@@ -73,6 +83,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
           color: status.color,
           icon: status.icon,
           display_order: status.display_order,
+          required_fields: status.required_fields,
         },
         conversations: statusConversations.map((c) => ({
           id: c.id,
@@ -84,6 +95,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
           dentro_ventana_24h: c.dentro_ventana_24h,
           assigned_to_name: c.assigned_to_name,
           assigned_to_id: c.assigned_to_id,
+          field_data: c.field_data, // Datos de campos personalizados
         })),
         count: statusConversations.length,
       };
