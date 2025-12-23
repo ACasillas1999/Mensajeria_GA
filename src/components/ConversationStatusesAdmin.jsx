@@ -228,11 +228,19 @@ export default function ConversationStatusesAdmin() {
                     title="Configurar campos personalizados que se solicitan al cambiar a este estado"
                   >
                     ⚙️ Campos
-                    {s.required_fields && JSON.parse(s.required_fields).length > 0 && (
-                      <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[10px]">
-                        {JSON.parse(s.required_fields).length}
-                      </span>
-                    )}
+                    {(() => {
+                      // required_fields puede venir como array (ya parseado) o como string JSON
+                      const fields = s.required_fields
+                        ? (Array.isArray(s.required_fields)
+                            ? s.required_fields
+                            : (typeof s.required_fields === 'string' ? JSON.parse(s.required_fields) : []))
+                        : [];
+                      return fields.length > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[10px]">
+                          {fields.length}
+                        </span>
+                      );
+                    })()}
                   </button>
 
                   <button
