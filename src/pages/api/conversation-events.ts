@@ -34,6 +34,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
         ce.texto,
         ce.evento_data,
         ce.creado_en,
+        UNIX_TIMESTAMP(ce.creado_en) AS ts,
         u.nombre AS usuario_nombre
       FROM conversation_events ce
       LEFT JOIN usuarios u ON u.id = ce.usuario_id

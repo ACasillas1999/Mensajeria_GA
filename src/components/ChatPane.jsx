@@ -1556,8 +1556,10 @@ function pickMime() {
           ...comments.map(c => ({ ...c, _type: 'comment' }))
         ]
           .sort((a, b) => {
-            const timeA = new Date(a.created_at || a.creado_en).getTime();
-            const timeB = new Date(b.created_at || b.creado_en).getTime();
+            // Usar timestamp Unix (segundos) para ordenamiento consistente
+            // Mensajes tienen 'ts', eventos ahora también tienen 'ts', comentarios usan 'creado_en'
+            const timeA = a.ts || new Date(a.created_at || a.creado_en).getTime() / 1000;
+            const timeB = b.ts || new Date(b.created_at || b.creado_en).getTime() / 1000;
             return timeA - timeB;
           })
           .map((item) => {
