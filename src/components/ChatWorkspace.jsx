@@ -27,10 +27,22 @@ function ChatWorkspaceInner({ initialId = null }) {
     let canceled = false;
     async function preload(id) {
       try {
+        const startTime = performance.now();
+        console.log(`[ChatWorkspace] 📥 Cargando conversación ${id} desde initialId...`);
+
         const r = await fetch(`${BASE}/api/conversations/${id}`.replace(/\/\//g, '/'));
         const j = await r.json();
-        if (!canceled && j.ok) setCurrent(j.item);
-      } catch {}
+
+        const fetchTime = performance.now() - startTime;
+        console.log(`[ChatWorkspace] ⏱️ Fetch completado en ${fetchTime.toFixed(0)}ms`);
+
+        if (!canceled && j.ok) {
+          setCurrent(j.item);
+          console.log(`[ChatWorkspace] ✅ Conversación ${id} cargada y establecida`);
+        }
+      } catch (err) {
+        console.error('[ChatWorkspace] ❌ Error cargando conversación:', err);
+      }
     }
     preload(initialId);
     return () => { canceled = true; };

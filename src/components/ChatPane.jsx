@@ -576,25 +576,38 @@ function pickMime() {
 
   async function load() {
     if (!conversation) return;
+    const loadStartTime = performance.now();
+    console.log(`[ChatPane] 🔄 Iniciando carga para conversación ${conversation.id}`);
+
     setLoading(true);
     isInitialLoad.current = true; // Marcar como carga inicial
     try {
+      // 1. Cargar mensajes
+      const messagesStartTime = performance.now();
       const limit = 50; // Cargar solo 50 mensajes inicialmente
       const qs = new URLSearchParams({ conversation_id: String(conversation.id), limit: String(limit) });
       if (searchQ.trim()) qs.set('q', searchQ.trim());
+
       const r = await fetch(`${BASE}/api/messages?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
+      const messagesTime = performance.now() - messagesStartTime;
+
       if (j.ok) {
         const messages = j.items || [];
-        console.log(`[ChatPane] Cargados ${messages.length} mensajes para conversación ${conversation.id}`);
+        console.log(`[ChatPane] 📨 Mensajes cargados: ${messages.length} en ${messagesTime.toFixed(0)}ms`);
         setItems(messages);
         setTotalMessages(j.total || messages.length);
-        // Hay más si la cantidad recibida es igual al límite
         setHasMore(messages.length === limit);
       }
 
-      // Cargar eventos del sistema
+      // 2. Cargar eventos del sistema
+      const eventsStartTime = performance.now();
       await loadSystemEvents();
+      const eventsTime = performance.now() - eventsStartTime;
+      console.log(`[ChatPane] 📌 Eventos cargados en ${eventsTime.toFixed(0)}ms`);
+
+      const totalTime = performance.now() - loadStartTime;
+      console.log(`[ChatPane] ✅ Carga total completada en ${totalTime.toFixed(0)}ms`);
     } finally {
       setLoading(false);
       // Solo hacer scroll múltiple en la carga inicial
@@ -604,7 +617,7 @@ function pickMime() {
         setTimeout(scrollToBottom, 300);
         setTimeout(() => {
           isInitialLoad.current = false;
-          console.log('[ChatPane] Carga inicial completada');
+          console.log('[ChatPane] 🎯 Scroll inicial completado');
         }, 500);
       }
     }
@@ -864,11 +877,18 @@ function pickMime() {
   // Cargar comentarios internos
   async function loadComments() {
     if (!conversation) return;
+    const startTime = performance.now();
     try {
       const r = await fetch(`${BASE}/api/comentarios?conversacion_id=${conversation.id}`.replace(/\/\//g, '/'));
       const j = await r.json();
-      if (j.ok) setComments(j.items || []);
-    } catch {}
+      const fetchTime = performance.now() - startTime;
+      if (j.ok) {
+        setComments(j.items || []);
+        console.log(`[ChatPane] 💬 Comentarios cargados: ${(j.items || []).length} en ${fetchTime.toFixed(0)}ms`);
+      }
+    } catch (err) {
+      console.error('[ChatPane] ❌ Error cargando comentarios:', err);
+    }
   }
 
   // Crear comentario interno
@@ -894,8 +914,15 @@ function pickMime() {
   }
 
   useEffect(() => {
-    load();
-    loadComments();
+    if (conversation?.id) {
+      console.log(`[ChatPane] 🚀 useEffect disparado para conversación ${conversation.id}`);
+      const effectStartTime = performance.now();
+
+      Promise.all([load(), loadComments()]).then(() => {
+        const effectTime = performance.now() - effectStartTime;
+        console.log(`[ChatPane] ⚡ useEffect completado en ${effectTime.toFixed(0)}ms`);
+      });
+    }
     /* eslint-disable-next-line */
   }, [conversation?.id]);
 
