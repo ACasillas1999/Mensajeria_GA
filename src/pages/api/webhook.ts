@@ -7,6 +7,163 @@ import { broadcastToConversation } from './events';
 import type { RowDataPacket } from 'mysql2/promise';
 
 /**
+ * Verifica si una conversación está en estado final y resetea el ciclo si es necesario
+ * Cuando un cliente en estado final vuelve a escribir, se:
+ * 1. Guarda el ciclo completado en conversation_cycles
+ * 2. Incrementa cycle_count
+ * 3. Resetea el estado al configurado (auto_reset_to_status_id) o al estado por defecto
+ */
+async function checkAndResetCycle(convId: number) {
+  try {
+    // Obtener información de la conversación y su estado actual
+    const [convRows] = await pool.query<RowDataPacket[]>(
+      `SELECT
+        c.id,
+        c.status_id,
+        c.cycle_count,
+        c.current_cycle_started_at,
+        c.asignado_a,
+        cs.is_final,
+        cs.auto_reset_to_status_id,
+        cs.name as status_name
+      FROM conversaciones c
+      LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
+      WHERE c.id = ?`,
+      [convId]
+    );
+
+    if (convRows.length === 0) return;
+
+    const conv = convRows[0];
+
+    // Si no está en estado final, no hacer nada
+    if (!conv.is_final) return;
+
+    console.log(`[Cycle Reset] Conversación ${convId} en estado final "${conv.status_name}", completando ciclo...`);
+
+    // Obtener el último field_data del estado actual
+    const [lastHistoryRows] = await pool.query<RowDataPacket[]>(
+      `SELECT field_data
+       FROM conversation_status_history
+       WHERE conversation_id = ? AND new_status_id = ?
+       ORDER BY id DESC
+       LIMIT 1`,
+      [convId, conv.status_id]
+    );
+
+    const cycleData = lastHistoryRows.length > 0 && lastHistoryRows[0].field_data
+      ? lastHistoryRows[0].field_data
+      : null;
+
+    // Contar mensajes del ciclo actual
+    const [msgCountRows] = await pool.query<RowDataPacket[]>(
+      `SELECT COUNT(*) as total
+       FROM mensajes
+       WHERE conversacion_id = ?
+         AND creado_en >= ?`,
+      [convId, conv.current_cycle_started_at || new Date()]
+    );
+
+    const totalMessages = msgCountRows[0]?.total || 0;
+
+    // 1. Guardar el ciclo completado en conversation_cycles
+    const newCycleNumber = (conv.cycle_count || 0) + 1;
+
+    await pool.query(
+      `INSERT INTO conversation_cycles
+       (conversation_id, cycle_number, started_at, completed_at,
+        initial_status_id, final_status_id, total_messages, assigned_to, cycle_data)
+       VALUES (?, ?, ?, NOW(), NULL, ?, ?, ?, ?)`,
+      [
+        convId,
+        newCycleNumber,
+        conv.current_cycle_started_at || new Date(),
+        conv.status_id,
+        totalMessages,
+        conv.asignado_a || null,
+        cycleData
+      ]
+    );
+
+    console.log(`[Cycle Reset] Ciclo #${newCycleNumber} guardado con ${totalMessages} mensajes`);
+
+    // 2. Determinar estado de reset
+    let resetStatusId = conv.auto_reset_to_status_id;
+
+    // Si no hay auto_reset_to_status_id, usar el estado por defecto
+    if (!resetStatusId) {
+      const [defaultStatusRows] = await pool.query<RowDataPacket[]>(
+        `SELECT id FROM conversation_statuses
+         WHERE is_default = TRUE AND is_active = TRUE
+         LIMIT 1`
+      );
+
+      if (defaultStatusRows.length === 0) {
+        // Si no hay estado default, usar el primero activo
+        const [firstStatusRows] = await pool.query<RowDataPacket[]>(
+          `SELECT id FROM conversation_statuses
+           WHERE is_active = TRUE
+           ORDER BY display_order ASC
+           LIMIT 1`
+        );
+        resetStatusId = firstStatusRows[0]?.id || conv.status_id;
+      } else {
+        resetStatusId = defaultStatusRows[0].id;
+      }
+    }
+
+    // 3. Resetear la conversación al nuevo ciclo
+    await pool.query(
+      `UPDATE conversaciones
+       SET status_id = ?,
+           cycle_count = ?,
+           current_cycle_started_at = NOW()
+       WHERE id = ?`,
+      [resetStatusId, newCycleNumber, convId]
+    );
+
+    // 4. Registrar el cambio de estado en el historial
+    await pool.query(
+      `INSERT INTO conversation_status_history
+       (conversation_id, old_status_id, new_status_id, changed_by, change_reason)
+       VALUES (?, ?, ?, NULL, 'Ciclo completado - Reset automático')`,
+      [convId, conv.status_id, resetStatusId]
+    );
+
+    // 5. Registrar evento del sistema
+    const [newStatusRows] = await pool.query<RowDataPacket[]>(
+      `SELECT name, icon FROM conversation_statuses WHERE id = ?`,
+      [resetStatusId]
+    );
+
+    const newStatusName = newStatusRows[0]?.name || 'Nuevo';
+    const newStatusIcon = newStatusRows[0]?.icon || '🔄';
+
+    await pool.query(
+      `INSERT INTO conversation_events
+       (conversacion_id, tipo, texto, evento_data)
+       VALUES (?, 'cambio_estado', ?, ?)`,
+      [
+        convId,
+        `🔄 Ciclo #${newCycleNumber} completado - Estado reseteado a ${newStatusIcon} ${newStatusName}`,
+        JSON.stringify({
+          cycle_number: newCycleNumber,
+          old_status_id: conv.status_id,
+          new_status_id: resetStatusId,
+          reason: 'Cliente volvió a escribir después de completar ciclo'
+        })
+      ]
+    );
+
+    console.log(`[Cycle Reset] Conversación ${convId} reseteada a estado "${newStatusName}" (ciclo #${newCycleNumber})`);
+
+  } catch (error) {
+    console.error('[Cycle Reset] Error:', error);
+    // No lanzar error para no interrumpir el procesamiento del webhook
+  }
+}
+
+/**
  * Procesa eventos de llamadas de WhatsApp Business
  */
 async function processCallEvent(value: any) {
@@ -325,6 +482,9 @@ export const POST: APIRoute = async ({ request }) => {
              WHERE id=?`,
             [profileName, cuerpo, ts, convId]
           );
+
+          // Verificar si la conversación está en un estado final y resetear ciclo
+          await checkAndResetCycle(convId);
 
           // Crear notificación si la conversación está asignada a un agente
           if (mensajeId) {

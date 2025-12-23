@@ -34,6 +34,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
         c.ultimo_msg_entrante_ts,
         c.dentro_ventana_24h,
         c.status_id,
+        c.cycle_count,
         cs.name AS status_name,
         cs.color AS status_color,
         cs.icon AS status_icon,
@@ -95,6 +96,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
           dentro_ventana_24h: c.dentro_ventana_24h,
           assigned_to_name: c.assigned_to_name,
           assigned_to_id: c.assigned_to_id,
+          cycle_count: c.cycle_count, // Número de ciclos completados
           field_data: c.field_data, // Datos de campos personalizados
         })),
         count: statusConversations.length,

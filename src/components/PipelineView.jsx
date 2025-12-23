@@ -295,14 +295,24 @@ function PipelineViewInner() {
                           </div>
                           <div className="text-xs text-slate-400 truncate">{conv.wa_user}</div>
                         </div>
-                        {!conv.dentro_ventana_24h && (
-                          <span
-                            className="text-xs px-1.5 py-0.5 rounded bg-amber-900/40 text-amber-300"
-                            title="Fuera de ventana 24h"
-                          >
-                            ⏰
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {conv.cycle_count > 0 && (
+                            <span
+                              className="text-xs px-1.5 py-0.5 rounded bg-purple-900/40 text-purple-300 border border-purple-700/50"
+                              title={`Cliente recurrente - Ciclo #${conv.cycle_count + 1}`}
+                            >
+                              🔄 {conv.cycle_count + 1}
+                            </span>
+                          )}
+                          {!conv.dentro_ventana_24h && (
+                            <span
+                              className="text-xs px-1.5 py-0.5 rounded bg-amber-900/40 text-amber-300"
+                              title="Fuera de ventana 24h"
+                            >
+                              ⏰
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {conv.ultimo_msg && (
