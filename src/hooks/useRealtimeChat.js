@@ -25,6 +25,7 @@ export function useRealtimeChat({
   const eventSourceRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttempts = useRef(0);
+  const isConnectingRef = useRef(false); // Flag para evitar conexiones simultáneas
 
   // Usar refs para los callbacks para evitar reconexiones innecesarias
   const callbacksRef = useRef({
@@ -49,6 +50,12 @@ export function useRealtimeChat({
   const connect = useCallback(() => {
     if (!enabled) return;
 
+    // Evitar conexiones simultáneas
+    if (isConnectingRef.current) {
+      console.log('[SSE] ⚠️ Ya hay una conexión en proceso, omitiendo...');
+      return;
+    }
+
     // Cerrar conexión anterior completamente
     if (eventSourceRef.current) {
       console.log('[SSE] Cerrando conexión anterior');
@@ -67,6 +74,7 @@ export function useRealtimeChat({
       : `${BASE}/api/events`.replace(/\/\//g, '/');
 
     try {
+      isConnectingRef.current = true; // Marcar como conectando
       console.log('[SSE] Conectando a:', url);
       const es = new EventSource(url);
       eventSourceRef.current = es;
@@ -74,10 +82,12 @@ export function useRealtimeChat({
       es.onopen = () => {
         console.log('[SSE] Conectado exitosamente');
         reconnectAttempts.current = 0;
+        isConnectingRef.current = false; // Ya no está conectando
       };
 
       es.onerror = (err) => {
         console.error('[SSE] Error:', err);
+        isConnectingRef.current = false; // Liberar flag
 
         // Cerrar y limpiar la referencia
         if (eventSourceRef.current) {
@@ -149,6 +159,7 @@ export function useRealtimeChat({
 
     } catch (err) {
       console.error('[SSE] Error al crear conexión:', err);
+      isConnectingRef.current = false; // Liberar flag en caso de error
     }
   }, [conversationId, enabled]); // Solo depende de conversationId y enabled
 
@@ -157,6 +168,7 @@ export function useRealtimeChat({
 
     return () => {
       console.log('[SSE] Limpiando conexión');
+      isConnectingRef.current = false; // Liberar flag al limpiar
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
