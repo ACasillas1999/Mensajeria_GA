@@ -71,7 +71,8 @@ async function changeConversationStatus(
           new_status_id: newStatusId,
           old_status_name: oldStatusName,
           new_status_name: newStatusName,
-          reason: reason || null
+          reason: reason || null,
+          field_data: fieldData ? JSON.parse(fieldData) : null
         })
       ]
     );

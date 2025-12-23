@@ -101,13 +101,44 @@ function SystemEvent({ evento }) {
     'nota_sistema': 'ℹ️'
   };
 
+  // Parsear evento_data si existe
+  let eventoData = null;
+  try {
+    eventoData = evento.evento_data
+      ? (typeof evento.evento_data === 'string' ? JSON.parse(evento.evento_data) : evento.evento_data)
+      : null;
+  } catch (e) {
+    console.error('Error parsing evento_data:', e);
+  }
+
+  // Verificar si hay field_data en el evento
+  const fieldData = eventoData?.field_data;
+
   return (
     <div className="flex justify-center my-3">
-      <div className="max-w-md px-4 py-2 rounded-lg bg-slate-900/50 border border-slate-700/50 text-center">
+      <div className="max-w-lg px-4 py-2 rounded-lg bg-slate-900/50 border border-slate-700/50 text-center">
         <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
           <span className="text-base">{iconos[evento.tipo] || 'ℹ️'}</span>
           <span>{evento.texto}</span>
         </div>
+
+        {/* Mostrar datos de campos personalizados si existen */}
+        {fieldData && Object.keys(fieldData).length > 0 && (
+          <div className="mt-2 pt-2 border-t border-slate-700/50 text-left">
+            <div className="text-[10px] text-slate-500 mb-2 font-semibold text-center">Información adicional:</div>
+            <div className="space-y-1.5 bg-slate-800/30 rounded px-3 py-2">
+              {Object.entries(fieldData).map(([key, value]) => (
+                <div key={key} className="flex items-start gap-2">
+                  <span className="text-[11px] text-slate-400 min-w-fit">
+                    {key.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}:
+                  </span>
+                  <span className="text-[11px] text-emerald-300 font-medium">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="text-[10px] text-slate-500 mt-1">
           {new Date(evento.creado_en).toLocaleString()}
         </div>
@@ -865,8 +896,6 @@ function pickMime() {
   useEffect(() => {
     load();
     loadComments();
-    // Recargar estados para asegurarse de tener la configuración más reciente
-    reloadStatuses?.();
     /* eslint-disable-next-line */
   }, [conversation?.id]);
 
