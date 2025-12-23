@@ -344,6 +344,7 @@ export default function ChatPane({ conversation }) {
   const [systemEvents, setSystemEvents] = useState([]); // Eventos del sistema (asignaciones, cambios de estado)
   const [loading, setLoading] = useState(false);
   const [searchQ, setSearchQ] = useState("");
+  const loadingRef = useRef(false); // Flag para evitar cargas duplicadas
 
   // notificaciones
   const prevIncomingCountRef = useRef(0);
@@ -914,15 +915,30 @@ function pickMime() {
   }
 
   useEffect(() => {
-    if (conversation?.id) {
-      console.log(`[ChatPane] 🚀 useEffect disparado para conversación ${conversation.id}`);
-      const effectStartTime = performance.now();
+    if (!conversation?.id) return;
 
-      Promise.all([load(), loadComments()]).then(() => {
-        const effectTime = performance.now() - effectStartTime;
-        console.log(`[ChatPane] ⚡ useEffect completado en ${effectTime.toFixed(0)}ms`);
-      });
+    // Evitar cargas duplicadas si ya hay una en proceso
+    if (loadingRef.current) {
+      console.log(`[ChatPane] ⚠️ Ya hay una carga en proceso, omitiendo...`);
+      return;
     }
+
+    console.log(`[ChatPane] 🚀 useEffect disparado para conversación ${conversation.id}`);
+    loadingRef.current = true;
+    const effectStartTime = performance.now();
+
+    Promise.all([load(), loadComments()]).then(() => {
+      const effectTime = performance.now() - effectStartTime;
+      console.log(`[ChatPane] ⚡ useEffect completado en ${effectTime.toFixed(0)}ms`);
+      loadingRef.current = false;
+    }).catch(() => {
+      loadingRef.current = false;
+    });
+
+    return () => {
+      // Liberar flag al desmontar
+      loadingRef.current = false;
+    };
     /* eslint-disable-next-line */
   }, [conversation?.id]);
 
