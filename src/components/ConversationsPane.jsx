@@ -346,10 +346,16 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             value={q}
             onChange={(e)=>setQ(e.target.value)}
             onKeyDown={(e)=> e.key==="Enter" && load(q)}
-            placeholder="Buscar..."
-            className="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-1 text-xs outline-none focus:border-emerald-400"
+            placeholder="Buscar por nombre, número o texto..."
+            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs outline-none focus:border-emerald-400 shadow-inner"
           />
-          <button onClick={()=>load(q)} className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 flex-shrink-0">🔎</button>
+          <button
+            onClick={()=>load(q)}
+            className="px-3 py-2 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 flex-shrink-0 border border-slate-700 text-slate-200"
+            title="Buscar"
+          >
+            🔎
+          </button>
         </div>
 
         {/* Pestañas de vista */}
