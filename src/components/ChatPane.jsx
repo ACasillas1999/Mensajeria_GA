@@ -339,11 +339,13 @@ function StatusFieldsModal({ status, onClose, onSubmit }) {
 }
 
 export default function ChatPane({ conversation }) {
-  const { statuses, quickReplies: allQuickReplies, reloadQuickReplies, reloadStatuses } = useAppData();
+  const { statuses, quickReplies: allQuickReplies, users, reloadQuickReplies, reloadStatuses } = useAppData();
   const [items, setItems] = useState([]);
   const [systemEvents, setSystemEvents] = useState([]); // Eventos del sistema (asignaciones, cambios de estado)
   const [loading, setLoading] = useState(false);
   const [searchQ, setSearchQ] = useState("");
+  const [searchResults, setSearchResults] = useState([]); // IDs de mensajes que coinciden con la búsqueda
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(-1); // Índice del resultado actual
   const [sseEnabled, setSseEnabled] = useState(false); // Habilitar SSE solo después de carga inicial
 
   // notificaciones
@@ -770,7 +772,53 @@ function pickMime() {
     return `${hours}h ${minutes}m`;
   }
 
-  async function runSearch() { await load(); }
+  function runSearch() {
+    if (!searchQ.trim()) {
+      setSearchResults([]);
+      setCurrentSearchIndex(-1);
+      return;
+    }
+
+    const query = searchQ.toLowerCase().trim();
+    const results = items
+      .filter(m => m.text && m.text.toLowerCase().includes(query))
+      .map(m => m.id);
+
+    setSearchResults(results);
+    if (results.length > 0) {
+      setCurrentSearchIndex(0);
+      scrollToMessage(results[0]);
+    } else {
+      setCurrentSearchIndex(-1);
+    }
+  }
+
+  function scrollToMessage(messageId) {
+    const element = document.getElementById(`msg-${messageId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function nextSearchResult() {
+    if (searchResults.length === 0) return;
+    const nextIndex = (currentSearchIndex + 1) % searchResults.length;
+    setCurrentSearchIndex(nextIndex);
+    scrollToMessage(searchResults[nextIndex]);
+  }
+
+  function prevSearchResult() {
+    if (searchResults.length === 0) return;
+    const prevIndex = currentSearchIndex === 0 ? searchResults.length - 1 : currentSearchIndex - 1;
+    setCurrentSearchIndex(prevIndex);
+    scrollToMessage(searchResults[prevIndex]);
+  }
+
+  function clearSearch() {
+    setSearchQ('');
+    setSearchResults([]);
+    setCurrentSearchIndex(-1);
+  }
   async function openAttachments() {
     if (!conversation) return;
     try {
@@ -899,6 +947,33 @@ function pickMime() {
     } catch (err) {
       console.error('Error updating status:', err);
       alert('Error de red al cambiar el estado');
+    }
+  }
+
+  // Asignar conversación a un agente
+  async function handleAssignAgent(userId) {
+    try {
+      const r = await fetch(`${BASE}/api/admin/assign`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversation.id,
+          user_id: userId || null
+        })
+      });
+      const j = await r.json();
+      if (!j.ok) {
+        alert(j.error || 'No se pudo asignar');
+      } else {
+        const assignedUser = users.find(u => u.id === userId);
+        conversation.asignado_a = userId;
+        conversation.assigned_to_name = assignedUser?.nombre || null;
+        // Recargar eventos del sistema para mostrar la asignación
+        await loadSystemEvents();
+      }
+    } catch (err) {
+      console.error('Error assigning conversation:', err);
+      alert('Error de red al asignar');
     }
   }
 
@@ -1511,15 +1586,67 @@ function pickMime() {
               </option>
             ))}
           </select>
-          <input
-            value={searchQ}
-            onChange={(e)=>setSearchQ(e.target.value)}
-            onKeyDown={(e)=>{ if (e.key==='Enter') runSearch(); }}
-            placeholder="Buscar en chat..."
-            className="h-8 px-2 rounded bg-slate-900 border border-slate-700 text-xs outline-none focus:border-emerald-400"
-            style={{width:'160px'}}
-          />
-          <button type="button" onClick={runSearch} title="Buscar" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">🔎</button>
+          {/* Selector de agente asignado */}
+          <select
+            value={conversation.asignado_a || ''}
+            onChange={(e) => handleAssignAgent(e.target.value ? Number(e.target.value) : null)}
+            className="bg-slate-900 border border-slate-700 text-xs rounded px-2 py-1"
+            title="Asignar a agente"
+          >
+            <option value="">Sin asignar</option>
+            {users.map(u => (
+              <option key={u.id} value={u.id}>
+                👤 {u.nombre}
+              </option>
+            ))}
+          </select>
+          <div className="flex items-center gap-1">
+            <input
+              value={searchQ}
+              onChange={(e)=>setSearchQ(e.target.value)}
+              onKeyDown={(e)=>{
+                if (e.key==='Enter') runSearch();
+                if (e.key==='Escape') clearSearch();
+              }}
+              placeholder="Buscar en chat..."
+              className="h-8 px-2 rounded bg-slate-900 border border-slate-700 text-xs outline-none focus:border-emerald-400"
+              style={{width:'160px'}}
+            />
+            {searchResults.length > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-slate-400 px-2">
+                  {currentSearchIndex + 1} de {searchResults.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={prevSearchResult}
+                  title="Anterior (↑)"
+                  className="h-8 w-8 rounded bg-slate-800 hover:bg-slate-700 text-xs"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={nextSearchResult}
+                  title="Siguiente (↓)"
+                  className="h-8 w-8 rounded bg-slate-800 hover:bg-slate-700 text-xs"
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  title="Cerrar búsqueda (Esc)"
+                  className="h-8 w-8 rounded bg-slate-800 hover:bg-slate-700 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            {searchResults.length === 0 && searchQ && (
+              <button type="button" onClick={runSearch} title="Buscar" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">🔎</button>
+            )}
+          </div>
           <button type="button" onClick={openAttachments} title="Ver adjuntos" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📎</button>
           <button type="button" onClick={() => { loadTemplates(); setShowTemplates(true); }} title="Enviar plantilla" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📋</button>
         </div>
@@ -1572,12 +1699,16 @@ function pickMime() {
             }
 
             const m = item;
+            const isHighlighted = searchResults.length > 0 && searchResults[currentSearchIndex] === m.id;
             return (
-          <div key={m.id}
-               className={`max-w-[75%] px-3 py-2 rounded-lg border
+          <div
+               key={m.id}
+               id={`msg-${m.id}`}
+               className={`max-w-[75%] px-3 py-2 rounded-lg border transition-all
                  ${m.sender === 'me'
                    ? 'ml-auto bg-emerald-600/20 border-emerald-700'
-                   : 'bg-slate-800 border-slate-700'}`}>
+                   : 'bg-slate-800 border-slate-700'}
+                 ${isHighlighted ? 'ring-2 ring-yellow-400 bg-yellow-900/20' : ''}`}>
             {m.tipo === "text" && m.text && <div className="text-sm whitespace-pre-wrap">{m.text}</div>}
             {m.tipo !== "text" && <MediaBubble m={m} onOpen={openMedia} onImageLoad={scrollToBottom} />}
 

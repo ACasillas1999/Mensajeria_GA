@@ -7,8 +7,10 @@ const AppDataContext = createContext(null);
 export function AppDataProvider({ children }) {
   const [statuses, setStatuses] = useState([]);
   const [quickReplies, setQuickReplies] = useState([]);
+  const [users, setUsers] = useState([]);
   const [statusesLoaded, setStatusesLoaded] = useState(false);
   const [quickRepliesLoaded, setQuickRepliesLoaded] = useState(false);
+  const [usersLoaded, setUsersLoaded] = useState(false);
 
   // Cargar estados una sola vez al iniciar la app
   useEffect(() => {
@@ -59,6 +61,24 @@ export function AppDataProvider({ children }) {
     }
   };
 
+  // Cargar usuarios una sola vez al iniciar la app
+  useEffect(() => {
+    async function loadUsers() {
+      if (usersLoaded) return;
+      try {
+        const r = await fetch(`${BASE}/api/admin/users`.replace(/\/\//g, '/'));
+        const j = await r.json();
+        if (j.ok) {
+          setUsers(j.items || []);
+          setUsersLoaded(true);
+        }
+      } catch (e) {
+        console.error('Error loading users:', e);
+      }
+    }
+    loadUsers();
+  }, [usersLoaded]);
+
   // Función para recargar estados (cuando se actualiza la configuración)
   const reloadStatuses = async () => {
     try {
@@ -75,8 +95,10 @@ export function AppDataProvider({ children }) {
   const value = {
     statuses,
     quickReplies,
+    users,
     statusesLoaded,
     quickRepliesLoaded,
+    usersLoaded,
     reloadQuickReplies,
     reloadStatuses,
   };
