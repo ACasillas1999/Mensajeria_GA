@@ -97,7 +97,7 @@ function ChatWorkspaceInner({ initialId = null }) {
   };
 
   return (
-    <section ref={containerRef} className="flex gap-0 h-full relative select-none">
+    <section ref={containerRef} className="flex gap-0 h-full relative">
       {/* MOBILE: Panel izquierdo (conversaciones) - se oculta cuando hay conversación seleccionada */}
       <aside
         className={`md:hidden w-full h-full ${current ? 'hidden' : 'block'}`}
@@ -141,7 +141,7 @@ function ChatWorkspaceInner({ initialId = null }) {
 
       <div
         onMouseDown={handleMouseDown}
-        className={`hidden md:block w-1 cursor-col-resize hover:bg-emerald-500/50 transition-colors flex-shrink-0 ${
+        className={`hidden md:block w-1 cursor-col-resize hover:bg-emerald-500/50 transition-colors flex-shrink-0 select-none ${
           isDragging ? 'bg-emerald-500' : 'bg-slate-700/30'
         }`}
         title="Arrastra para redimensionar"
