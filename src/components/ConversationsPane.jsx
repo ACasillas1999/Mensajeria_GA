@@ -30,6 +30,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   const [unreadCounts, setUnreadCounts] = useState({}); // { conversacion_id: count }
   const [showNewChat, setShowNewChat] = useState(false);
   const [newPhone, setNewPhone] = useState("");
+  const [agentFilter, setAgentFilter] = useState(""); // nombre del agente asignado
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [sending, setSending] = useState(false);
@@ -261,6 +262,9 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
 
   // Filtrar según la vista seleccionada
   const filtered = items.filter(c => {
+    if (agentFilter && c.asignado_nombre !== agentFilter) {
+      return false;
+    }
     if (view === 'archived') {
       return c.is_archived === true || c.is_archived === 1;
     } else if (view === 'favorites') {
@@ -309,6 +313,17 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
               <option key={s.id} value={s.id}>
                 {s.icon} {s.name}
               </option>
+            ))}
+          </select>
+          <select
+            value={agentFilter}
+            onChange={(e)=>setAgentFilter(e.target.value)}
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs min-w-0"
+            title="Filtrar por agente asignado"
+          >
+            <option value="">Todos los agentes</option>
+            {Array.from(new Set(items.map(i => i.asignado_nombre).filter(Boolean))).map(name => (
+              <option key={name} value={name}>{name}</option>
             ))}
           </select>
         </div>
