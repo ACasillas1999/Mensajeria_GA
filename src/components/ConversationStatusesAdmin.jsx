@@ -43,6 +43,8 @@ export default function ConversationStatusesAdmin() {
       display_order: statuses.length,
       is_active: true,
       is_default: false,
+      is_final: false,
+      auto_reset_to_status_id: null,
     });
   }
 
@@ -66,6 +68,8 @@ export default function ConversationStatusesAdmin() {
       display_order: Number(modalStatus.display_order) || 0,
       is_active: modalStatus.is_active === true || modalStatus.is_active === 1,
       is_default: modalStatus.is_default === true || modalStatus.is_default === 1,
+      is_final: modalStatus.is_final === true || modalStatus.is_final === 1,
+      auto_reset_to_status_id: modalStatus.auto_reset_to_status_id || null,
     };
 
     try {
@@ -336,30 +340,79 @@ export default function ConversationStatusesAdmin() {
                 />
               </div>
 
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={modalStatus.is_active}
-                    onChange={(e) =>
-                      setModalStatus({ ...modalStatus, is_active: e.target.checked })
-                    }
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm text-slate-300">Estado activo</span>
-                </label>
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={modalStatus.is_active}
+                      onChange={(e) =>
+                        setModalStatus({ ...modalStatus, is_active: e.target.checked })
+                      }
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-slate-300">Estado activo</span>
+                  </label>
 
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={modalStatus.is_default}
-                    onChange={(e) =>
-                      setModalStatus({ ...modalStatus, is_default: e.target.checked })
-                    }
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm text-slate-300">Estado por defecto</span>
-                </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={modalStatus.is_default}
+                      onChange={(e) =>
+                        setModalStatus({ ...modalStatus, is_default: e.target.checked })
+                      }
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-slate-300">Estado por defecto</span>
+                  </label>
+                </div>
+
+                {/* Configuración de ciclos */}
+                <div className="p-3 rounded-lg bg-purple-900/20 border border-purple-700/50">
+                  <label className="flex items-center gap-2 cursor-pointer mb-3">
+                    <input
+                      type="checkbox"
+                      checked={modalStatus.is_final}
+                      onChange={(e) =>
+                        setModalStatus({ ...modalStatus, is_final: e.target.checked })
+                      }
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-purple-300 font-medium">
+                      🔄 Estado final (completa ciclo)
+                    </span>
+                  </label>
+                  <p className="text-xs text-slate-400 mb-3 ml-6">
+                    Cuando el cliente esté en este estado y envíe un mensaje, se guardará el ciclo y se reseteará automáticamente
+                  </p>
+
+                  {modalStatus.is_final && (
+                    <div className="ml-6">
+                      <label className="block text-xs text-slate-400 mb-1">
+                        Estado al que resetear:
+                      </label>
+                      <select
+                        value={modalStatus.auto_reset_to_status_id || ''}
+                        onChange={(e) =>
+                          setModalStatus({
+                            ...modalStatus,
+                            auto_reset_to_status_id: e.target.value ? Number(e.target.value) : null
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100"
+                      >
+                        <option value="">-- Auto (primer estado activo) --</option>
+                        {statuses
+                          .filter(s => s.is_active && s.id !== modalStatus.id)
+                          .map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.icon} {s.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-2 pt-2">
