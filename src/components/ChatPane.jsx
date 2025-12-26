@@ -772,24 +772,53 @@ function pickMime() {
     return `${hours}h ${minutes}m`;
   }
 
-  function runSearch() {
+  async function runSearch() {
     if (!searchQ.trim()) {
       setSearchResults([]);
       setCurrentSearchIndex(-1);
       return;
     }
 
-    const query = searchQ.toLowerCase().trim();
-    const results = items
-      .filter(m => m.text && m.text.toLowerCase().includes(query))
-      .map(m => m.id);
+    try {
+      // Hacer búsqueda en el servidor para obtener TODOS los mensajes que coinciden
+      const qs = new URLSearchParams({
+        conversation_id: String(conversation.id),
+        q: searchQ.trim(),
+        limit: '500' // Límite alto para obtener todos los resultados
+      });
+      const res = await fetch(`${BASE}/api/messages?${qs}`.replace(/\/\//g, '/'));
+      const json = await res.json();
 
-    setSearchResults(results);
-    if (results.length > 0) {
-      setCurrentSearchIndex(0);
-      scrollToMessage(results[0]);
-    } else {
-      setCurrentSearchIndex(-1);
+      if (json.ok && json.items) {
+        // Combinar con los mensajes actuales y eliminar duplicados
+        const allMessages = [...items];
+        json.items.forEach(newMsg => {
+          if (!allMessages.find(m => m.id === newMsg.id)) {
+            allMessages.push(newMsg);
+          }
+        });
+
+        // Actualizar los items con todos los mensajes encontrados
+        setItems(allMessages.sort((a, b) => {
+          const timeA = a.ts || new Date(a.created_at || a.creado_en).getTime() / 1000;
+          const timeB = b.ts || new Date(b.created_at || b.creado_en).getTime() / 1000;
+          return timeA - timeB;
+        }));
+
+        // Obtener IDs de los mensajes que coinciden
+        const results = json.items.map(m => m.id);
+        setSearchResults(results);
+
+        if (results.length > 0) {
+          setCurrentSearchIndex(0);
+          scrollToMessage(results[0]);
+        } else {
+          setCurrentSearchIndex(-1);
+        }
+      }
+    } catch (err) {
+      console.error('Error searching messages:', err);
+      alert('Error al buscar mensajes');
     }
   }
 
