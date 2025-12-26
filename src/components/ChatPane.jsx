@@ -797,8 +797,20 @@ function pickMime() {
     // Add small delay to ensure DOM is ready
     setTimeout(() => {
       const element = document.getElementById(`msg-${messageId}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (element && scrollerRef.current) {
+        // Calcular la posición del elemento relativo al contenedor
+        const container = scrollerRef.current;
+        const elementTop = element.offsetTop;
+        const containerHeight = container.clientHeight;
+        const elementHeight = element.clientHeight;
+
+        // Centrar el elemento en el contenedor
+        const scrollPosition = elementTop - (containerHeight / 2) + (elementHeight / 2);
+
+        container.scrollTo({
+          top: scrollPosition,
+          behavior: 'smooth'
+        });
       }
     }, 100);
   }
