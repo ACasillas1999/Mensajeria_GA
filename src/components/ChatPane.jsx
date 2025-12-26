@@ -794,10 +794,13 @@ function pickMime() {
   }
 
   function scrollToMessage(messageId) {
-    const element = document.getElementById(`msg-${messageId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    // Add small delay to ensure DOM is ready
+    setTimeout(() => {
+      const element = document.getElementById(`msg-${messageId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   }
 
   function nextSearchResult() {
