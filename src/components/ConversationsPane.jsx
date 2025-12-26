@@ -296,36 +296,48 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   return (
     <div className="h-full flex flex-col bg-slate-950/70 border border-slate-800 rounded-xl overflow-hidden">
       {/* Header con filtros */}
-      <div className="flex-shrink-0 px-3 py-2 border-b border-slate-800">
+      <div className="flex-shrink-0 px-3 py-3 border-b border-slate-800 bg-slate-900/40">
         {/* Primera fila: Título + acciones */}
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span className="font-medium">Conversaciones</span>
-          <button
-            onClick={() => setShowNewChat(true)}
-            className="px-2 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium whitespace-nowrap"
-            title="Nueva conversación"
-          >
-            + Nueva
-          </button>
-          <select value={estado} onChange={(e)=>setEstado(e.target.value)} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs min-w-0">
-            <option value="">Todas</option>
-            {statuses.map(s => (
-              <option key={s.id} value={s.id}>
-                {s.icon} {s.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={agentFilter}
-            onChange={(e)=>setAgentFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs min-w-0"
-            title="Filtrar por agente asignado"
-          >
-            <option value="">Todos los agentes</option>
-            {Array.from(new Set(items.map(i => i.asignado_nombre).filter(Boolean))).map(name => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-          </select>
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-100">Conversaciones</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
+              {items.length} abiertas
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap ml-auto">
+            <button
+              onClick={() => setShowNewChat(true)}
+              className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold shadow-sm whitespace-nowrap"
+              title="Nueva conversación"
+            >
+              + Nueva
+            </button>
+            <select
+              value={estado}
+              onChange={(e)=>setEstado(e.target.value)}
+              className="h-8 bg-slate-900 border border-slate-700 rounded-lg px-3 text-xs min-w-[140px] outline-none focus:border-emerald-400"
+              title="Filtrar por estado"
+            >
+              <option value="">Todas</option>
+              {statuses.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.icon} {s.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={agentFilter}
+              onChange={(e)=>setAgentFilter(e.target.value)}
+              className="h-8 bg-slate-900 border border-slate-700 rounded-lg px-3 text-xs min-w-[150px] outline-none focus:border-emerald-400"
+              title="Filtrar por agente asignado"
+            >
+              <option value="">Todos los agentes</option>
+              {Array.from(new Set(items.map(i => i.asignado_nombre).filter(Boolean))).map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Segunda fila: Búsqueda (siempre full-width) */}

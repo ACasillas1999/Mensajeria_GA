@@ -960,7 +960,7 @@ function pickMime() {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
-          conversation_id: conversation.id,
+          conversacion_id: conversation.id,
           user_id: userId || null
         })
       });
