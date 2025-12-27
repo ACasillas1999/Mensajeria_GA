@@ -112,7 +112,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
         cc.completed_at,
         cc.initial_status_id,
         cc.final_status_id,
-        cc.assigned_to_user_id,
+        cc.assigned_to,
         cc.total_messages,
         cc.cycle_data,
         TIMESTAMPDIFF(SECOND, cc.started_at, cc.completed_at) AS duration_seconds,
@@ -126,7 +126,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
       FROM conversation_cycles cc
       LEFT JOIN conversation_statuses initial_status ON cc.initial_status_id = initial_status.id
       LEFT JOIN conversation_statuses final_status ON cc.final_status_id = final_status.id
-      LEFT JOIN usuarios u ON cc.assigned_to_user_id = u.id
+      LEFT JOIN usuarios u ON cc.assigned_to = u.id
       WHERE cc.conversation_id = ?
       ORDER BY cc.cycle_number ASC`,
       [conversationId]
