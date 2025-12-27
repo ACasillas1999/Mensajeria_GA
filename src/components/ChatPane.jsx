@@ -998,6 +998,51 @@ function pickMime() {
     }
   }
 
+  // Completar ciclo manualmente
+  async function handleCompleteCycle() {
+    if (!conversation) return;
+
+    const confirmed = confirm(
+      `¿Completar el ciclo actual de la conversación?\n\n` +
+      `Esto guardará el ciclo #${(conversation.cycle_count || 0) + 1} y reiniciará la conversación al estado inicial.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const r = await fetch(`${BASE}/api/complete-cycle`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversacion_id: conversation.id,
+          reason: 'Completado manualmente por el agente'
+        })
+      });
+
+      const j = await r.json();
+
+      if (!j.ok) {
+        alert(j.error || 'No se pudo completar el ciclo');
+      } else {
+        alert(`✅ ${j.message}\n\nLa conversación ha sido reseteada a "${j.new_status.name}"`);
+
+        // Actualizar el estado de la conversación en memoria
+        if (j.new_status) {
+          conversation.status_id = j.new_status.id;
+          conversation.status_name = j.new_status.name;
+          conversation.status_icon = j.new_status.icon;
+          conversation.cycle_count = j.cycle_number;
+        }
+
+        // Recargar eventos del sistema para mostrar el nuevo evento de ciclo completado
+        await loadSystemEvents();
+      }
+    } catch (err) {
+      console.error('Error completing cycle:', err);
+      alert('Error de red al completar el ciclo');
+    }
+  }
+
   // Asignar conversación a un agente
   async function handleAssignAgent(userId) {
     try {
@@ -1523,7 +1568,13 @@ function pickMime() {
   }
 
   return (
-    <div className="bg-slate-950/70 border border-slate-800 rounded-xl h-full flex flex-col">
+    <div className="relative bg-slate-950/70 border border-slate-800 rounded-xl h-full flex flex-col">
+      {loading && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+          <div className="w-12 h-12 rounded-full border-4 border-emerald-400/70 border-t-transparent animate-spin" />
+          <p className="mt-3 text-sm text-slate-200 font-medium">Cargando conversacion...</p>
+        </div>
+      )}
       <div className="flex-shrink-0 h-12 px-4 flex items-center gap-3 border-b border-slate-800">
         <div className="font-medium truncate">{conversation.title || `Chat ${conversation.id}`}</div>
         <div className="text-xs text-slate-400 truncate">{conversation.wa_user}</div>
@@ -1595,6 +1646,15 @@ function pickMime() {
             className="h-8 px-2 rounded text-xs bg-gradient-to-r from-purple-900/40 to-blue-900/40 hover:from-purple-800/60 hover:to-blue-800/60 border border-purple-700/50 text-purple-200 transition font-medium"
           >
             🎫 Trazabilidad
+          </button>
+          {/* Botón completar ciclo */}
+          <button
+            type="button"
+            onClick={handleCompleteCycle}
+            title="Completar ciclo actual y reiniciar conversación"
+            className="h-8 px-2 rounded text-xs bg-gradient-to-r from-green-900/40 to-emerald-900/40 hover:from-green-800/60 hover:to-emerald-800/60 border border-green-700/50 text-green-200 transition font-medium"
+          >
+            ✅ Completar Ciclo
           </button>
           {conversation.status_name && (
             <span
