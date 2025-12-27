@@ -84,7 +84,7 @@ export default function ConversationTraceView({ conversationId, onClose }) {
     ...statusHistory.map(item => ({
       type: 'status_change',
       ts: item.ts,
-      date: item.changed_at,
+      date: item.created_at,
       ...item
     })),
     ...assignmentHistory.map(item => ({

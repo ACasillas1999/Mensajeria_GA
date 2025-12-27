@@ -57,10 +57,10 @@ export const GET: APIRoute = async ({ request, locals }) => {
         csh.conversation_id,
         csh.old_status_id,
         csh.new_status_id,
-        csh.changed_by_user_id,
+        csh.changed_by,
         csh.field_data,
-        csh.changed_at,
-        UNIX_TIMESTAMP(csh.changed_at) AS ts,
+        csh.created_at,
+        UNIX_TIMESTAMP(csh.created_at) AS ts,
         old_status.name AS old_status_name,
         old_status.color AS old_status_color,
         old_status.icon AS old_status_icon,
@@ -70,15 +70,15 @@ export const GET: APIRoute = async ({ request, locals }) => {
         u.nombre AS changed_by_name,
         -- Calcular duración en el estado anterior (tiempo hasta el siguiente cambio)
         TIMESTAMPDIFF(SECOND,
-          LAG(csh.changed_at) OVER (ORDER BY csh.changed_at),
-          csh.changed_at
+          LAG(csh.created_at) OVER (ORDER BY csh.created_at),
+          csh.created_at
         ) AS duration_in_previous_state_seconds
       FROM conversation_status_history csh
       LEFT JOIN conversation_statuses old_status ON csh.old_status_id = old_status.id
       LEFT JOIN conversation_statuses new_status ON csh.new_status_id = new_status.id
-      LEFT JOIN usuarios u ON csh.changed_by_user_id = u.id
+      LEFT JOIN usuarios u ON csh.changed_by = u.id
       WHERE csh.conversation_id = ?
-      ORDER BY csh.changed_at ASC`,
+      ORDER BY csh.created_at ASC`,
       [conversationId]
     );
 
@@ -206,7 +206,7 @@ function calculateMetrics(conversation: any, statusHistory: any[], cycles: any[]
   // Tiempo en estado actual
   let currentStateDurationSeconds = 0;
   if (statusHistory.length > 0) {
-    const lastChange = new Date(statusHistory[statusHistory.length - 1].changed_at);
+    const lastChange = new Date(statusHistory[statusHistory.length - 1].created_at);
     currentStateDurationSeconds = Math.floor((now.getTime() - lastChange.getTime()) / 1000);
   } else {
     currentStateDurationSeconds = totalLifetimeSeconds;
@@ -229,8 +229,8 @@ function calculateMetrics(conversation: any, statusHistory: any[], cycles: any[]
     if (index < statusHistory.length - 1) {
       // Hay un siguiente cambio
       const nextChange = statusHistory[index + 1];
-      const currentTime = new Date(change.changed_at).getTime();
-      const nextTime = new Date(nextChange.changed_at).getTime();
+      const currentTime = new Date(change.created_at).getTime();
+      const nextTime = new Date(nextChange.created_at).getTime();
       duration = Math.floor((nextTime - currentTime) / 1000);
     } else {
       // Es el último cambio, usar tiempo hasta ahora
