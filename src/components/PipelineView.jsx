@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppDataProvider } from '../contexts/AppDataContext.jsx';
 import StatusFieldsModal from './StatusFieldsModal.jsx';
 import CycleHistoryModal from './CycleHistoryModal.jsx';
+import ConversationTraceView from './ConversationTraceView.jsx';
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -14,6 +15,7 @@ function PipelineViewInner() {
   const [filter, setFilter] = useState('all'); // 'all' | 'assigned_to_me'
   const [statusChangeModal, setStatusChangeModal] = useState({ show: false, conversation: null, newStatusId: null, status: null });
   const [cycleHistoryModal, setCycleHistoryModal] = useState({ show: false, conversationId: null, conversationName: null });
+  const [traceViewModal, setTraceViewModal] = useState({ show: false, conversationId: null });
 
   async function loadPipeline() {
     setLoading(true);
@@ -360,11 +362,24 @@ function PipelineViewInner() {
                       })()}
 
                       <div className="flex items-center justify-between text-xs">
-                        {conv.assigned_to_name ? (
-                          <span className="text-slate-500">👤 {conv.assigned_to_name}</span>
-                        ) : (
-                          <span className="text-slate-600">Sin asignar</span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {conv.assigned_to_name ? (
+                            <span className="text-slate-500">👤 {conv.assigned_to_name}</span>
+                          ) : (
+                            <span className="text-slate-600">Sin asignar</span>
+                          )}
+                          {/* Botón de trazabilidad */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTraceViewModal({ show: true, conversationId: conv.id });
+                            }}
+                            className="px-1.5 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 text-purple-300 border border-purple-700/50 transition-colors"
+                            title="Ver trazabilidad completa"
+                          >
+                            🎫
+                          </button>
+                        </div>
                         <span className="text-slate-500">
                           {formatTimestamp(conv.ultimo_msg_entrante_ts)}
                         </span>
@@ -403,6 +418,14 @@ function PipelineViewInner() {
           conversationId={cycleHistoryModal.conversationId}
           conversationName={cycleHistoryModal.conversationName}
           onClose={() => setCycleHistoryModal({ show: false, conversationId: null, conversationName: null })}
+        />
+      )}
+
+      {/* Modal de trazabilidad */}
+      {traceViewModal.show && (
+        <ConversationTraceView
+          conversationId={traceViewModal.conversationId}
+          onClose={() => setTraceViewModal({ show: false, conversationId: null })}
         />
       )}
     </div>

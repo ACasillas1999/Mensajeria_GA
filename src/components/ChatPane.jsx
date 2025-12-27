@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import MediaModal from "./MediaModal.jsx";
 import QuickReplies from "./QuickReplies.jsx";
+import ConversationTraceView from "./ConversationTraceView.jsx";
 import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 import { useAppData } from "../contexts/AppDataContext.jsx";
 
@@ -390,6 +391,9 @@ export default function ChatPane({ conversation }) {
   const [showCallHistory, setShowCallHistory] = useState(false);
   const [callHistory, setCallHistory] = useState([]);
   const [incomingCall, setIncomingCall] = useState(null); // {call_id, from, to, status}
+
+  // trazabilidad
+  const [showTraceView, setShowTraceView] = useState(false);
 
   // atajos de respuestas rápidas (usar el caché del contexto)
   const shortcuts = allQuickReplies.filter(i => i.atajo);
@@ -1583,6 +1587,15 @@ function pickMime() {
           >
             📞
           </button>
+          {/* Botón trazabilidad */}
+          <button
+            type="button"
+            onClick={() => setShowTraceView(true)}
+            title="Ver trazabilidad completa (Ticket)"
+            className="h-8 px-2 rounded text-xs bg-gradient-to-r from-purple-900/40 to-blue-900/40 hover:from-purple-800/60 hover:to-blue-800/60 border border-purple-700/50 text-purple-200 transition font-medium"
+          >
+            🎫 Trazabilidad
+          </button>
           {conversation.status_name && (
             <span
               className="text-[10px] px-2 py-0.5 rounded-full border text-white"
@@ -2239,6 +2252,14 @@ function pickMime() {
             handleStatusChange(statusChangeModal.newStatusId, fieldData);
             setStatusChangeModal({ show: false, newStatusId: null, status: null });
           }}
+        />
+      )}
+
+      {/* Modal de trazabilidad */}
+      {showTraceView && (
+        <ConversationTraceView
+          conversationId={conversation.id}
+          onClose={() => setShowTraceView(false)}
         />
       )}
     </div>
