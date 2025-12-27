@@ -87,11 +87,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       `INSERT INTO conversation_cycles
        (conversation_id, cycle_number, started_at, completed_at,
         initial_status_id, final_status_id, total_messages, assigned_to, cycle_data)
-       VALUES (?, ?, ?, NOW(), NULL, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?)`,
       [
         convId,
         newCycleNumber,
         conv.current_cycle_started_at || new Date(),
+        null, // initial_status_id - por ahora NULL, se puede mejorar después
         conv.status_id,
         totalMessages,
         conv.asignado_a || null,
