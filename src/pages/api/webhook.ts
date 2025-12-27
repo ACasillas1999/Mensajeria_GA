@@ -15,6 +15,8 @@ import type { RowDataPacket } from 'mysql2/promise';
  */
 async function checkAndResetCycle(convId: number) {
   try {
+    console.log(`[Cycle Reset DEBUG] ========== Iniciando checkAndResetCycle para conversación ${convId} ==========`);
+
     // Obtener información de la conversación y su estado actual
     const [convRows] = await pool.query<RowDataPacket[]>(
       `SELECT
@@ -32,12 +34,27 @@ async function checkAndResetCycle(convId: number) {
       [convId]
     );
 
-    if (convRows.length === 0) return;
+    if (convRows.length === 0) {
+      console.log(`[Cycle Reset DEBUG] Conversación ${convId} NO encontrada en la base de datos`);
+      return;
+    }
 
     const conv = convRows[0];
+    console.log(`[Cycle Reset DEBUG] Conversación encontrada:`, {
+      id: conv.id,
+      status_id: conv.status_id,
+      status_name: conv.status_name,
+      is_final: conv.is_final,
+      auto_reset_to_status_id: conv.auto_reset_to_status_id,
+      cycle_count: conv.cycle_count,
+      current_cycle_started_at: conv.current_cycle_started_at
+    });
 
     // Si no está en estado final, no hacer nada
-    if (!conv.is_final) return;
+    if (!conv.is_final) {
+      console.log(`[Cycle Reset DEBUG] Estado "${conv.status_name}" NO es final (is_final=${conv.is_final}). No se resetea el ciclo.`);
+      return;
+    }
 
     console.log(`[Cycle Reset] Conversación ${convId} en estado final "${conv.status_name}", completando ciclo...`);
 
@@ -386,6 +403,10 @@ export const POST: APIRoute = async ({ request }) => {
         const from = msgs[0]?.from;
         const profileName = contacts[0]?.profile?.name || null;
 
+        console.log(`[Webhook DEBUG] ===== Mensaje ENTRANTE recibido =====`);
+        console.log(`[Webhook DEBUG] De: ${from} (${profileName})`);
+        console.log(`[Webhook DEBUG] Total mensajes en este change: ${msgs.length}`);
+
         // upsert conversación del remitente (una vez por change)
         let convId: number;
         const [found] = await pool.query('SELECT id FROM conversaciones WHERE wa_user=? LIMIT 1', [from]);
@@ -483,8 +504,12 @@ export const POST: APIRoute = async ({ request }) => {
             [profileName, cuerpo, ts, convId]
           );
 
+          console.log(`[Webhook DEBUG] Mensaje insertado para conversación ${convId}. Llamando a checkAndResetCycle...`);
+
           // Verificar si la conversación está en un estado final y resetear ciclo
           await checkAndResetCycle(convId);
+
+          console.log(`[Webhook DEBUG] checkAndResetCycle completado para conversación ${convId}`);
 
           // Crear notificación si la conversación está asignada a un agente
           if (mensajeId) {
