@@ -504,12 +504,8 @@ export const POST: APIRoute = async ({ request }) => {
             [profileName, cuerpo, ts, convId]
           );
 
-          console.log(`[Webhook DEBUG] Mensaje insertado para conversación ${convId}. Llamando a checkAndResetCycle...`);
-
-          // Verificar si la conversación está en un estado final y resetear ciclo
-          await checkAndResetCycle(convId);
-
-          console.log(`[Webhook DEBUG] checkAndResetCycle completado para conversación ${convId}`);
+          // Nota: Los ciclos ahora se completan manualmente por el agente usando el botón "Completar Ciclo"
+          // Ya no se resetean automáticamente cuando el cliente envía un mensaje
 
           // Crear notificación si la conversación está asignada a un agente
           if (mensajeId) {

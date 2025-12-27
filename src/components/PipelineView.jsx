@@ -80,6 +80,40 @@ function PipelineViewInner() {
     }
   }
 
+  // Completar ciclo manualmente
+  async function handleCompleteCycle(conversationId, conversationName) {
+    const confirmed = confirm(
+      `¿Completar el ciclo actual de "${conversationName}"?\n\n` +
+      `Esto guardará el ciclo completado y reiniciará la conversación al estado inicial.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${BASE}/api/complete-cycle`.replace(/\/\//g, '/'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          conversacion_id: conversationId,
+          reason: 'Completado manualmente desde Pipeline'
+        })
+      });
+
+      const data = await res.json();
+
+      if (!data.ok) {
+        alert(data.error || 'No se pudo completar el ciclo');
+      } else {
+        alert(`✅ ${data.message}\n\nLa conversación ha sido reseteada a "${data.new_status.name}"`);
+        loadPipeline(); // Recargar pipeline para reflejar el cambio
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error completando ciclo');
+    }
+  }
+
   // Drag & Drop handlers
   function handleDragStart(e, conversation, fromStatusId) {
     setDraggedConversation({ ...conversation, fromStatusId });
@@ -378,6 +412,17 @@ function PipelineViewInner() {
                             title="Ver trazabilidad completa"
                           >
                             🎫
+                          </button>
+                          {/* Botón completar ciclo */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCompleteCycle(conv.id, conv.wa_profile_name || conv.wa_user);
+                            }}
+                            className="px-1.5 py-0.5 rounded bg-green-900/30 hover:bg-green-900/50 text-green-300 border border-green-700/50 transition-colors"
+                            title="Completar ciclo"
+                          >
+                            ✅
                           </button>
                         </div>
                         <span className="text-slate-500">
