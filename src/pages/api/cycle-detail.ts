@@ -134,9 +134,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const [messages] = await pool.query<RowDataPacket[]>(
       `SELECT
         m.id,
-        m.creado_en,
-        m.tipo,
-        m.contenido
+        m.creado_en
       FROM mensajes m
       WHERE m.conversacion_id = ?
         AND m.creado_en >= ?
