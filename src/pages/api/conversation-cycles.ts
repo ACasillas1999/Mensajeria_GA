@@ -99,21 +99,37 @@ export const GET: APIRoute = async ({ locals, url }) => {
           current_cycle_started_at: conversation.current_cycle_started_at,
           current_cycle_duration_seconds: currentCycleDuration,
         },
-        cycles: cycles.map(c => ({
-          id: c.id,
-          cycle_number: c.cycle_number,
-          started_at: c.started_at,
-          completed_at: c.completed_at,
-          duration_seconds: c.duration_seconds,
-          duration_formatted: formatDuration(c.duration_seconds),
-          total_messages: c.total_messages,
-          initial_status_name: c.initial_status_name,
-          initial_status_color: c.initial_status_color,
-          final_status_name: c.final_status_name,
-          final_status_color: c.final_status_color,
-          assigned_to_name: c.assigned_to_name,
-          cycle_data: c.cycle_data ? JSON.parse(c.cycle_data as string) : null,
-        })),
+        cycles: cycles.map(c => {
+          // Parsear cycle_data solo si es string, si ya es objeto dejarlo así
+          let parsedCycleData = null;
+          if (c.cycle_data) {
+            if (typeof c.cycle_data === 'string') {
+              try {
+                parsedCycleData = JSON.parse(c.cycle_data);
+              } catch (e) {
+                console.error('Error parsing cycle_data:', e);
+              }
+            } else {
+              parsedCycleData = c.cycle_data;
+            }
+          }
+
+          return {
+            id: c.id,
+            cycle_number: c.cycle_number,
+            started_at: c.started_at,
+            completed_at: c.completed_at,
+            duration_seconds: c.duration_seconds,
+            duration_formatted: formatDuration(c.duration_seconds),
+            total_messages: c.total_messages,
+            initial_status_name: c.initial_status_name,
+            initial_status_color: c.initial_status_color,
+            final_status_name: c.final_status_name,
+            final_status_color: c.final_status_color,
+            assigned_to_name: c.assigned_to_name,
+            cycle_data: parsedCycleData,
+          };
+        }),
         stats: {
           total_cycles: totalCycles,
           avg_duration_seconds: avgDuration,
