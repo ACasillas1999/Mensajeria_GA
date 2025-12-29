@@ -66,7 +66,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const [stateChanges] = await pool.query<RowDataPacket[]>(
       `SELECT
         csh.id,
-        csh.changed_at,
+        csh.created_at,
         csh.old_status_id,
         csh.new_status_id,
         csh.change_reason,
@@ -83,9 +83,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
       LEFT JOIN conversation_statuses cs_new ON csh.new_status_id = cs_new.id
       LEFT JOIN usuarios u ON csh.changed_by = u.id
       WHERE csh.conversation_id = ?
-        AND csh.changed_at >= ?
-        AND csh.changed_at <= ?
-      ORDER BY csh.changed_at ASC`,
+        AND csh.created_at >= ?
+        AND csh.created_at <= ?
+      ORDER BY csh.created_at ASC`,
       [cycle.conversation_id, cycle.started_at, cycle.completed_at]
     );
 
@@ -106,16 +106,16 @@ export const GET: APIRoute = async ({ locals, url }) => {
       }
 
       // Calcular duración hasta el siguiente cambio o hasta el final del ciclo
-      const startTime = new Date(change.changed_at).getTime();
+      const startTime = new Date(change.created_at).getTime();
       const endTime = index < stateChanges.length - 1
-        ? new Date(stateChanges[index + 1].changed_at).getTime()
+        ? new Date(stateChanges[index + 1].created_at).getTime()
         : new Date(cycle.completed_at).getTime();
 
       const durationSeconds = Math.floor((endTime - startTime) / 1000);
 
       return {
         id: change.id,
-        changed_at: change.changed_at,
+        created_at: change.created_at,
         old_status_name: change.old_status_name,
         old_status_color: change.old_status_color,
         old_status_icon: change.old_status_icon,
@@ -147,9 +147,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
     // Contar mensajes en cada estado
     const messagesPerState = stateTimeline.map((state, index) => {
-      const stateStart = new Date(state.changed_at).getTime();
+      const stateStart = new Date(state.created_at).getTime();
       const stateEnd = index < stateTimeline.length - 1
-        ? new Date(stateTimeline[index + 1].changed_at).getTime()
+        ? new Date(stateTimeline[index + 1].created_at).getTime()
         : new Date(cycle.completed_at).getTime();
 
       const count = messages.filter(msg => {

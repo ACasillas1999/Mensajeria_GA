@@ -189,7 +189,7 @@ export default function CycleDetailModal({ cycleId, onClose }) {
                                     {state.new_status_name}
                                   </div>
                                   <div className="text-xs text-slate-400">
-                                    {formatDate(state.changed_at)}
+                                    {formatDate(state.created_at)}
                                   </div>
                                 </div>
                               </div>
