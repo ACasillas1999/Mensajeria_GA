@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const BASE = import.meta.env.BASE_URL || "";
 
@@ -33,6 +33,9 @@ export default function TemplateCreator() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [existing, setExisting] = useState([]);
+  const [loadingList, setLoadingList] = useState(false);
+  const [listError, setListError] = useState(null);
 
   const updateField = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -101,6 +104,7 @@ export default function TemplateCreator() {
         type: "success",
         text: `Plantilla enviada a revisión (${data.status || "PENDING"})`,
       });
+      loadExisting();
     } catch (err) {
       setFeedback({
         type: "error",
@@ -110,6 +114,30 @@ export default function TemplateCreator() {
       setSubmitting(false);
     }
   };
+
+  const loadExisting = async () => {
+    setLoadingList(true);
+    setListError(null);
+    try {
+      const res = await fetch(
+        `${BASE}/api/templates?estado=`.replace(/\/\//g, "/")
+      );
+      const data = await res.json();
+      if (!data.ok) {
+        throw new Error(data.error || "No se pudieron cargar las plantillas");
+      }
+      setExisting(data.items || []);
+    } catch (err) {
+      setListError(err?.message || "Error cargando plantillas");
+      setExisting([]);
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  useEffect(() => {
+    loadExisting();
+  }, []);
 
   const hasButtons = form.buttons.length > 0;
 
@@ -419,6 +447,75 @@ export default function TemplateCreator() {
             </li>
             <li>Botones: máximo 3, texto corto y claro.</li>
           </ul>
+        </div>
+
+        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="font-semibold text-emerald-300 flex-1">
+              Plantillas existentes
+            </div>
+            <button
+              type="button"
+              onClick={loadExisting}
+              className="px-3 py-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
+              disabled={loadingList}
+            >
+              {loadingList ? "Cargando..." : "Recargar"}
+            </button>
+          </div>
+
+          {listError && (
+            <div className="rounded border border-red-700 bg-red-900/30 text-red-200 px-3 py-2">
+              {listError}
+            </div>
+          )}
+
+          <div className="max-h-80 overflow-y-auto thin-scroll space-y-2">
+            {loadingList && !listError && (
+              <div className="text-xs text-slate-400">Cargando...</div>
+            )}
+            {!loadingList && existing.length === 0 && !listError && (
+              <div className="text-xs text-slate-500">
+                No hay plantillas registradas.
+              </div>
+            )}
+            {existing.map((tpl) => (
+              <div
+                key={`${tpl.id}-${tpl.nombre}`}
+                className="border border-slate-800 rounded-lg p-3 bg-slate-900/50"
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-1">
+                    <div className="font-semibold text-slate-100">
+                      {tpl.nombre}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {tpl.idioma} · {tpl.categoria}
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded border ${
+                      tpl.estado === "APPROVED"
+                        ? "bg-emerald-900/30 border-emerald-700 text-emerald-300"
+                        : tpl.estado === "PENDING"
+                        ? "bg-amber-900/30 border-amber-700 text-amber-300"
+                        : "bg-red-900/30 border-red-700 text-red-300"
+                    }`}
+                  >
+                    {tpl.estado}
+                  </span>
+                </div>
+                {tpl.body_text && (
+                  <div className="text-xs text-slate-300 mt-1 line-clamp-3">
+                    {tpl.body_text}
+                  </div>
+                )}
+                <div className="text-[10px] text-slate-500 mt-1">
+                  ID: {tpl.wa_template_id || "N/A"}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
