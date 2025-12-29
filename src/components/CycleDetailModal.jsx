@@ -260,6 +260,67 @@ export default function CycleDetailModal({ cycleId, onClose }) {
                                   </div>
                                 </div>
                               )}
+
+                              {/* Messages in this state */}
+                              {state.messages && state.messages.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-slate-700/30">
+                                  <div className="text-xs text-slate-400 mb-2">💬 Conversación en este estado:</div>
+                                  <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                    {state.messages.map((msg) => (
+                                      <div
+                                        key={msg.id}
+                                        className={`flex ${msg.from_me ? 'justify-end' : 'justify-start'}`}
+                                      >
+                                        <div
+                                          className={`max-w-[80%] rounded-lg px-3 py-2 text-xs ${
+                                            msg.from_me
+                                              ? 'bg-blue-600/30 text-slate-200'
+                                              : 'bg-slate-700/50 text-slate-300'
+                                          }`}
+                                        >
+                                          {msg.from_me && msg.usuario_nombre && (
+                                            <div className="text-[10px] text-blue-300 mb-1">
+                                              👤 {msg.usuario_nombre}
+                                            </div>
+                                          )}
+                                          {msg.tipo === 'text' && (
+                                            <div className="whitespace-pre-wrap break-words">
+                                              {msg.cuerpo}
+                                            </div>
+                                          )}
+                                          {msg.tipo === 'image' && (
+                                            <div className="flex items-center gap-1">
+                                              <span>🖼️</span>
+                                              <span className="text-slate-400">Imagen</span>
+                                            </div>
+                                          )}
+                                          {msg.tipo === 'document' && (
+                                            <div className="flex items-center gap-1">
+                                              <span>📄</span>
+                                              <span className="text-slate-400">Documento</span>
+                                            </div>
+                                          )}
+                                          {msg.tipo === 'audio' && (
+                                            <div className="flex items-center gap-1">
+                                              <span>🎵</span>
+                                              <span className="text-slate-400">Audio</span>
+                                            </div>
+                                          )}
+                                          {msg.tipo === 'video' && (
+                                            <div className="flex items-center gap-1">
+                                              <span>🎥</span>
+                                              <span className="text-slate-400">Video</span>
+                                            </div>
+                                          )}
+                                          <div className="text-[10px] text-slate-500 mt-1">
+                                            {formatTime(msg.creado_en)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

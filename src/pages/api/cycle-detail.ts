@@ -134,8 +134,14 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const [messages] = await pool.query<RowDataPacket[]>(
       `SELECT
         m.id,
-        m.creado_en
+        m.creado_en,
+        m.from_me,
+        m.tipo,
+        m.cuerpo,
+        m.media_url,
+        u.nombre as usuario_nombre
       FROM mensajes m
+      LEFT JOIN usuarios u ON m.usuario_id = u.id
       WHERE m.conversacion_id = ?
         AND m.creado_en >= ?
         AND m.creado_en <= ?
@@ -143,21 +149,30 @@ export const GET: APIRoute = async ({ locals, url }) => {
       [cycle.conversation_id, cycle.started_at, cycle.completed_at]
     );
 
-    // Contar mensajes en cada estado
+    // Agrupar mensajes por estado
     const messagesPerState = stateTimeline.map((state, index) => {
       const stateStart = new Date(state.created_at).getTime();
       const stateEnd = index < stateTimeline.length - 1
         ? new Date(stateTimeline[index + 1].created_at).getTime()
         : new Date(cycle.completed_at).getTime();
 
-      const count = messages.filter(msg => {
+      const stateMessages = messages.filter(msg => {
         const msgTime = new Date(msg.creado_en).getTime();
         return msgTime >= stateStart && msgTime < stateEnd;
-      }).length;
+      }).map(msg => ({
+        id: msg.id,
+        creado_en: msg.creado_en,
+        from_me: msg.from_me,
+        tipo: msg.tipo,
+        cuerpo: msg.cuerpo,
+        media_url: msg.media_url,
+        usuario_nombre: msg.usuario_nombre,
+      }));
 
       return {
         ...state,
-        message_count: count,
+        message_count: stateMessages.length,
+        messages: stateMessages,
       };
     });
 
