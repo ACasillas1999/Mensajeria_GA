@@ -36,6 +36,7 @@ export default function TemplateCreator() {
   const [existing, setExisting] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [listError, setListError] = useState(null);
+  const [syncing, setSyncing] = useState(false);
 
   const updateField = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -115,7 +116,7 @@ export default function TemplateCreator() {
     }
   };
 
-  const loadExisting = async () => {
+  const loadExisting = async (allowSync = true) => {
     setLoadingList(true);
     setListError(null);
     try {
@@ -126,7 +127,12 @@ export default function TemplateCreator() {
       if (!data.ok) {
         throw new Error(data.error || "No se pudieron cargar las plantillas");
       }
-      setExisting(data.items || []);
+      const items = data.items || [];
+      setExisting(items);
+      // Si no hay registros en BD, intentar sincronizar con Meta una vez
+      if (allowSync && items.length === 0) {
+        await syncTemplates(true);
+      }
     } catch (err) {
       setListError(err?.message || "Error cargando plantillas");
       setExisting([]);
@@ -138,6 +144,34 @@ export default function TemplateCreator() {
   useEffect(() => {
     loadExisting();
   }, []);
+
+  const syncTemplates = async (silent = false) => {
+    if (!silent) setListError(null);
+    setSyncing(true);
+    try {
+      const res = await fetch(
+        `${BASE}/api/sync-templates`.replace(/\/\//g, "/"),
+        { method: "GET" }
+      );
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "No se pudo sincronizar con Meta");
+      }
+      await loadExisting(false);
+      if (!silent) {
+        setFeedback({
+          type: "success",
+          text: data.message || "Sincronizado desde Meta",
+        });
+      }
+    } catch (err) {
+      const msg = err?.message || "Error sincronizando plantillas";
+      if (!silent) setFeedback({ type: "error", text: msg });
+      setListError(msg);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const hasButtons = form.buttons.length > 0;
 
@@ -450,19 +484,27 @@ export default function TemplateCreator() {
         </div>
 
         <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="font-semibold text-emerald-300 flex-1">
-              Plantillas existentes
+            <div className="flex items-center gap-2">
+              <div className="font-semibold text-emerald-300 flex-1">
+                Plantillas existentes
+              </div>
+              <button
+                type="button"
+                onClick={loadExisting}
+                className="px-3 py-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
+                disabled={loadingList}
+              >
+                {loadingList ? "Cargando..." : "Recargar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => syncTemplates(false)}
+                className="px-3 py-1.5 text-xs rounded bg-emerald-700 hover:bg-emerald-600 border border-emerald-600 text-white"
+                disabled={syncing}
+              >
+                {syncing ? "Sincronizando..." : "Sync Meta"}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={loadExisting}
-              className="px-3 py-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
-              disabled={loadingList}
-            >
-              {loadingList ? "Cargando..." : "Recargar"}
-            </button>
-          </div>
 
           {listError && (
             <div className="rounded border border-red-700 bg-red-900/30 text-red-200 px-3 py-2">
