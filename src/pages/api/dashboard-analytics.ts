@@ -118,17 +118,17 @@ export const GET: APIRoute = async ({ locals, url }) => {
       ORDER BY hour`
     );
 
-    // 5. Tasa de resolución global
-    const [resolutionRateRows] = await pool.query<RowDataPacket[]>(
-      `SELECT
-        COUNT(*) AS total_conversations,
-        COUNT(CASE WHEN cs.is_final = TRUE THEN 1 END) AS resolved_conversations,
-        COUNT(CASE WHEN cs.is_final = FALSE THEN 1 END) AS open_conversations,
-        ROUND(COUNT(CASE WHEN cs.is_final = TRUE THEN 1 END) * 100.0 / COUNT(*), 2) AS resolution_rate
-      FROM conversaciones c
-      LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
-      WHERE c.creado_en ${dateFilter}`
-    );
+    // 5. Tasa de resolución global (DESHABILITADA - no se usa en el frontend)
+    // const [resolutionRateRows] = await pool.query<RowDataPacket[]>(
+    //   `SELECT
+    //     COUNT(*) AS total_conversations,
+    //     COUNT(CASE WHEN cs.is_final = TRUE THEN 1 END) AS resolved_conversations,
+    //     COUNT(CASE WHEN cs.is_final = FALSE THEN 1 END) AS open_conversations,
+    //     ROUND(COUNT(CASE WHEN cs.is_final = TRUE THEN 1 END) * 100.0 / COUNT(*), 2) AS resolution_rate
+    //   FROM conversaciones c
+    //   LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
+    //   WHERE c.creado_en ${dateFilter}`
+    // );
 
     // 6. Estadísticas de ciclos
     const [cycleStatsRows] = await pool.query<RowDataPacket[]>(
@@ -235,13 +235,13 @@ export const GET: APIRoute = async ({ locals, url }) => {
           message_count: r.message_count
         })),
 
-        // Tasa de resolución
-        resolution_rate: resolutionRateRows[0] ? {
-          total_conversations: resolutionRateRows[0].total_conversations,
-          resolved_conversations: resolutionRateRows[0].resolved_conversations,
-          open_conversations: resolutionRateRows[0].open_conversations,
-          resolution_rate: resolutionRateRows[0].resolution_rate
-        } : null,
+        // Tasa de resolución (DESHABILITADA)
+        // resolution_rate: resolutionRateRows[0] ? {
+        //   total_conversations: resolutionRateRows[0].total_conversations,
+        //   resolved_conversations: resolutionRateRows[0].resolved_conversations,
+        //   open_conversations: resolutionRateRows[0].open_conversations,
+        //   resolution_rate: resolutionRateRows[0].resolution_rate
+        // } : null,
 
         // Estadísticas de ciclos
         cycle_stats: cycleStatsRows[0] ? {

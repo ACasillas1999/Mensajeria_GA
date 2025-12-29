@@ -179,14 +179,7 @@ function OverviewTab({ stats, analytics }) {
   return (
     <div className="space-y-6">
       {/* KPIs Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <MetricCard
-          title="Tasa de Resolución"
-          value={analytics?.resolution_rate?.resolution_rate ? `${analytics.resolution_rate.resolution_rate}%` : 'N/A'}
-          subtitle={`${analytics?.resolution_rate?.resolved_conversations || 0} de ${analytics?.resolution_rate?.total_conversations || 0} resueltas`}
-          icon="✅"
-          color="emerald"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard
           title="Tiempo Prom. Respuesta"
           value={analytics?.response_times?.[0]?.avg_response_time_formatted || 'N/A'}
@@ -316,6 +309,7 @@ function AgentsTab({ analytics }) {
               <thead>
                 <tr className="border-b border-slate-700">
                   <th className="text-left py-3 px-4 text-slate-400">Agente</th>
+                  <th className="text-right py-3 px-4 text-slate-400">Tiempo 1ra Resp.</th>
                   <th className="text-right py-3 px-4 text-slate-400">Conversaciones</th>
                   <th className="text-right py-3 px-4 text-slate-400">Resueltas</th>
                   <th className="text-right py-3 px-4 text-slate-400">Mensajes</th>
@@ -324,24 +318,32 @@ function AgentsTab({ analytics }) {
                 </tr>
               </thead>
               <tbody>
-                {analytics.agent_performance.map(agent => (
-                  <tr key={agent.agent_id} className="border-b border-slate-800 hover:bg-slate-900/50">
-                    <td className="py-3 px-4 font-medium text-slate-200">{agent.agent_name}</td>
-                    <td className="py-3 px-4 text-right text-slate-300">{agent.conversations_handled}</td>
-                    <td className="py-3 px-4 text-right text-emerald-400">{agent.conversations_resolved}</td>
-                    <td className="py-3 px-4 text-right text-blue-400">{agent.messages_sent}</td>
-                    <td className="py-3 px-4 text-right text-purple-400">{agent.cycles_completed}</td>
-                    <td className="py-3 px-4 text-right">
-                      <span className={`font-semibold ${
-                        agent.resolution_rate >= 75 ? 'text-emerald-400' :
-                        agent.resolution_rate >= 50 ? 'text-amber-400' :
-                        'text-red-400'
-                      }`}>
-                        {agent.resolution_rate}%
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {analytics.agent_performance.map(agent => {
+                  // Buscar el tiempo de respuesta de este agente
+                  const responseTime = analytics.response_times?.find(rt => rt.agent_id === agent.agent_id);
+
+                  return (
+                    <tr key={agent.agent_id} className="border-b border-slate-800 hover:bg-slate-900/50">
+                      <td className="py-3 px-4 font-medium text-slate-200">{agent.agent_name}</td>
+                      <td className="py-3 px-4 text-right text-blue-400 font-medium">
+                        {responseTime?.avg_response_time_formatted || 'N/A'}
+                      </td>
+                      <td className="py-3 px-4 text-right text-slate-300">{agent.conversations_handled}</td>
+                      <td className="py-3 px-4 text-right text-emerald-400">{agent.conversations_resolved}</td>
+                      <td className="py-3 px-4 text-right text-blue-400">{agent.messages_sent}</td>
+                      <td className="py-3 px-4 text-right text-purple-400">{agent.cycles_completed}</td>
+                      <td className="py-3 px-4 text-right">
+                        <span className={`font-semibold ${
+                          agent.resolution_rate >= 75 ? 'text-emerald-400' :
+                          agent.resolution_rate >= 50 ? 'text-amber-400' :
+                          'text-red-400'
+                        }`}>
+                          {agent.resolution_rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -496,14 +498,14 @@ function HourlyActivityChart({ data }) {
 
         return (
           <div key={hour} className="flex flex-col items-center gap-1">
-            <div className="relative w-full h-32 bg-slate-900 rounded">
+            <div className="relative w-full h-20 bg-slate-900 rounded">
               <div
                 className="absolute bottom-0 w-full bg-emerald-500 rounded transition-all"
                 style={{ height: `${height}%` }}
                 title={`${hour}:00 - ${count} mensajes`}
               />
             </div>
-            <div className="text-xs text-slate-500">{hour}</div>
+            <div className="text-[10px] text-slate-500">{hour}</div>
           </div>
         );
       })}
