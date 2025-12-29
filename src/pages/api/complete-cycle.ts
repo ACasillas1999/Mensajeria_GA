@@ -159,7 +159,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     await pool.query(
       `INSERT INTO conversation_events
        (conversacion_id, tipo, texto, evento_data)
-       VALUES (?, 'ciclo_completado', ?, ?)`,
+       VALUES (?, 'cambio_estado', ?, ?)`,
       [
         convId,
         `✅ Ciclo #${newCycleNumber} completado por ${user.nombre} - Estado reseteado a ${newStatusIcon} ${newStatusName}`,
@@ -170,7 +170,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
           completed_by: user.id,
           completed_by_name: user.nombre,
           reason: reason || 'Completado manualmente',
-          total_messages: totalMessages
+          total_messages: totalMessages,
+          event_type: 'cycle_completed'  // Para distinguirlo de otros cambios de estado
         })
       ]
     );
