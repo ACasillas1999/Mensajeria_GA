@@ -436,6 +436,7 @@ export const POST: APIRoute = async ({ request }) => {
 
           if (m.context && m.context.id) {
             replied_to_wa_id = m.context.id;
+            console.log(`[Webhook Reply] Mensaje con contexto detectado. Reply a: ${replied_to_wa_id}`);
 
             // Buscar el mensaje citado en nuestra BD por su wa_msg_id
             const [quotedMsgRows] = await pool.query<RowDataPacket[]>(
@@ -452,6 +453,9 @@ export const POST: APIRoute = async ({ request }) => {
                 // Para otros tipos, mostrar el tipo de mensaje
                 replied_to_text = quotedMsgRows[0].cuerpo; // Ya tiene formato [Imagen], [Audio], etc.
               }
+              console.log(`[Webhook Reply] Mensaje citado encontrado: ID=${replied_to_msg_id}, texto="${replied_to_text}"`);
+            } else {
+              console.log(`[Webhook Reply] ADVERTENCIA: Mensaje citado con wa_msg_id=${replied_to_wa_id} NO encontrado en BD`);
             }
           }
 

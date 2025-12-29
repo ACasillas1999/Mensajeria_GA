@@ -30,6 +30,14 @@ export default function ChatView({ conversation }) {
       const r = await fetch(`${BASE}/api/messages?conversation_id=${conversation.id}`.replace(/\/\//g, '/'))
       const data = await r.json()
       if (!cancel && data.ok) {
+        // Debug: verificar si los mensajes tienen datos de reply
+        console.log('[ChatView] Mensajes cargados:', data.items.map(m => ({
+          id: m.id,
+          text: m.text?.substring(0, 30),
+          replied_to_text: m.replied_to_text,
+          replied_to_msg_id: m.replied_to_msg_id,
+          replied_to_wa_id: m.replied_to_wa_id
+        })))
         setMsgs(data.items || [])
       }
     }
@@ -292,6 +300,17 @@ export default function ChatView({ conversation }) {
             : m.media_url
 
           // Componente para mostrar mensaje citado
+          // Debug: verificar valores de reply
+          if (m.text && m.text.includes('pintaste')) {
+            console.log('[ChatView DEBUG] Mensaje con "pintaste":', {
+              id: m.id,
+              text: m.text,
+              replied_to_text: m.replied_to_text,
+              replied_to_msg_id: m.replied_to_msg_id,
+              replied_to_wa_id: m.replied_to_wa_id
+            });
+          }
+
           const QuotedMessage = m.replied_to_text ? (
             <div className="mb-2 pl-2 py-1 border-l-4 border-gray-400 bg-gray-100 rounded text-xs text-gray-600 italic">
               {m.replied_to_text}
