@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CycleDetailModal from './CycleDetailModal';
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -8,6 +9,7 @@ const BASE = import.meta.env.BASE_URL || '';
 export default function CycleHistoryModal({ conversationId, conversationName, onClose }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [selectedCycleId, setSelectedCycleId] = useState(null);
 
   useEffect(() => {
     loadCycles();
@@ -141,14 +143,18 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
                     {data?.cycles.map((cycle) => (
                       <div
                         key={cycle.id}
-                        className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-slate-600 transition-colors"
+                        className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-slate-600 transition-colors cursor-pointer group"
+                        onClick={() => setSelectedCycleId(cycle.id)}
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <span className="text-lg">🔄</span>
                             <div>
-                              <div className="font-semibold text-slate-100">
-                                Ciclo #{cycle.cycle_number}
+                              <div className="font-semibold text-slate-100 flex items-center gap-2">
+                                <span>Ciclo #{cycle.cycle_number}</span>
+                                <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  🔍 Ver detalle
+                                </span>
                               </div>
                               <div className="text-xs text-slate-400">
                                 {formatDate(cycle.started_at)} → {formatDate(cycle.completed_at)}
@@ -236,6 +242,14 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
           </button>
         </div>
       </div>
+
+      {/* Cycle Detail Modal */}
+      {selectedCycleId && (
+        <CycleDetailModal
+          cycleId={selectedCycleId}
+          onClose={() => setSelectedCycleId(null)}
+        />
+      )}
     </div>
   );
 }
