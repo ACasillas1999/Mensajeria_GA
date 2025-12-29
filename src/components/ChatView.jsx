@@ -291,9 +291,17 @@ export default function ChatView({ conversation }) {
             ? `${BASE}/api/media/${m.media_id}`.replace(/\/\//g, '/')
             : m.media_url
 
+          // Componente para mostrar mensaje citado
+          const QuotedMessage = m.replied_to_text ? (
+            <div className="mb-2 pl-2 py-1 border-l-4 border-gray-400 bg-gray-100 rounded text-xs text-gray-600 italic">
+              {m.replied_to_text}
+            </div>
+          ) : null
+
           if (m.tipo === 'audio' && mediaSrc) {
             return (
               <div key={m.id} className={common}>
+                {QuotedMessage}
                 <audio controls src={mediaSrc} />
                 {renderStatus(m)}
               </div>
@@ -302,6 +310,7 @@ export default function ChatView({ conversation }) {
           if (m.tipo === 'image' && mediaSrc) {
             return (
               <div key={m.id} className={common}>
+                {QuotedMessage}
                 <img src={mediaSrc} alt="imagen" className="rounded max-w-[280px]" />
                 {m.cuerpo && <div className="text-xs text-gray-600 mt-1">{m.cuerpo}</div>}
                 {renderStatus(m)}
@@ -311,6 +320,7 @@ export default function ChatView({ conversation }) {
           if (m.tipo === 'document' && mediaSrc) {
             return (
               <div key={m.id} className={common}>
+                {QuotedMessage}
                 <a href={mediaSrc} target="_blank" rel="noreferrer" className="underline">{m.cuerpo || 'Descargar documento'}</a>
                 {renderStatus(m)}
               </div>
@@ -319,6 +329,7 @@ export default function ChatView({ conversation }) {
           if (m.tipo === 'video' && mediaSrc) {
             return (
               <div key={m.id} className={common}>
+                {QuotedMessage}
                 <video controls className="rounded max-w-[300px]" src={mediaSrc} />
                 {m.cuerpo && <div className="text-xs text-gray-600 mt-1">{m.cuerpo}</div>}
                 {renderStatus(m)}
@@ -327,6 +338,7 @@ export default function ChatView({ conversation }) {
           }
           return (
             <div key={m.id} className={common}>
+              {QuotedMessage}
               <div className="whitespace-pre-wrap text-sm flex items-end">
                 <span>{m.cuerpo}</span>
                 {renderStatus(m)}

@@ -429,6 +429,32 @@ export const POST: APIRoute = async ({ request }) => {
           let media_id: string | null = null;
           let mime_type: string | null = null;
 
+          // Capturar información de mensaje citado (reply/quote)
+          let replied_to_wa_id: string | null = null;
+          let replied_to_msg_id: number | null = null;
+          let replied_to_text: string | null = null;
+
+          if (m.context && m.context.id) {
+            replied_to_wa_id = m.context.id;
+
+            // Buscar el mensaje citado en nuestra BD por su wa_msg_id
+            const [quotedMsgRows] = await pool.query<RowDataPacket[]>(
+              'SELECT id, cuerpo, tipo FROM mensajes WHERE wa_msg_id = ? LIMIT 1',
+              [replied_to_wa_id]
+            );
+
+            if (quotedMsgRows.length > 0) {
+              replied_to_msg_id = quotedMsgRows[0].id;
+              // Guardar el texto citado para visualización rápida
+              if (quotedMsgRows[0].tipo === 'text') {
+                replied_to_text = quotedMsgRows[0].cuerpo;
+              } else {
+                // Para otros tipos, mostrar el tipo de mensaje
+                replied_to_text = quotedMsgRows[0].cuerpo; // Ya tiene formato [Imagen], [Audio], etc.
+              }
+            }
+          }
+
           switch (tipo) {
             case 'text':
               cuerpo = m.text?.body || '';
@@ -485,14 +511,17 @@ export const POST: APIRoute = async ({ request }) => {
           }
 
           const [insertResult] = await pool.query(
-            `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, media_id, mime_type)
-             VALUES (?,?,?,?,?,?,?,?)
+            `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, media_id, mime_type, replied_to_msg_id, replied_to_wa_id, replied_to_text)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?)
              ON DUPLICATE KEY UPDATE
                ts=VALUES(ts),
                cuerpo=VALUES(cuerpo),
                media_id=VALUES(media_id),
-               mime_type=VALUES(mime_type)`,
-            [convId, 0, tipo, cuerpo, m.id, ts, media_id, mime_type]
+               mime_type=VALUES(mime_type),
+               replied_to_msg_id=VALUES(replied_to_msg_id),
+               replied_to_wa_id=VALUES(replied_to_wa_id),
+               replied_to_text=VALUES(replied_to_text)`,
+            [convId, 0, tipo, cuerpo, m.id, ts, media_id, mime_type, replied_to_msg_id, replied_to_wa_id, replied_to_text]
           );
 
           const mensajeId = (insertResult as any).insertId;

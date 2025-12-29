@@ -53,6 +53,9 @@ export const GET: APIRoute = async ({ request }) => {
           m.agent_reaction_emoji,
           m.client_reaction_emoji,
           m.usuario_id,
+          m.replied_to_msg_id,
+          m.replied_to_wa_id,
+          m.replied_to_text,
           u.nombre AS usuario_nombre,
           COALESCE(UNIX_TIMESTAMP(m.creado_en), m.ts) AS ts,
           COALESCE(UNIX_TIMESTAMP(m.creado_en), m.ts) AS sort_ts
@@ -90,6 +93,9 @@ export const GET: APIRoute = async ({ request }) => {
         client_reaction_emoji: (r as any).client_reaction_emoji || null,
         usuario_id: (r as any).usuario_id || null,
         usuario_nombre: (r as any).usuario_nombre || null,
+        replied_to_msg_id: (r as any).replied_to_msg_id || null,
+        replied_to_wa_id: (r as any).replied_to_wa_id || null,
+        replied_to_text: (r as any).replied_to_text || null,
       };
     });
 
