@@ -5,13 +5,43 @@ import { pool } from "../../lib/db";
 /**
  * API avanzada de analytics para el dashboard
  * Retorna métricas detalladas de rendimiento de agentes, tiempos de respuesta, etc.
+ * Acepta parámetros de rango de fecha: ?days=30 o ?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
  */
-export const GET: APIRoute = async ({ locals }) => {
+export const GET: APIRoute = async ({ locals, url }) => {
   try {
     const user = (locals as any).user as { id: number, rol: string } | undefined;
     if (!user) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
 
     const isAdmin = String(user.rol).toLowerCase() === 'admin';
+
+    // Obtener parámetros de fecha del query string
+    const days = url.searchParams.get('days');
+    const startDate = url.searchParams.get('start_date');
+    const endDate = url.searchParams.get('end_date');
+
+    // Construir condición de fecha dinámica
+    let dateFilter = '';
+    let messageDateFilter = '';
+    let cyclesDateFilter = '';
+    let hourlyDateFilter = '';
+    let dailyDateFilter = '';
+
+    if (startDate && endDate) {
+      // Rango personalizado
+      dateFilter = `>= '${startDate}' AND c.creado_en <= '${endDate} 23:59:59'`;
+      messageDateFilter = `>= '${startDate}' AND m.creado_en <= '${endDate} 23:59:59'`;
+      cyclesDateFilter = `>= '${startDate}' AND cc.completed_at <= '${endDate} 23:59:59'`;
+      hourlyDateFilter = `>= '${startDate}' AND COALESCE(creado_en, FROM_UNIXTIME(ts)) <= '${endDate} 23:59:59'`;
+      dailyDateFilter = `>= '${startDate}' AND c.creado_en <= '${endDate} 23:59:59'`;
+    } else {
+      // Usar días (por defecto 30)
+      const numDays = days || '30';
+      dateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
+      messageDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
+      cyclesDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
+      hourlyDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
+      dailyDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
+    }
 
     // 1. Tiempo promedio de primera respuesta por agente
     const [responseTimeRows] = await pool.query<RowDataPacket[]>(
@@ -34,12 +64,12 @@ export const GET: APIRoute = async ({ locals }) => {
       ) AS first_response ON first_response.conversacion_id = c.id
       WHERE u.activo = 1
         AND u.rol = 'AGENTE'
-        AND c.creado_en >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        AND c.creado_en ${dateFilter}
       GROUP BY u.id, u.nombre
       ORDER BY avg_response_time_seconds ASC`
     );
 
-    // 2. Rendimiento por agente (últimos 30 días)
+    // 2. Rendimiento por agente
     const [agentPerformanceRows] = await pool.query<RowDataPacket[]>(
       `SELECT
         u.id,
@@ -50,13 +80,13 @@ export const GET: APIRoute = async ({ locals }) => {
         COUNT(DISTINCT cc.id) AS cycles_completed
       FROM usuarios u
       LEFT JOIN conversaciones c ON c.asignado_a = u.id
-        AND c.creado_en >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        AND c.creado_en ${dateFilter}
       LEFT JOIN mensajes m ON m.usuario_id = u.id
         AND m.from_me = 1
-        AND m.creado_en >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        AND m.creado_en ${messageDateFilter}
       LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
       LEFT JOIN conversation_cycles cc ON cc.assigned_to = u.id
-        AND cc.completed_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        AND cc.completed_at ${cyclesDateFilter}
       WHERE u.activo = 1 AND u.rol = 'AGENTE'
       GROUP BY u.id, u.nombre
       ORDER BY conversations_handled DESC`
@@ -77,13 +107,13 @@ export const GET: APIRoute = async ({ locals }) => {
       ORDER BY active_conversations DESC`
     );
 
-    // 4. Mensajes por hora del día (últimos 7 días) - Para identificar horarios pico
+    // 4. Mensajes por hora del día - Para identificar horarios pico
     const [hourlyActivityRows] = await pool.query<RowDataPacket[]>(
       `SELECT
         HOUR(COALESCE(creado_en, FROM_UNIXTIME(ts))) AS hour,
         COUNT(*) AS message_count
       FROM mensajes
-      WHERE COALESCE(creado_en, FROM_UNIXTIME(ts)) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+      WHERE COALESCE(creado_en, FROM_UNIXTIME(ts)) ${hourlyDateFilter}
       GROUP BY hour
       ORDER BY hour`
     );
@@ -97,7 +127,7 @@ export const GET: APIRoute = async ({ locals }) => {
         ROUND(COUNT(CASE WHEN cs.is_final = TRUE THEN 1 END) * 100.0 / COUNT(*), 2) AS resolution_rate
       FROM conversaciones c
       LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
-      WHERE c.creado_en >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`
+      WHERE c.creado_en ${dateFilter}`
     );
 
     // 6. Estadísticas de ciclos
@@ -109,7 +139,7 @@ export const GET: APIRoute = async ({ locals }) => {
         MIN(duration_seconds) AS min_duration_seconds,
         MAX(duration_seconds) AS max_duration_seconds
       FROM conversation_cycles
-      WHERE completed_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`
+      WHERE completed_at ${cyclesDateFilter}`
     );
 
     // 7. Conversaciones por fuente/canal (si aplica)
@@ -118,7 +148,7 @@ export const GET: APIRoute = async ({ locals }) => {
         'WhatsApp' AS channel,
         COUNT(*) AS conversation_count
       FROM conversaciones
-      WHERE creado_en >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`
+      WHERE creado_en ${dateFilter}`
     );
 
     // 8. Top 5 conversaciones más largas (por mensajes)
@@ -132,22 +162,22 @@ export const GET: APIRoute = async ({ locals }) => {
       FROM conversaciones c
       LEFT JOIN mensajes m ON m.conversacion_id = c.id
       LEFT JOIN usuarios u ON u.id = c.asignado_a
-      WHERE c.creado_en >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      WHERE c.creado_en ${dateFilter}
       GROUP BY c.id, c.wa_profile_name, c.wa_user, u.nombre
       ORDER BY message_count DESC
       LIMIT 5`
     );
 
-    // 9. Actividad diaria (últimos 7 días) - Para gráfica de tendencia
+    // 9. Actividad diaria - Para gráfica de tendencia
     const [dailyActivityRows] = await pool.query<RowDataPacket[]>(
       `SELECT
-        DATE(creado_en) AS day,
+        DATE(c.creado_en) AS day,
         COUNT(DISTINCT c.id) AS conversations,
         COUNT(m.id) AS messages
       FROM conversaciones c
       LEFT JOIN mensajes m ON m.conversacion_id = c.id
         AND DATE(COALESCE(m.creado_en, FROM_UNIXTIME(m.ts))) = DATE(c.creado_en)
-      WHERE c.creado_en >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+      WHERE c.creado_en ${dailyDateFilter}
       GROUP BY day
       ORDER BY day DESC`
     );
@@ -161,7 +191,7 @@ export const GET: APIRoute = async ({ locals }) => {
         COUNT(client_reaction_emoji) AS total_reactions
       FROM mensajes
       WHERE client_reaction_emoji IS NOT NULL
-        AND creado_en >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`
+        AND COALESCE(creado_en, FROM_UNIXTIME(ts)) ${hourlyDateFilter}`
     );
 
     const result = {

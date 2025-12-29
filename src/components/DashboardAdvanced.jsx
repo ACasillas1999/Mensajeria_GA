@@ -8,16 +8,30 @@ export default function DashboardAdvanced() {
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('overview'); // overview, agents, performance
 
+  // Date range state
+  const [dateRange, setDateRange] = useState('30'); // 7, 30, 90, custom
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+
   useEffect(() => {
     loadData();
-  }, []);
+  }, [dateRange, customStartDate, customEndDate]);
 
   async function loadData() {
     setLoading(true);
     try {
+      let analyticsUrl = `${BASE}/api/dashboard-analytics`.replace(/\/\//g, '/');
+
+      // Add date range parameters
+      if (dateRange === 'custom' && customStartDate && customEndDate) {
+        analyticsUrl += `?start_date=${customStartDate}&end_date=${customEndDate}`;
+      } else {
+        analyticsUrl += `?days=${dateRange}`;
+      }
+
       const [statsRes, analyticsRes] = await Promise.all([
         fetch(`${BASE}/api/dashboard`.replace(/\/\//g, '/')),
-        fetch(`${BASE}/api/dashboard-analytics`.replace(/\/\//g, '/'))
+        fetch(analyticsUrl)
       ]);
 
       const statsData = await statsRes.json();
@@ -42,6 +56,72 @@ export default function DashboardAdvanced() {
 
   return (
     <div className="space-y-6">
+      {/* Date Range Selector */}
+      <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-800 bg-slate-950/70">
+        <div className="text-sm font-medium text-slate-300">Período:</div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setDateRange('7')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              dateRange === '7'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            Últimos 7 días
+          </button>
+          <button
+            onClick={() => setDateRange('30')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              dateRange === '30'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            Últimos 30 días
+          </button>
+          <button
+            onClick={() => setDateRange('90')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              dateRange === '90'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            Últimos 90 días
+          </button>
+          <button
+            onClick={() => setDateRange('custom')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              dateRange === 'custom'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            Personalizado
+          </button>
+        </div>
+
+        {dateRange === 'custom' && (
+          <div className="flex items-center gap-2 ml-4">
+            <input
+              type="date"
+              value={customStartDate}
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm"
+            />
+            <span className="text-slate-500">a</span>
+            <input
+              type="date"
+              value={customEndDate}
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm"
+            />
+          </div>
+        )}
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-700">
         <button
