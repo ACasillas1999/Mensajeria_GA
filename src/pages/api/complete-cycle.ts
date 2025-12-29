@@ -65,9 +65,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       [convId, conv.status_id]
     );
 
-    const cycleData = lastHistoryRows.length > 0 && lastHistoryRows[0].field_data
-      ? lastHistoryRows[0].field_data
-      : null;
+    // Convertir cycleData a string JSON si no es null
+    let cycleData = null;
+    if (lastHistoryRows.length > 0 && lastHistoryRows[0].field_data) {
+      const rawData = lastHistoryRows[0].field_data;
+      cycleData = typeof rawData === 'string' ? rawData : JSON.stringify(rawData);
+    }
 
     // Contar mensajes del ciclo actual
     const [msgCountRows] = await pool.query<RowDataPacket[]>(
@@ -85,13 +88,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     await pool.query(
       `INSERT INTO conversation_cycles
-       (conversation_id, cycle_number, started_at, final_status_id, total_messages, assigned_to, cycle_data)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       (conversation_id, cycle_number, started_at, completed_at, initial_status_id, final_status_id, total_messages, assigned_to, cycle_data)
+       VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?)`,
       [
         convId,
         newCycleNumber,
         conv.current_cycle_started_at || new Date(),
-        conv.status_id,
+        null,  // initial_status_id
+        conv.status_id,  // final_status_id
         totalMessages,
         conv.asignado_a || null,
         cycleData
