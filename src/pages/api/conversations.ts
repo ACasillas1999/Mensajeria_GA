@@ -14,9 +14,19 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const params: any[] = [];
     let where = "WHERE 1=1";
     if (search) {
-      where +=
-        " AND (COALESCE(wa_profile_name, wa_user) LIKE CONCAT('%', ?, '%') OR CAST(id AS CHAR) LIKE CONCAT('%', ?, '%'))";
-      params.push(search, search);
+      // Buscar en nombre, teléfono, ID de conversación, o contenido de mensajes
+      where += ` AND (
+        c.wa_profile_name LIKE CONCAT('%', ?, '%')
+        OR c.wa_user LIKE CONCAT('%', ?, '%')
+        OR CAST(c.id AS CHAR) LIKE CONCAT('%', ?, '%')
+        OR EXISTS (
+          SELECT 1 FROM mensajes m
+          WHERE m.conversacion_id = c.id
+          AND m.cuerpo LIKE CONCAT('%', ?, '%')
+          LIMIT 1
+        )
+      )`;
+      params.push(search, search, search, search);
     }
 
     // Filtro por status_id (nuevo sistema)
