@@ -86,14 +86,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // 1. Guardar el ciclo completado en conversation_cycles
     const newCycleNumber = (conv.cycle_count || 0) + 1;
 
+    // MySQL está en UTC, pero queremos guardar la hora local
+    // Node.js ya está en CST (UTC-6), solo necesitamos usar la fecha directamente
+    const completedAt = new Date();
+
     await pool.query(
       `INSERT INTO conversation_cycles
        (conversation_id, cycle_number, started_at, completed_at, initial_status_id, final_status_id, total_messages, assigned_to, cycle_data)
-       VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         convId,
         newCycleNumber,
         conv.current_cycle_started_at || new Date(),
+        completedAt,  // completed_at con la fecha actual
         null,  // initial_status_id
         conv.status_id,  // final_status_id
         totalMessages,
