@@ -30,6 +30,13 @@ const tones = {
 };
 
 export default function MagicBento({ isAdmin = false }) {
+  useEffect(() => {
+    // Render Feather icons once hydrated
+    if (typeof window !== "undefined") {
+      window.feather?.replace();
+    }
+  }, []);
+
   const Tile = ({
     href,
     title,
@@ -90,7 +97,7 @@ export default function MagicBento({ isAdmin = false }) {
   };
 
   return (
-    <section className="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 auto-rows-[115px] md:auto-rows-[125px] xl:auto-rows-[135px]">
+    <section className="mt-2 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 auto-rows-[115px] md:auto-rows-[125px] xl:auto-rows-[135px]">
       <Tile
         href="/mensajes"
         title="Mensajes"
@@ -195,3 +202,4 @@ export default function MagicBento({ isAdmin = false }) {
     </section>
   );
 }
+import { useEffect } from "react";
