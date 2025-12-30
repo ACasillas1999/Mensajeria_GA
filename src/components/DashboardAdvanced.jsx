@@ -311,24 +311,26 @@ function OverviewTab({ stats, analytics }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[2fr,1fr] gap-4 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[2fr,1fr] gap-4 items-stretch">
         {analytics?.hourly_activity && (
-          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
-            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10 h-full flex flex-col">
+            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2 shrink-0">
               <Icon name="activity" className="text-emerald-400" />
               <span>Actividad por hora del dia (ultimos 7 dias)</span>
             </h3>
-            <HourlyActivityChart data={analytics.hourly_activity} />
+            <div className="flex-1">
+              <HourlyActivityChart data={analytics.hourly_activity} />
+            </div>
           </div>
         )}
 
         {stats?.statuses && (
-          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10 max-h-[460px] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10 h-full flex flex-col">
+            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2 shrink-0">
               <Icon name="pie" className="text-emerald-400" />
               <span>Distribucion por estado</span>
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 overflow-y-auto pr-1">
               {stats.statuses.map(status => (
                 <div
                   key={status.id}
