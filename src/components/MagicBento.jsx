@@ -97,165 +97,140 @@ export default function MagicBento({ isAdmin = false }) {
   };
 
   return (
-    <>
-      <section className="mt-2 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 auto-rows-[115px] md:auto-rows-[125px] xl:auto-rows-[135px]">
-        <Tile
-          href="/mensajes"
-          title="Mensajes"
-          subtitle="Inbox prioritario"
-          desc="Centraliza conversaciones, asignaciones y notas internas."
-          icon="message-square"
-          tone="emerald"
-          badge="En vivo"
-          className="col-span-1 sm:col-span-2 xl:col-span-6"
-        />
+    <section
+      className="mt-2 grid grid-flow-dense gap-3 auto-rows-[1fr]"
+      style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}
+    >
+      <Tile
+        href="/mensajes"
+        title="Mensajes"
+        subtitle="Inbox prioritario"
+        desc="Centraliza conversaciones, asignaciones y notas internas."
+        icon="message-square"
+        tone="emerald"
+        badge="En vivo"
+        className="md:col-span-2"
+      />
 
-        <Tile
-          href="/dashboard"
-          title="Dashboard"
-          subtitle="Rendimiento y metricas"
-          desc="Respuestas, estados y actividad diaria."
-          icon="bar-chart-2"
-          tone="blue"
-          className="col-span-1 sm:col-span-2 xl:col-span-6"
-        />
+      <Tile
+        href="/dashboard"
+        title="Dashboard"
+        subtitle="Rendimiento y metricas"
+        desc="Respuestas, estados y actividad diaria."
+        icon="bar-chart-2"
+        tone="blue"
+        className="md:col-span-2"
+      />
 
-        <Tile
-          href="/clientes"
-          title="Clientes"
-          subtitle="Listado y busqueda"
-          desc="Perfiles, tags y detalles de contacto."
-          icon="users"
-          tone="purple"
-          className="col-span-1 sm:col-span-2 xl:col-span-3"
-        />
+      <Tile
+        href="/clientes"
+        title="Clientes"
+        subtitle="Listado y busqueda"
+        desc="Perfiles, tags y detalles de contacto."
+        icon="users"
+        tone="purple"
+      />
 
-        <Tile
-          href="/pipeline"
-          title="Pipeline"
-          subtitle="Embudo y etapas"
-          desc="Arrastra oportunidades y define prioridades."
-          icon="trello"
-          tone="amber"
-          className="col-span-1 sm:col-span-2 xl:col-span-3"
-        />
+      <Tile
+        href="/pipeline"
+        title="Pipeline"
+        subtitle="Embudo y etapas"
+        desc="Arrastra oportunidades y define prioridades."
+        icon="trello"
+        tone="amber"
+      />
 
-        <Tile
-          href="/plantillas"
-          title="Plantillas"
-          subtitle="Respuestas rapidas"
-          desc="Gestiona mensajes listos para el equipo."
-          icon="file-plus"
-          tone="blue"
-          className="col-span-1 sm:col-span-2 xl:col-span-3"
-        />
+      <Tile
+        href="/plantillas"
+        title="Plantillas"
+        subtitle="Respuestas rapidas"
+        desc="Gestiona mensajes listos para el equipo."
+        icon="file-plus"
+        tone="blue"
+      />
 
-        <Tile
-          href="/config"
-          title="Configuracion"
-          subtitle="Preferencias"
-          desc="Horarios, integraciones y ajustes."
-          icon="settings"
-          tone="emerald"
-          className="col-span-1 sm:col-span-2 xl:col-span-3"
-        />
+      <Tile
+        href="/config"
+        title="Configuracion"
+        subtitle="Preferencias"
+        desc="Horarios, integraciones y ajustes."
+        icon="settings"
+        tone="emerald"
+      />
 
-        {isAdmin && (
-          <>
-            <Tile
-              href="/admin/asignacion"
-              title="Asignacion"
-              subtitle="Distribucion"
-              desc="Reparte conversaciones entre agentes."
-              icon="share-2"
-              tone="emerald"
-              className="col-span-1 sm:col-span-2 xl:col-span-3"
-            />
-            <Tile
-              href="/admin/usuarios"
-              title="Usuarios"
-              subtitle="Equipo"
-              desc="Roles, accesos y altas."
-              icon="user-check"
-              tone="purple"
-              className="col-span-1 sm:col-span-2 xl:col-span-3"
-            />
-            <Tile
-              href="/admin/auto-respuestas"
-              title="Auto-respuestas"
-              subtitle="Bot"
-              desc="Reglas, triggers y mensajes del bot."
-              icon="cpu"
-              tone="amber"
-              className="col-span-1 sm:col-span-2 xl:col-span-3"
-            />
-            <Tile
-              href="/admin/mensajes-no-reconocidos"
-              title="No reconocidos"
-              subtitle="Pendientes"
-              desc="Frases que requieren entrenamiento."
-              icon="help-circle"
-              tone="blue"
-              className="col-span-1 sm:col-span-2 xl:col-span-3"
-            />
-          </>
-        )}
-      </section>
+      {isAdmin && (
+        <>
+          <Tile
+            href="/admin/asignacion"
+            title="Asignacion"
+            subtitle="Distribucion"
+            desc="Reparte conversaciones entre agentes."
+            icon="share-2"
+            tone="emerald"
+          />
+          <Tile
+            href="/admin/usuarios"
+            title="Usuarios"
+            subtitle="Equipo"
+            desc="Roles, accesos y altas."
+            icon="user-check"
+            tone="purple"
+          />
+          <Tile
+            href="/admin/auto-respuestas"
+            title="Auto-respuestas"
+            subtitle="Bot"
+            desc="Reglas, triggers y mensajes del bot."
+            icon="cpu"
+            tone="amber"
+          />
+          <Tile
+            href="/admin/mensajes-no-reconocidos"
+            title="No reconocidos"
+            subtitle="Pendientes"
+            desc="Frases que requieren entrenamiento."
+            icon="help-circle"
+            tone="blue"
+          />
+        </>
+      )}
 
-      <section className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-        <a
-          href="/mensajes?filter=sin-resolver"
-          className="group p-4 rounded-2xl border border-slate-800 bg-slate-950/70 hover:border-emerald-500/40 transition flex items-center gap-3"
-        >
-          <span className="w-10 h-10 rounded-xl border border-emerald-500/40 bg-emerald-500/10 grid place-items-center text-emerald-400">
-            <Icon name="activity" />
-          </span>
-          <div className="leading-tight">
-            <div className="text-sm text-slate-300 font-semibold">Pendientes</div>
-            <div className="text-xs text-slate-500">Ver conversaciones sin resolver</div>
-          </div>
-        </a>
+      <Tile
+        href="/mensajes?filter=sin-resolver"
+        title="Pendientes"
+        subtitle="Prioridad"
+        desc="Ver conversaciones sin resolver"
+        icon="activity"
+        tone="emerald"
+      />
 
-        <a
-          href="/plantillas"
-          className="group p-4 rounded-2xl border border-slate-800 bg-slate-950/70 hover:border-sky-500/40 transition flex items-center gap-3"
-        >
-          <span className="w-10 h-10 rounded-xl border border-sky-500/40 bg-sky-500/10 grid place-items-center text-sky-400">
-            <Icon name="file-plus" />
-          </span>
-          <div className="leading-tight">
-            <div className="text-sm text-slate-300 font-semibold">Plantillas</div>
-            <div className="text-xs text-slate-500">Crear o editar respuesta rÇ­pida</div>
-          </div>
-        </a>
+      <Tile
+        href="/plantillas"
+        title="Plantillas"
+        subtitle="Rápidas"
+        desc="Crear o editar respuesta rápida"
+        icon="file-plus"
+        tone="blue"
+      />
 
-        <a
-          href="/admin/auto-respuestas"
-          className="group p-4 rounded-2xl border border-slate-800 bg-slate-950/70 hover:border-amber-500/40 transition flex items-center gap-3"
-        >
-          <span className="w-10 h-10 rounded-xl border border-amber-500/40 bg-amber-500/10 grid place-items-center text-amber-400">
-            <Icon name="cpu" />
-          </span>
-          <div className="leading-tight">
-            <div className="text-sm text-slate-300 font-semibold">Auto-respuestas</div>
-            <div className="text-xs text-slate-500">Configurar reglas del bot</div>
-          </div>
-        </a>
+      <Tile
+        href="/admin/auto-respuestas"
+        title="Auto-respuestas"
+        subtitle="Bot"
+        desc="Configurar reglas del bot"
+        icon="cpu"
+        tone="amber"
+      />
 
-        <a
-          href="/dashboard"
-          className="group p-4 rounded-2xl border border-slate-800 bg-slate-950/70 hover:border-purple-500/40 transition flex items-center gap-3"
-        >
-          <span className="w-10 h-10 rounded-xl border border-purple-500/40 bg-purple-500/10 grid place-items-center text-purple-400">
-            <Icon name="bar-chart-2" />
-          </span>
-          <div className="leading-tight">
-            <div className="text-sm text-slate-300 font-semibold">MÉtricas</div>
-            <div className="text-xs text-slate-500">Ir al dashboard de rendimiento</div>
-          </div>
-        </a>
-      </section>
-    </>
+      <Tile
+        href="/dashboard"
+        title="Métricas"
+        subtitle="Rendimiento"
+        desc="Ir al dashboard de rendimiento"
+        icon="bar-chart-2"
+        tone="purple"
+      />
+    </section>
   );
 }
 import { useEffect } from "react";
