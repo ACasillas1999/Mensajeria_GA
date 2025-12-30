@@ -7,6 +7,7 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
   const [loading, setLoading] = useState(true)
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [variables, setVariables] = useState([])
+  const [headerMediaUrl, setHeaderMediaUrl] = useState('')
   const [sending, setSending] = useState(false)
 
   useEffect(() => {
@@ -34,6 +35,9 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
     const matches = tpl.body_text?.match(/\{\{(\d+)\}\}/g) || []
     const varCount = matches.length
     setVariables(new Array(varCount).fill(''))
+
+    // Reset header media URL
+    setHeaderMediaUrl('')
   }
 
   async function sendTemplate() {
@@ -45,18 +49,36 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
       return
     }
 
+    // Validar que si el template tiene header de media, se proporcione la URL
+    const hasMediaHeader = ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(selectedTemplate.header_type)
+    if (hasMediaHeader && !headerMediaUrl.trim()) {
+      alert(`Esta plantilla requiere un ${selectedTemplate.header_type.toLowerCase()} en el header. Por favor proporciona la URL.`)
+      return
+    }
+
     setSending(true)
     try {
+      const payload = {
+        conversacion_id: conversation.id,
+        to: conversation.wa_user,
+        template: selectedTemplate.nombre,
+        lang: selectedTemplate.idioma || 'es',
+        params: variables.length > 0 ? variables : undefined,
+      }
+
+      // Agregar header media según el tipo
+      if (selectedTemplate.header_type === 'IMAGE' && headerMediaUrl) {
+        payload.header_image = headerMediaUrl
+      } else if (selectedTemplate.header_type === 'VIDEO' && headerMediaUrl) {
+        payload.header_video = headerMediaUrl
+      } else if (selectedTemplate.header_type === 'DOCUMENT' && headerMediaUrl) {
+        payload.header_document = headerMediaUrl
+      }
+
       const res = await fetch(`${BASE}/api/send-template`.replace(/\/\//g, '/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversacion_id: conversation.id,
-          to: conversation.wa_user,
-          template: selectedTemplate.nombre,
-          lang: selectedTemplate.idioma || 'es',
-          params: variables.length > 0 ? variables : undefined,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await res.json()
@@ -139,7 +161,14 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                       className="w-full text-left p-4 border rounded-lg hover:border-green-500 hover:bg-green-50 transition"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div className="font-semibold">{tpl.nombre}</div>
+                        <div className="font-semibold flex items-center gap-2">
+                          {tpl.nombre}
+                          {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(tpl.header_type) && (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title={`Requiere ${tpl.header_type}`}>
+                              {tpl.header_type === 'IMAGE' ? '🖼️' : tpl.header_type === 'VIDEO' ? '🎥' : '📄'}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
                           {tpl.categoria}
                         </span>
@@ -159,12 +188,32 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                   onClick={() => {
                     setSelectedTemplate(null)
                     setVariables([])
+                    setHeaderMediaUrl('')
                   }}
                   className="text-sm text-gray-600 hover:text-gray-800"
                 >
                   ← Cambiar plantilla
                 </button>
               </div>
+
+              {/* Header Media Input */}
+              {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(selectedTemplate.header_type) && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm font-medium mb-2">
+                    Header {selectedTemplate.header_type} <span className="text-red-500">*</span>
+                  </p>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Esta plantilla requiere un {selectedTemplate.header_type.toLowerCase()} en el header.
+                  </p>
+                  <input
+                    type="url"
+                    value={headerMediaUrl}
+                    onChange={e => setHeaderMediaUrl(e.target.value)}
+                    placeholder={`URL del ${selectedTemplate.header_type.toLowerCase()} (https://...)`}
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+              )}
 
               {variables.length > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -211,7 +260,11 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
             </button>
             <button
               onClick={sendTemplate}
-              disabled={sending || variables.some(v => !v.trim())}
+              disabled={
+                sending ||
+                variables.some(v => !v.trim()) ||
+                (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(selectedTemplate.header_type) && !headerMediaUrl.trim())
+              }
               className="flex-1 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {sending ? 'Enviando...' : 'Enviar plantilla'}
