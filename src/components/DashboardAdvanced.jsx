@@ -311,9 +311,9 @@ function OverviewTab({ stats, analytics }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[2fr,1fr] gap-4 items-start">
         {analytics?.hourly_activity && (
-          <div className="xl:col-span-2 p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
             <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
               <Icon name="activity" className="text-emerald-400" />
               <span>Actividad por hora del dia (ultimos 7 dias)</span>
@@ -323,7 +323,7 @@ function OverviewTab({ stats, analytics }) {
         )}
 
         {stats?.statuses && (
-          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10 max-h-[460px] overflow-y-auto">
             <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
               <Icon name="pie" className="text-emerald-400" />
               <span>Distribucion por estado</span>
@@ -332,24 +332,19 @@ function OverviewTab({ stats, analytics }) {
               {stats.statuses.map(status => (
                 <div
                   key={status.id}
-                  className="p-4 rounded-lg border border-slate-700 bg-slate-900/50"
+                  className="p-3 rounded-lg border border-slate-700 bg-slate-900/50"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div
-                      className="w-8 h-8 rounded-full border grid place-items-center text-slate-200"
-                      style={{ color: status.color, borderColor: status.color }}
-                    >
-                      <Icon name="tag" className="text-current" />
-                    </div>
+                  <div className="flex items-center gap-2 mb-2 text-sm">
+                    <Icon name="tag" className="text-current" style={{ color: status.color }} />
                     <span
-                      className="font-medium"
+                      className="font-semibold"
                       style={{ color: status.color }}
                     >
                       {status.name}
                     </span>
                   </div>
-                  <div className="text-2xl font-bold text-slate-200">{status.total}</div>
-                  <div className="text-xs text-slate-500 mt-1">
+                  <div className="text-xl font-bold text-slate-200">{status.total}</div>
+                  <div className="text-[11px] text-slate-500 mt-1">
                     Mis: {status.mine || 0}
                   </div>
                 </div>
@@ -614,7 +609,7 @@ function HourlyActivityChart({ data }) {
 
           return (
             <div key={hour} className="flex flex-col items-center gap-1">
-              <div className="relative w-full h-20 bg-slate-900 rounded">
+              <div className="relative w-full h-32 bg-slate-900 rounded">
                 <div
                   className="absolute bottom-0 w-full bg-emerald-500 rounded transition-all"
                   style={{ height: `${height}%` }}
