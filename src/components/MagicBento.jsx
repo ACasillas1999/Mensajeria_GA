@@ -73,17 +73,15 @@ export default function MagicBento({ isAdmin = false }) {
               </span>
             )}
           </div>
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <div className="text-lg font-semibold text-slate-100 leading-tight">
+          <div className="flex items-start gap-3">
+            <div className={`w-9 h-9 rounded-xl border ${accent.iconBg} grid place-items-center shrink-0`}>
+              <Icon name={icon} className={accent.icon} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-lg font-semibold text-slate-100 leading-tight truncate">
                 {title}
               </div>
               {desc && <div className="text-sm text-slate-400 mt-1 line-clamp-2">{desc}</div>}
-            </div>
-            <div
-              className={`rounded-xl p-3 border ${accent.iconBg} transition-transform group-hover:scale-105`}
-            >
-              <Icon name={icon} className={accent.icon} />
             </div>
           </div>
         </div>
@@ -92,7 +90,7 @@ export default function MagicBento({ isAdmin = false }) {
   };
 
   return (
-    <section className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 auto-rows-[130px] md:auto-rows-[140px] xl:auto-rows-[150px]">
+    <section className="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 auto-rows-[115px] md:auto-rows-[125px] xl:auto-rows-[135px]">
       <Tile
         href="/mensajes"
         title="Mensajes"
