@@ -94,7 +94,7 @@ const syncTemplates: APIRoute = async ({ locals }) => {
         if (estado !== 'APPROVED') {
           continue;
         }
-        const wa_template_id = tpl.id;
+        const wa_template_id = tpl.id || null;
 
         // Extraer componentes
         let body_text = '';
@@ -105,31 +105,41 @@ const syncTemplates: APIRoute = async ({ locals }) => {
 
         if (tpl.components && Array.isArray(tpl.components)) {
           for (const comp of tpl.components) {
-            if (comp.type === 'BODY' && comp.text) {
-              body_text = comp.text;
+            if (comp.type === 'BODY') {
+              body_text = comp.text || '';
             } else if (comp.type === 'HEADER') {
               // Header puede ser TEXT, IMAGE, VIDEO, DOCUMENT
               if (comp.format) {
                 header_type = comp.format.toUpperCase();
-                if (comp.text) {
-                  header_text = comp.text;
-                }
+                // Para headers de media, el texto puede ser opcional
+                header_text = comp.text || null;
               } else if (comp.text) {
                 header_type = 'TEXT';
                 header_text = comp.text;
               }
-            } else if (comp.type === 'FOOTER' && comp.text) {
-              footer_text = comp.text;
+            } else if (comp.type === 'FOOTER') {
+              footer_text = comp.text || null;
             } else if (comp.type === 'BUTTONS' && comp.buttons) {
-              buttons = JSON.stringify(comp.buttons);
+              try {
+                buttons = JSON.stringify(comp.buttons);
+              } catch (e) {
+                buttons = null;
+              }
             }
           }
+        }
+
+        // Si no hay body_text, saltar (es inválido)
+        if (!body_text) {
+          console.warn('Plantilla sin body_text:', nombre);
+          errors++;
+          continue;
         }
 
         // Insertar o actualizar en BD
         await pool.query(
           `INSERT INTO plantillas
-           (nombre, idioma, categoria, estado, body_text, header_type, header_text, footer_text, buttons, wa_template_id)
+           (nombre, idioma, categoria, estado, body_text, header_type, header_text, footer_text, botones, wa_template_id)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON DUPLICATE KEY UPDATE
              idioma = VALUES(idioma),
@@ -139,15 +149,15 @@ const syncTemplates: APIRoute = async ({ locals }) => {
              header_type = VALUES(header_type),
              header_text = VALUES(header_text),
              footer_text = VALUES(footer_text),
-             buttons = VALUES(buttons),
+             botones = VALUES(botones),
              wa_template_id = VALUES(wa_template_id),
              updated_at = CURRENT_TIMESTAMP`,
           [nombre, idioma, categoria, estado, body_text, header_type, header_text, footer_text, buttons, wa_template_id]
         );
 
         synced++;
-      } catch (err) {
-        console.error('Error sincronizando plantilla:', tpl.name, err);
+      } catch (err: any) {
+        console.error('Error sincronizando plantilla:', tpl.name, err?.message || err);
         errors++;
       }
     }
