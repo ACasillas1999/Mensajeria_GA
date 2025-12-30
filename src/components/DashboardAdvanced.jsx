@@ -318,7 +318,7 @@ function OverviewTab({ stats, analytics }) {
               <Icon name="activity" className="text-emerald-400" />
               <span>Actividad por hora del dia (ultimos 7 dias)</span>
             </h3>
-            <div className="flex-1">
+            <div className="flex-1 flex items-end">
               <HourlyActivityChart data={analytics.hourly_activity} />
             </div>
           </div>
@@ -599,7 +599,7 @@ function HourlyActivityChart({ data }) {
   const maxCount = Math.max(...data.map(d => d.message_count), 1);
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto w-full">
       <div
         className="grid gap-1 min-w-[720px] md:min-w-0"
         style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
