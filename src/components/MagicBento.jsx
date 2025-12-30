@@ -98,8 +98,8 @@ export default function MagicBento({ isAdmin = false }) {
 
   return (
     <section
-      className="mt-2 grid grid-flow-dense gap-3 auto-rows-[1fr]"
-      style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}
+      className="mt-2 grid grid-flow-dense gap-4 auto-rows-[1fr]"
+      style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}
     >
       <Tile
         href="/mensajes"
@@ -109,7 +109,7 @@ export default function MagicBento({ isAdmin = false }) {
         icon="message-square"
         tone="emerald"
         badge="En vivo"
-        className="md:col-span-2"
+        className="md:col-span-2 lg:col-span-3"
       />
 
       <Tile
@@ -138,6 +138,7 @@ export default function MagicBento({ isAdmin = false }) {
         desc="Arrastra oportunidades y define prioridades."
         icon="trello"
         tone="amber"
+        className="md:col-span-2"
       />
 
       <Tile
@@ -156,6 +157,7 @@ export default function MagicBento({ isAdmin = false }) {
         desc="Horarios, integraciones y ajustes."
         icon="settings"
         tone="emerald"
+        className="md:col-span-2"
       />
 
       {isAdmin && (
@@ -167,6 +169,7 @@ export default function MagicBento({ isAdmin = false }) {
             desc="Reparte conversaciones entre agentes."
             icon="share-2"
             tone="emerald"
+            className="md:col-span-2"
           />
           <Tile
             href="/admin/usuarios"
