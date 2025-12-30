@@ -99,6 +99,7 @@ const syncTemplates: APIRoute = async ({ locals }) => {
         // Extraer componentes
         let body_text = '';
         let header_text = null;
+        let header_type = 'NONE';
         let footer_text = null;
         let buttons = null;
 
@@ -106,8 +107,17 @@ const syncTemplates: APIRoute = async ({ locals }) => {
           for (const comp of tpl.components) {
             if (comp.type === 'BODY' && comp.text) {
               body_text = comp.text;
-            } else if (comp.type === 'HEADER' && comp.text) {
-              header_text = comp.text;
+            } else if (comp.type === 'HEADER') {
+              // Header puede ser TEXT, IMAGE, VIDEO, DOCUMENT
+              if (comp.format) {
+                header_type = comp.format.toUpperCase();
+                if (comp.text) {
+                  header_text = comp.text;
+                }
+              } else if (comp.text) {
+                header_type = 'TEXT';
+                header_text = comp.text;
+              }
             } else if (comp.type === 'FOOTER' && comp.text) {
               footer_text = comp.text;
             } else if (comp.type === 'BUTTONS' && comp.buttons) {
@@ -119,19 +129,20 @@ const syncTemplates: APIRoute = async ({ locals }) => {
         // Insertar o actualizar en BD
         await pool.query(
           `INSERT INTO plantillas
-           (nombre, idioma, categoria, estado, body_text, header_text, footer_text, buttons, wa_template_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+           (nombre, idioma, categoria, estado, body_text, header_type, header_text, footer_text, buttons, wa_template_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON DUPLICATE KEY UPDATE
              idioma = VALUES(idioma),
              categoria = VALUES(categoria),
              estado = VALUES(estado),
              body_text = VALUES(body_text),
+             header_type = VALUES(header_type),
              header_text = VALUES(header_text),
              footer_text = VALUES(footer_text),
              buttons = VALUES(buttons),
              wa_template_id = VALUES(wa_template_id),
              updated_at = CURRENT_TIMESTAMP`,
-          [nombre, idioma, categoria, estado, body_text, header_text, footer_text, buttons, wa_template_id]
+          [nombre, idioma, categoria, estado, body_text, header_type, header_text, footer_text, buttons, wa_template_id]
         );
 
         synced++;
