@@ -172,7 +172,7 @@ export default function MagicBento({ isAdmin = false }) {
   };
 
   return (
-    <section className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-4 auto-rows-[150px]">
+    <section className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-4 auto-rows-[150px] md:auto-rows-[170px] xl:auto-rows-[180px]">
       <Tile
         href="/mensajes"
         title="Mensajes"
@@ -181,7 +181,7 @@ export default function MagicBento({ isAdmin = false }) {
         icon="inbox"
         tone="emerald"
         badge="En vivo"
-        className="sm:col-span-2 xl:col-span-7 min-h-[190px]"
+        className="sm:col-span-2 xl:col-span-8 xl:row-span-2 min-h-[200px]"
       />
 
       <Tile
@@ -191,7 +191,7 @@ export default function MagicBento({ isAdmin = false }) {
         desc="Respuestas, estados y actividad diaria."
         icon="chart"
         tone="blue"
-        className="sm:col-span-2 xl:col-span-5 min-h-[190px]"
+        className="sm:col-span-2 xl:col-span-4 xl:row-span-2 min-h-[200px]"
       />
 
       <Tile
@@ -201,7 +201,7 @@ export default function MagicBento({ isAdmin = false }) {
         desc="Perfiles, tags y detalles de contacto."
         icon="users"
         tone="purple"
-        className="col-span-1 xl:col-span-3"
+        className="col-span-1 sm:col-span-2 xl:col-span-3"
       />
 
       <Tile
@@ -211,7 +211,7 @@ export default function MagicBento({ isAdmin = false }) {
         desc="Arrastra oportunidades y define prioridades."
         icon="pipeline"
         tone="amber"
-        className="col-span-1 xl:col-span-3"
+        className="col-span-1 sm:col-span-2 xl:col-span-3"
       />
 
       <Tile
@@ -221,7 +221,7 @@ export default function MagicBento({ isAdmin = false }) {
         desc="Gestiona mensajes listos para el equipo."
         icon="template"
         tone="blue"
-        className="col-span-1 xl:col-span-3"
+        className="col-span-1 sm:col-span-2 xl:col-span-3"
       />
 
       <Tile
@@ -231,7 +231,7 @@ export default function MagicBento({ isAdmin = false }) {
         desc="Horarios, integraciones y ajustes."
         icon="settings"
         tone="emerald"
-        className="col-span-1 xl:col-span-3"
+        className="col-span-1 sm:col-span-2 xl:col-span-3"
       />
 
       {isAdmin && (
@@ -243,7 +243,7 @@ export default function MagicBento({ isAdmin = false }) {
             desc="Reparte conversaciones entre agentes."
             icon="users"
             tone="emerald"
-            className="col-span-1 xl:col-span-3"
+            className="col-span-1 sm:col-span-2 xl:col-span-3"
           />
           <Tile
             href="/admin/usuarios"
@@ -252,7 +252,7 @@ export default function MagicBento({ isAdmin = false }) {
             desc="Roles, accesos y altas."
             icon="users"
             tone="purple"
-            className="col-span-1 xl:col-span-3"
+            className="col-span-1 sm:col-span-2 xl:col-span-3"
           />
           <Tile
             href="/admin/auto-respuestas"
@@ -261,7 +261,7 @@ export default function MagicBento({ isAdmin = false }) {
             desc="Reglas, triggers y mensajes del bot."
             icon="bot"
             tone="amber"
-            className="col-span-1 xl:col-span-3"
+            className="col-span-1 sm:col-span-2 xl:col-span-3"
           />
           <Tile
             href="/admin/mensajes-no-reconocidos"
@@ -270,7 +270,7 @@ export default function MagicBento({ isAdmin = false }) {
             desc="Frases que requieren entrenamiento."
             icon="alert"
             tone="blue"
-            className="col-span-1 xl:col-span-3"
+            className="col-span-1 sm:col-span-2 xl:col-span-3"
           />
         </>
       )}
