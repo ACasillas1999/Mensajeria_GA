@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import fs from "node:fs/promises";
 import { pool } from "../../lib/db";
+import { mapWaError } from "../../lib/waErrorMap";
 import { sendText } from "../../lib/whatsapp";
 
 const WABA_TOKEN = process.env.WABA_TOKEN || "";
@@ -298,12 +299,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const isAxios = axios.isAxiosError(err);
     const status = (isAxios && err.response?.status) || 500;
     const payload = isAxios
-      ? {
-          code: err.response?.data?.error?.code,
-          title: err.response?.data?.error?.title,
-          message: err.response?.data?.error?.message,
-          details: err.response?.data?.error?.error_data,
-        }
+      ? mapWaError(err.response?.data?.error)
       : { message: String(err?.message || err) };
     console.error("SEND ERROR:", { status, payload });
     return new Response(JSON.stringify({ ok: false, error: payload }), { status });

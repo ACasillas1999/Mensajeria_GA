@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { pool } from '../../lib/db';
 import { z } from 'zod';
 import axios from 'axios';
+import { mapWaError } from '../../lib/waErrorMap';
 
 const WABA_TOKEN = process.env.WABA_TOKEN;
 const WABA_PHONE_NUMBER_ID = process.env.WABA_PHONE_NUMBER_ID;
@@ -109,10 +110,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {
-    console.error('Error enviando template:', err?.response?.data || err?.message);
-    const errorMsg = err?.response?.data?.error?.message || err?.message || 'Error enviando plantilla';
-    return new Response(JSON.stringify({ ok: false, error: errorMsg }), {
-      status: err?.response?.status || 500,
+    const isAxios = axios.isAxiosError(err);
+    const status = (isAxios && err.response?.status) || 500;
+    const payload = isAxios ? mapWaError(err.response?.data?.error) : { message: err?.message || 'Error' };
+    console.error('Error enviando template:', payload, err?.response?.data || err?.message);
+    return new Response(JSON.stringify({ ok: false, error: payload }), {
+      status,
       headers: { 'Content-Type': 'application/json' },
     });
   }
