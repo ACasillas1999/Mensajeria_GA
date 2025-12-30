@@ -12,7 +12,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const usuario_id = user?.id || null;
 
     const body = await request.json();
-    const { conversacion_id, to, template, lang, params } = body;
+    const { conversacion_id, to, template, lang, params, header_image, header_video, header_document } = body;
 
     if (!to || !template) {
       return new Response(
@@ -32,14 +32,59 @@ export const POST: APIRoute = async ({ request, locals }) => {
       },
     };
 
-    // Agregar parámetros si existen
+    // Construir componentes del template
+    const components: any[] = [];
+
+    // Agregar header si tiene imagen, video o documento
+    if (header_image) {
+      components.push({
+        type: 'header',
+        parameters: [
+          {
+            type: 'image',
+            image: {
+              link: header_image
+            }
+          }
+        ]
+      });
+    } else if (header_video) {
+      components.push({
+        type: 'header',
+        parameters: [
+          {
+            type: 'video',
+            video: {
+              link: header_video
+            }
+          }
+        ]
+      });
+    } else if (header_document) {
+      components.push({
+        type: 'header',
+        parameters: [
+          {
+            type: 'document',
+            document: {
+              link: header_document
+            }
+          }
+        ]
+      });
+    }
+
+    // Agregar body con parámetros de texto si existen
     if (params && params.length > 0) {
-      payload.template.components = [
-        {
-          type: 'body',
-          parameters: params.map((p: string) => ({ type: 'text', text: p })),
-        },
-      ];
+      components.push({
+        type: 'body',
+        parameters: params.map((p: string) => ({ type: 'text', text: p })),
+      });
+    }
+
+    // Asignar componentes al template
+    if (components.length > 0) {
+      payload.template.components = components;
     }
 
     // Enviar a WhatsApp
