@@ -87,6 +87,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       payload.template.components = components;
     }
 
+    // DEBUG: Log del payload completo
+    console.log('=== ENVIANDO TEMPLATE A WHATSAPP ===');
+    console.log('Template:', template);
+    console.log('Payload completo:', JSON.stringify(payload, null, 2));
+    console.log('====================================');
+
     // Enviar a WhatsApp
     const waRes = await axios.post(
       `https://graph.facebook.com/${WABA_VERSION}/${WABA_PHONE_NUMBER_ID}/messages`,
