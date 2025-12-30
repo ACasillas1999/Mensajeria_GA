@@ -490,25 +490,30 @@ function HourlyActivityChart({ data }) {
   const maxCount = Math.max(...data.map(d => d.message_count), 1);
 
   return (
-    <div className="grid grid-cols-24 gap-1">
-      {Array.from({ length: 24 }, (_, hour) => {
-        const hourData = data.find(d => d.hour === hour);
-        const count = hourData?.message_count || 0;
-        const height = (count / maxCount) * 100;
+    <div className="overflow-x-auto">
+      <div
+        className="grid gap-1 min-w-[720px] md:min-w-0"
+        style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
+      >
+        {Array.from({ length: 24 }, (_, hour) => {
+          const hourData = data.find(d => d.hour === hour);
+          const count = hourData?.message_count || 0;
+          const height = (count / maxCount) * 100;
 
-        return (
-          <div key={hour} className="flex flex-col items-center gap-1">
-            <div className="relative w-full h-20 bg-slate-900 rounded">
-              <div
-                className="absolute bottom-0 w-full bg-emerald-500 rounded transition-all"
-                style={{ height: `${height}%` }}
-                title={`${hour}:00 - ${count} mensajes`}
-              />
+          return (
+            <div key={hour} className="flex flex-col items-center gap-1">
+              <div className="relative w-full h-20 bg-slate-900 rounded">
+                <div
+                  className="absolute bottom-0 w-full bg-emerald-500 rounded transition-all"
+                  style={{ height: `${height}%` }}
+                  title={`${hour}:00 - ${count} mensajes`}
+                />
+              </div>
+              <div className="text-[10px] text-slate-500">{hour}</div>
             </div>
-            <div className="text-[10px] text-slate-500">{hour}</div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
