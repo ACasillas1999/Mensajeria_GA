@@ -2,13 +2,129 @@ import { useEffect, useState } from 'react';
 
 const BASE = import.meta.env.BASE_URL || '';
 
+const icons = {
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v5l3 2" />
+    </>
+  ),
+  activity: <path d="M3 12h4l2 6 4-12 2 6h4" />,
+  pie: (
+    <>
+      <path d="M21 12a9 9 0 1 1-9-9" />
+      <path d="M12 3v9h9" />
+    </>
+  ),
+  tag: (
+    <>
+      <path d="M3 12V5a2 2 0 0 1 2-2h7l9 9-7 7-9-9Z" />
+      <path d="M7 7h.01" />
+    </>
+  ),
+  trophy: (
+    <>
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M5 4h2v2a2 2 0 0 1-2-2Z" />
+      <path d="M17 4h2a2 2 0 0 1-2 2V4Z" />
+    </>
+  ),
+  users: (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  ),
+  bar: (
+    <>
+      <path d="M3 3v18h18" />
+      <path d="M7 16v-6" />
+      <path d="M12 16V5" />
+      <path d="M17 16v-4" />
+    </>
+  ),
+  smile: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+      <path d="M9 9h.01" />
+      <path d="M15 9h.01" />
+    </>
+  ),
+  repeat: (
+    <>
+      <path d="M17 2l4 4-4 4" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <path d="M7 22l-4-4 4-4" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </>
+  ),
+  message: (
+    <>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
+      <path d="M8 10h8" />
+      <path d="M8 6h8" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4" />
+      <path d="M8 2v4" />
+      <path d="M3 10h18" />
+    </>
+  ),
+  target: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 8v2" />
+      <path d="M16 12h-2" />
+      <path d="M12 16v-2" />
+      <path d="M8 12h2" />
+    </>
+  ),
+  list: (
+    <>
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="M3 6h.01" />
+      <path d="M3 12h.01" />
+      <path d="M3 18h.01" />
+    </>
+  )
+};
+
+function Icon({ name, className = '' }) {
+  const icon = icons[name] || icons.activity;
+
+  return (
+    <svg
+      className={`w-5 h-5 ${className}`}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {icon}
+    </svg>
+  );
+}
+
 export default function DashboardAdvanced() {
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('overview'); // overview, agents, performance
 
-  // Date range state
   const [dateRange, setDateRange] = useState('30'); // 7, 30, 90, custom
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
@@ -22,7 +138,6 @@ export default function DashboardAdvanced() {
     try {
       let analyticsUrl = `${BASE}/api/dashboard-analytics`.replace(/\/\//g, '/');
 
-      // Add date range parameters
       if (dateRange === 'custom' && customStartDate && customEndDate) {
         analyticsUrl += `?start_date=${customStartDate}&end_date=${customEndDate}`;
       } else {
@@ -49,16 +164,15 @@ export default function DashboardAdvanced() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-slate-400">Cargando estadísticas...</div>
+        <div className="text-slate-400">Cargando estadisticas...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Date Range Selector */}
-      <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-800 bg-slate-950/70">
-        <div className="text-sm font-medium text-slate-300">Período:</div>
+    <div className="max-w-7xl mx-auto px-2 md:px-4 space-y-6">
+      <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+        <div className="text-sm font-medium text-slate-300">Periodo:</div>
 
         <div className="flex gap-2">
           <button
@@ -69,7 +183,7 @@ export default function DashboardAdvanced() {
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
-            Últimos 7 días
+            Ultimos 7 dias
           </button>
           <button
             onClick={() => setDateRange('30')}
@@ -79,7 +193,7 @@ export default function DashboardAdvanced() {
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
-            Últimos 30 días
+            Ultimos 30 dias
           </button>
           <button
             onClick={() => setDateRange('90')}
@@ -89,7 +203,7 @@ export default function DashboardAdvanced() {
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
-            Últimos 90 días
+            Ultimos 90 dias
           </button>
           <button
             onClick={() => setDateRange('custom')}
@@ -122,7 +236,6 @@ export default function DashboardAdvanced() {
         )}
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-700">
         <button
           onClick={() => setSelectedTab('overview')}
@@ -132,7 +245,7 @@ export default function DashboardAdvanced() {
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          📊 Resumen General
+          Resumen
         </button>
         <button
           onClick={() => setSelectedTab('agents')}
@@ -142,7 +255,7 @@ export default function DashboardAdvanced() {
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          👥 Rendimiento de Agentes
+          Agentes
         </button>
         <button
           onClick={() => setSelectedTab('performance')}
@@ -152,21 +265,18 @@ export default function DashboardAdvanced() {
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          ⚡ Análisis de Rendimiento
+          Rendimiento
         </button>
       </div>
 
-      {/* Overview Tab */}
       {selectedTab === 'overview' && (
         <OverviewTab stats={stats} analytics={analytics} />
       )}
 
-      {/* Agents Tab */}
       {selectedTab === 'agents' && (
         <AgentsTab analytics={analytics} />
       )}
 
-      {/* Performance Tab */}
       {selectedTab === 'performance' && (
         <PerformanceTab analytics={analytics} />
       )}
@@ -174,81 +284,86 @@ export default function DashboardAdvanced() {
   );
 }
 
-// ============ OVERVIEW TAB ============
 function OverviewTab({ stats, analytics }) {
   return (
     <div className="space-y-6">
-      {/* KPIs Principales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard
-          title="Tiempo Prom. Respuesta"
+          title="Tiempo prom. respuesta"
           value={analytics?.response_times?.[0]?.avg_response_time_formatted || 'N/A'}
-          subtitle="Del agente más rápido"
-          icon="⚡"
+          subtitle="Agente mas rapido"
+          icon="clock"
           color="blue"
         />
         <MetricCard
-          title="Ciclos Completados"
+          title="Ciclos completados"
           value={analytics?.cycle_stats?.total_cycles || 0}
           subtitle={`Promedio: ${analytics?.cycle_stats?.avg_messages_per_cycle || 0} msgs`}
-          icon="🔄"
+          icon="repeat"
           color="purple"
         />
         <MetricCard
-          title="Satisfacción"
+          title="Satisfaccion"
           value={analytics?.satisfaction?.satisfaction_rate ? `${analytics.satisfaction.satisfaction_rate}%` : 'N/A'}
           subtitle={`${analytics?.satisfaction?.positive_reactions || 0} reacciones positivas`}
-          icon="😊"
+          icon="smile"
           color="amber"
         />
       </div>
 
-      {/* Actividad por Hora del Día */}
-      {analytics?.hourly_activity && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4">
-            📈 Actividad por Hora del Día (Últimos 7 días)
-          </h3>
-          <HourlyActivityChart data={analytics.hourly_activity} />
-        </div>
-      )}
-
-      {/* Estadísticas de Estado */}
-      {stats?.statuses && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4">
-            📋 Distribución por Estado
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {stats.statuses.map(status => (
-              <div
-                key={status.id}
-                className="p-4 rounded-lg border border-slate-700 bg-slate-900/50"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">{status.icon}</span>
-                  <span
-                    className="font-medium"
-                    style={{ color: status.color }}
-                  >
-                    {status.name}
-                  </span>
-                </div>
-                <div className="text-2xl font-bold text-slate-200">{status.total}</div>
-                <div className="text-xs text-slate-500 mt-1">
-                  Mis: {status.mine || 0}
-                </div>
-              </div>
-            ))}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        {analytics?.hourly_activity && (
+          <div className="xl:col-span-2 p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+              <Icon name="activity" className="text-emerald-400" />
+              <span>Actividad por hora del dia (ultimos 7 dias)</span>
+            </h3>
+            <HourlyActivityChart data={analytics.hourly_activity} />
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Top 5 Conversaciones */}
+        {stats?.statuses && (
+          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+              <Icon name="pie" className="text-emerald-400" />
+              <span>Distribucion por estado</span>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {stats.statuses.map(status => (
+                <div
+                  key={status.id}
+                  className="p-4 rounded-lg border border-slate-700 bg-slate-900/50"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-8 h-8 rounded-full border grid place-items-center text-slate-200"
+                      style={{ color: status.color, borderColor: status.color }}
+                    >
+                      <Icon name="tag" className="text-current" />
+                    </div>
+                    <span
+                      className="font-medium"
+                      style={{ color: status.color }}
+                    >
+                      {status.name}
+                    </span>
+                  </div>
+                  <div className="text-2xl font-bold text-slate-200">{status.total}</div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    Mis: {status.mine || 0}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {analytics?.top_conversations && analytics.top_conversations.length > 0 && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4">
-            🏆 Top 5 Conversaciones Más Activas (Últimos 30 días)
+        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+          <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+            <Icon name="trophy" className="text-emerald-400" />
+            <span>Top 5 conversaciones activas (ultimos 30 dias)</span>
           </h3>
           <div className="space-y-2">
             {analytics.top_conversations.map((conv, idx) => (
@@ -284,84 +399,83 @@ function OverviewTab({ stats, analytics }) {
   );
 }
 
-// ============ AGENTS TAB ============
 function AgentsTab({ analytics }) {
   return (
     <div className="space-y-6">
-      {/* Carga de Trabajo Actual */}
-      {analytics?.workload && analytics.workload.length > 0 && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4">
-            📊 Carga de Trabajo Actual por Agente
-          </h3>
-          <WorkloadChart data={analytics.workload} />
-        </div>
-      )}
-
-      {/* Rendimiento por Agente */}
-      {analytics?.agent_performance && analytics.agent_performance.length > 0 && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4">
-            🎯 Rendimiento por Agente (Últimos 30 días)
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="text-left py-3 px-4 text-slate-400">Agente</th>
-                  <th className="text-right py-3 px-4 text-slate-400">Tiempo 1ra Resp.</th>
-                  <th className="text-right py-3 px-4 text-slate-400">Conversaciones</th>
-                  <th className="text-right py-3 px-4 text-slate-400">Resueltas</th>
-                  <th className="text-right py-3 px-4 text-slate-400">Mensajes</th>
-                  <th className="text-right py-3 px-4 text-slate-400">Ciclos</th>
-                  <th className="text-right py-3 px-4 text-slate-400">Tasa Resolución</th>
-                </tr>
-              </thead>
-              <tbody>
-                {analytics.agent_performance.map(agent => {
-                  // Buscar el tiempo de respuesta de este agente
-                  const responseTime = analytics.response_times?.find(rt => rt.agent_id === agent.agent_id);
-
-                  return (
-                    <tr key={agent.agent_id} className="border-b border-slate-800 hover:bg-slate-900/50">
-                      <td className="py-3 px-4 font-medium text-slate-200">{agent.agent_name}</td>
-                      <td className="py-3 px-4 text-right text-blue-400 font-medium">
-                        {responseTime?.avg_response_time_formatted || 'N/A'}
-                      </td>
-                      <td className="py-3 px-4 text-right text-slate-300">{agent.conversations_handled}</td>
-                      <td className="py-3 px-4 text-right text-emerald-400">{agent.conversations_resolved}</td>
-                      <td className="py-3 px-4 text-right text-blue-400">{agent.messages_sent}</td>
-                      <td className="py-3 px-4 text-right text-purple-400">{agent.cycles_completed}</td>
-                      <td className="py-3 px-4 text-right">
-                        <span className={`font-semibold ${
-                          agent.resolution_rate >= 75 ? 'text-emerald-400' :
-                          agent.resolution_rate >= 50 ? 'text-amber-400' :
-                          'text-red-400'
-                        }`}>
-                          {agent.resolution_rate}%
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {analytics?.workload && analytics.workload.length > 0 && (
+          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+              <Icon name="users" className="text-emerald-400" />
+              <span>Carga de trabajo actual</span>
+            </h3>
+            <WorkloadChart data={analytics.workload} />
           </div>
-        </div>
-      )}
+        )}
+
+        {analytics?.agent_performance && analytics.agent_performance.length > 0 && (
+          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10 xl:col-span-1">
+            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+              <Icon name="bar" className="text-emerald-400" />
+              <span>Rendimiento por agente (ultimos 30 dias)</span>
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="text-left py-3 px-4 text-slate-400">Agente</th>
+                    <th className="text-right py-3 px-4 text-slate-400">Tiempo 1ra resp.</th>
+                    <th className="text-right py-3 px-4 text-slate-400">Conversaciones</th>
+                    <th className="text-right py-3 px-4 text-slate-400">Resueltas</th>
+                    <th className="text-right py-3 px-4 text-slate-400">Mensajes</th>
+                    <th className="text-right py-3 px-4 text-slate-400">Ciclos</th>
+                    <th className="text-right py-3 px-4 text-slate-400">Tasa resolucion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.agent_performance.map(agent => {
+                    const responseTime = analytics.response_times?.find(rt => rt.agent_id === agent.agent_id);
+
+                    return (
+                      <tr key={agent.agent_id} className="border-b border-slate-800 hover:bg-slate-900/50">
+                        <td className="py-3 px-4 font-medium text-slate-200">{agent.agent_name}</td>
+                        <td className="py-3 px-4 text-right text-blue-400 font-medium">
+                          {responseTime?.avg_response_time_formatted || 'N/A'}
+                        </td>
+                        <td className="py-3 px-4 text-right text-slate-300">{agent.conversations_handled}</td>
+                        <td className="py-3 px-4 text-right text-emerald-400">{agent.conversations_resolved}</td>
+                        <td className="py-3 px-4 text-right text-blue-400">{agent.messages_sent}</td>
+                        <td className="py-3 px-4 text-right text-purple-400">{agent.cycles_completed}</td>
+                        <td className="py-3 px-4 text-right">
+                          <span className={`font-semibold ${
+                            agent.resolution_rate >= 75 ? 'text-emerald-400' :
+                            agent.resolution_rate >= 50 ? 'text-amber-400' :
+                            'text-red-400'
+                          }`}>
+                            {agent.resolution_rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-// ============ PERFORMANCE TAB ============
 function PerformanceTab({ analytics }) {
   return (
     <div className="space-y-6">
-      {/* Tiempo de Respuesta por Agente */}
       {analytics?.response_times && analytics.response_times.length > 0 && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4">
-            ⚡ Tiempo de Primera Respuesta por Agente (Últimos 30 días)
+        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+          <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+            <Icon name="clock" className="text-emerald-400" />
+            <span>Tiempo de primera respuesta (ultimos 30 dias)</span>
           </h3>
           <div className="space-y-3">
             {analytics.response_times.map(agent => (
@@ -371,7 +485,6 @@ function PerformanceTab({ analytics }) {
                 </div>
                 <div className="flex-1">
                   <ResponseTimeBar
-                    name={agent.agent_name}
                     avgTime={agent.avg_response_time_seconds}
                     minTime={agent.min_response_time_seconds}
                     maxTime={agent.max_response_time_seconds}
@@ -390,38 +503,37 @@ function PerformanceTab({ analytics }) {
         </div>
       )}
 
-      {/* Estadísticas de Ciclos */}
       {analytics?.cycle_stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
-            title="Ciclos Completados"
+            title="Ciclos completados"
             value={analytics.cycle_stats.total_cycles}
-            subtitle="Últimos 30 días"
-            icon="🔄"
+            subtitle="Ultimos 30 dias"
+            icon="repeat"
             color="purple"
           />
           <MetricCard
-            title="Duración Promedio"
+            title="Duracion promedio"
             value={analytics.cycle_stats.avg_duration_formatted}
             subtitle={`Min: ${formatSeconds(analytics.cycle_stats.min_duration_seconds)}`}
-            icon="⏱️"
+            icon="clock"
             color="blue"
           />
           <MetricCard
-            title="Mensajes por Ciclo"
+            title="Mensajes por ciclo"
             value={analytics.cycle_stats.avg_messages_per_cycle}
             subtitle="Promedio"
-            icon="💬"
+            icon="message"
             color="emerald"
           />
         </div>
       )}
 
-      {/* Actividad Diaria */}
       {analytics?.daily_activity && analytics.daily_activity.length > 0 && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4">
-            📅 Actividad Diaria (Últimos 7 días)
+        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+          <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+            <Icon name="calendar" className="text-emerald-400" />
+            <span>Actividad diaria (ultimos 7 dias)</span>
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -459,22 +571,22 @@ function PerformanceTab({ analytics }) {
   );
 }
 
-// ============ COMPONENTS ============
-
 function MetricCard({ title, value, subtitle, icon, color = 'slate' }) {
   const colors = {
     emerald: 'text-emerald-400',
     blue: 'text-blue-400',
     purple: 'text-purple-400',
     amber: 'text-amber-400',
-    slate: 'text-slate-400'
+    slate: 'text-slate-300'
   };
 
   return (
-    <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-      <div className="flex items-start justify-between mb-2">
-        <div className="text-sm text-slate-400">{title}</div>
-        <span className="text-2xl">{icon}</span>
+    <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2 text-sm text-slate-300">
+          <Icon name={icon} className={`${colors[color]} opacity-90`} />
+          <span>{title}</span>
+        </div>
       </div>
       <div className={`text-3xl font-bold ${colors[color]} mb-1`}>
         {value}
@@ -560,15 +672,13 @@ function ResponseTimeBar({ avgTime, minTime, maxTime, maxValue }) {
 
   return (
     <div className="relative w-full h-8 bg-slate-900 rounded-full overflow-hidden">
-      {/* Rango completo (min a max) */}
       <div
         className="absolute h-full bg-blue-900/30 rounded-full"
         style={{
           left: `${minPercent}%`,
-          width: `${maxPercent - minPercent}%`
+          width: `${Math.max(maxPercent - minPercent, 2)}%`
         }}
       />
-      {/* Promedio */}
       <div
         className="absolute h-full bg-emerald-500 rounded-full transition-all"
         style={{ width: `${avgPercent}%` }}
