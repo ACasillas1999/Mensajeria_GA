@@ -3,6 +3,7 @@ import MediaModal from "./MediaModal.jsx";
 import QuickReplies from "./QuickReplies.jsx";
 import ConversationTraceView from "./ConversationTraceView.jsx";
 import TemplatePicker from "./TemplatePicker.jsx";
+import LocationMessage from "./LocationMessage.jsx";
 import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 import { useAppData } from "../contexts/AppDataContext.jsx";
 
@@ -1407,6 +1408,78 @@ function pickMime() {
     }
   }
 
+  // Enviar ubicación actual
+  async function sendLocation() {
+    if (!conversation) return;
+    
+    // Verificar si el navegador soporta geolocalización
+    if (!navigator.geolocation) {
+      alert("Tu navegador no soporta geolocalización");
+      return;
+    }
+
+    try {
+      // Obtener posición actual
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      const locationText = `[Ubicación ${latitude},${longitude}]`;
+
+      // Enviar como mensaje de texto
+      const to = conversation.wa_user;
+      const conversacion_id = conversation.id;
+
+      // Mensaje optimista
+      const tempId = "tmp_" + Math.random().toString(36).slice(2);
+      const optimistic = {
+        id: tempId,
+        conversation_id: conversacion_id,
+        text: locationText,
+        created_at: new Date().toISOString(),
+        sender: "me",
+        tipo: "text",
+        status: "sending",
+      };
+      setItems((prev) => [...prev, optimistic]);
+      requestAnimationFrame(() => scrollToBottom());
+
+      // Enviar al backend
+      const res = await fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversacion_id, to, text: locationText }),
+      });
+      const j = await res.json();
+
+      if (res.ok && j.ok) {
+        setItems((prev) =>
+          prev.map(m => m.id === tempId ? { ...m, status: "sent" } : m)
+        );
+      } else {
+        setItems((prev) =>
+          prev.map(m => m.id === tempId ? { ...m, status: "failed" } : m)
+        );
+        alert(j.error?.message || "No se pudo enviar la ubicación");
+      }
+    } catch (error) {
+      if (error.code === 1) {
+        alert("Permiso de ubicación denegado. Por favor, permite el acceso a tu ubicación.");
+      } else if (error.code === 2) {
+        alert("No se pudo obtener tu ubicación. Verifica tu conexión GPS.");
+      } else if (error.code === 3) {
+        alert("Tiempo de espera agotado al obtener la ubicación.");
+      } else {
+        alert("Error al obtener la ubicación: " + error.message);
+      }
+    }
+  }
+
   // Detectar cuando el texto cambia para mostrar sugerencias de atajos
   useEffect(() => {
     if (text.startsWith("/") && text.length > 1) {
@@ -1785,7 +1858,15 @@ function pickMime() {
                    ? 'ml-auto bg-emerald-600/20 border-emerald-700'
                    : 'bg-slate-800 border-slate-700'}
                  ${isHighlighted ? 'ring-2 ring-yellow-400 bg-yellow-900/20' : ''}`}>
-            {m.tipo === "text" && m.text && <div className="text-sm whitespace-pre-wrap">{m.text}</div>}
+            {m.tipo === "text" && m.text && (
+              // Detectar si es un mensaje de ubicación
+              /\[Ubicación\s+([-\d.]+),\s*([-\d.]+)\]/i.test(m.text) || 
+              /ubicación:\s*([-\d.]+),\s*([-\d.]+)/i.test(m.text) ? (
+                <LocationMessage text={m.text} />
+              ) : (
+                <div className="text-sm whitespace-pre-wrap">{m.text}</div>
+              )
+            )}
             {m.tipo !== "text" && <MediaBubble m={m} onOpen={openMedia} onImageLoad={scrollToBottom} />}
 
               <div className="mt-1 flex items-center gap-2 relative">
@@ -1956,6 +2037,9 @@ function pickMime() {
           </label>
           <button type="button" onClick={() => setShowQuickReplies(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700" title="Respuestas rápidas">
             ⚡
+          </button>
+          <button type="button" onClick={sendLocation} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700" title="Enviar mi ubicación">
+            📍
           </button>
           <textarea
             value={text}

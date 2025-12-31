@@ -1,6 +1,5 @@
 ---
 import "../styles/global.css";
-import ThemeToggle from "../components/ThemeToggle.jsx";
 
 const { title = "Mensajería Web GA" } = Astro.props as { title?: string };
 const path = Astro.url.pathname;
@@ -47,9 +46,6 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
       <div class="h-full max-w-7xl mx-auto px-4 flex items-center">
         <h1 class="text-lg font-semibold text-emerald-400">{title}</h1>
         <div class="ml-auto flex items-center gap-3">
-          <!-- Theme Toggle -->
-          <ThemeToggle client:load />
-
           {
             user && (
               <div class="text-right leading-tight">
