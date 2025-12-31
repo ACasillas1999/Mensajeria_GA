@@ -43,8 +43,8 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
   async function sendTemplate() {
     if (!selectedTemplate) return
 
-    // Validar que todas las variables estén llenas
-    if (variables.some(v => !v.trim())) {
+    // Validar que todas las variables estén llenas (solo si hay variables)
+    if (variables.length > 0 && variables.some(v => !v.trim())) {
       alert('Por favor llena todas las variables de la plantilla')
       return
     }
@@ -271,7 +271,7 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
               onClick={sendTemplate}
               disabled={
                 sending ||
-                variables.some(v => !v.trim()) ||
+                (variables.length > 0 && variables.some(v => !v.trim())) ||
                 (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(selectedTemplate.header_type) && !headerMediaUrl.trim())
               }
               className="flex-1 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
