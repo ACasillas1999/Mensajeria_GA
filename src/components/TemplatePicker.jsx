@@ -18,7 +18,9 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
     try {
       const res = await fetch(`${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/'))
       const data = await res.json()
+      console.log('[TemplatePicker] Datos recibidos:', data)
       if (data.ok) {
+        console.log('[TemplatePicker] Plantillas:', data.items)
         setTemplates(data.items || [])
       }
     } catch (err) {
@@ -29,11 +31,13 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
   }
 
   function selectTemplate(tpl) {
+    console.log('[TemplatePicker] Plantilla seleccionada:', tpl)
     setSelectedTemplate(tpl)
 
     // Extraer variables del body_text (formato {{1}}, {{2}}, etc.)
     const matches = tpl.body_text?.match(/\{\{(\d+)\}\}/g) || []
     const varCount = matches.length
+    console.log('[TemplatePicker] Variables detectadas:', varCount, matches)
     setVariables(new Array(varCount).fill(''))
 
     // Reset header media URL
