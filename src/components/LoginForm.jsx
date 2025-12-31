@@ -23,14 +23,14 @@ export default function LoginForm() {
       const data = await res.json();
 
       if (res.ok && data.ok) {
-        setMensaje("¡Listo! Bienvenido.");
+        setMensaje("\u00a1Listo! Bienvenido.");
         const url = new URL(window.location.href);
         const next = url.searchParams.get("next") || `${BASE}/`.replace(/\/\//g, "/") || "/";
         setTimeout(() => {
           window.location.href = next || "/";
         }, 500);
       } else {
-        setMensaje(`Error: ${data?.error ?? "Usuario o contraseña incorrectos."}`);
+        setMensaje(`Error: ${data?.error ?? "Usuario o contrase\u00f1a incorrectos."}`);
       }
     } catch {
       setMensaje("Error: red o servidor.");
@@ -41,18 +41,25 @@ export default function LoginForm() {
 
   const hasError = mensaje.startsWith("Error:");
   const formClass =
-    `w-80 p-6 rounded-2xl border transition-all duration-300
-    bg-slate-900/60 backdrop-blur-md border-slate-700/60 shadow-xl` + (hasError ? " animate-shake" : "");
+    `w-full p-7 sm:p-8 rounded-2xl border transition-all duration-300 text-left
+    bg-gradient-to-b from-slate-900/70 via-slate-900/60 to-slate-950/70
+    backdrop-blur-xl border-white/5 shadow-[0_16px_70px_rgba(0,0,0,0.55)]
+    ${hasError ? "animate-shake" : "hover:-translate-y-0.5 hover:shadow-[0_20px_80px_rgba(16,185,129,0.18)]"}`;
 
   return (
     <form onSubmit={handleSubmit} className={formClass}>
-      <h2 className="text-xl font-semibold mb-4">Iniciar sesión</h2>
+      <div className="mb-5 text-center">
+        <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-200/80 font-semibold">Panel privado</p>
+        <h2 className="text-2xl font-semibold text-white mt-2">Iniciar sesi\u00f3n</h2>
+        <p className="text-sm text-slate-300/80 mt-1">Usa tus credenciales corporativas para continuar.</p>
+      </div>
 
       <input
         type="email"
         placeholder="Email"
-        className="w-full mb-3 p-2 rounded-md bg-slate-900 border border-slate-700/70 outline-none
-                   transition-all duration-200 focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-400/60"
+        className="w-full mb-4 p-3 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 outline-none
+                   transition-all duration-200 placeholder:text-slate-500
+                   focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-300/60"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
@@ -60,9 +67,10 @@ export default function LoginForm() {
 
       <input
         type="password"
-        placeholder="Contraseña"
-        className="w-full mb-3 p-2 rounded-md bg-slate-900 border border-slate-700/70 outline-none
-                   transition-all duration-200 focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-400/60"
+        placeholder="Contrase\u00f1a"
+        className="w-full mb-5 p-3 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 outline-none
+                   transition-all duration-200 placeholder:text-slate-500
+                   focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-300/60"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
@@ -71,18 +79,20 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-2 mt-1 rounded-md text-black font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
-                   bg-gradient-to-tr from-emerald-500 to-green-400 hover:brightness-110 shadow-lg shadow-emerald-500/20"
+        className="w-full py-3 mt-1 rounded-xl text-black font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
+                   bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-400 hover:brightness-110
+                   shadow-lg shadow-emerald-500/25 hover:shadow-emerald-400/40 hover:-translate-y-0.5"
       >
         {loading ? "Entrando..." : "Entrar"}
       </button>
 
+      <p className="mt-3 text-xs text-slate-400 text-center">\u00bfProblemas para acceder? Contacta a soporte interno.</p>
+
       {mensaje && (
-        <p className={`mt-4 text-sm ${hasError ? "text-red-400" : "text-green-400"}`}>
+        <p className={`mt-4 text-sm text-center px-3 py-2 rounded-lg ${hasError ? "text-red-300 bg-red-500/10 border border-red-500/30" : "text-emerald-200 bg-emerald-500/10 border border-emerald-500/30"}`}>
           {mensaje}
         </p>
       )}
     </form>
   );
 }
-
