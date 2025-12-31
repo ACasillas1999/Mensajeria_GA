@@ -67,37 +67,58 @@ export default function LocationPicker({ onSend, onClose }) {
     if (mode !== 'map' || !mapRef.current) return;
 
     const loadMap = async () => {
-      const L = (await import('leaflet')).default;
+      // Cargar Mapbox GL JS si no está disponible
+      if (!window.mapboxgl) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+        document.head.appendChild(link);
 
-      // Fix iconos
-      delete L.Icon.Default.prototype._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      });
+        const script = document.createElement('script');
+        script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+        await new Promise((resolve) => {
+          script.onload = resolve;
+          document.head.appendChild(script);
+        });
+      }
+
+      while (!window.mapboxgl) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const mapboxgl = window.mapboxgl;
+      mapboxgl.accessToken = 'pk.eyJ1IjoiYWNhc2lsbGFzNzY2IiwiYSI6ImNsdW12cTZyMjB4NnMya213MDdseXp6ZGgifQ.t7-l1lQfd8mgHILM5YrdNw';
 
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
       }
 
       // Centro en Guadalajara por defecto
-      const map = L.map(mapRef.current).setView([20.6597, -103.3496], 12);
+      const map = new mapboxgl.Map({
+        container: mapRef.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [-103.3496, 20.6597],
+        zoom: 12
+      });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
-      }).addTo(map);
+      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
       let marker = null;
 
       map.on('click', (e) => {
-        const { lat, lng } = e.latlng;
+        const { lat, lng } = e.lngLat;
         
         if (marker) {
-          marker.setLatLng([lat, lng]);
+          marker.setLngLat([lng, lat]);
         } else {
-          marker = L.marker([lat, lng]).addTo(map);
+          marker = new mapboxgl.Marker({ color: '#ed6b1f', draggable: true })
+            .setLngLat([lng, lat])
+            .addTo(map);
+          
+          marker.on('dragend', () => {
+            const lngLat = marker.getLngLat();
+            setSelectedLocation({ lat: lngLat.lat, lng: lngLat.lng });
+          });
         }
         
         setSelectedLocation({ lat, lng });
