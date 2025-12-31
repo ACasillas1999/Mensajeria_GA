@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import MediaModal from "./MediaModal.jsx";
 import QuickReplies from "./QuickReplies.jsx";
 import ConversationTraceView from "./ConversationTraceView.jsx";
+import TemplatePicker from "./TemplatePicker.jsx";
 import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 import { useAppData } from "../contexts/AppDataContext.jsx";
 
@@ -362,7 +363,6 @@ export default function ChatPane({ conversation }) {
   const [attach, setAttach] = useState({ open:false, items:[] });
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [templates, setTemplates] = useState([]);
 
   // comentarios internos
   const [showComments, setShowComments] = useState(false);
@@ -917,47 +917,6 @@ function pickMime() {
     }
   }
 
-  // Cargar plantillas disponibles desde la base de datos
-  async function loadTemplates() {
-    try {
-      const res = await fetch(`${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/'));
-      const data = await res.json();
-      if (data.ok && Array.isArray(data.items)) {
-        setTemplates(data.items);
-      } else {
-        setTemplates([]);
-      }
-    } catch (err) {
-      console.error('Error cargando plantillas:', err);
-      setTemplates([]);
-    }
-  }
-
-  // Enviar plantilla
-  async function sendTemplate(tpl) {
-    if (!conversation) return;
-    try {
-      const r = await fetch(`${BASE}/api/send-template`.replace(/\/\//g, '/'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversacion_id: conversation.id,
-          to: conversation.wa_user,
-          template: tpl.nombre,
-          lang: tpl.idioma || 'es',
-        }),
-      });
-      const j = await r.json();
-      if (j.ok) {
-        setShowTemplates(false);
-        refreshMessages();
-      } else {
-        alert(j.error?.message || j.error || 'No se pudo enviar la plantilla');
-      }
-    } catch {
-      alert('Error de red');
-    }
-  }
 
   // Insertar respuesta rápida en el texto
   function handleQuickReplySelect(content) {
@@ -1765,7 +1724,7 @@ function pickMime() {
             )}
           </div>
           <button type="button" onClick={openAttachments} title="Ver adjuntos" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📎</button>
-          <button type="button" onClick={() => { loadTemplates(); setShowTemplates(true); }} title="Enviar plantilla" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📋</button>
+          <button type="button" onClick={() => setShowTemplates(true)} title="Enviar plantilla" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📋</button>
         </div>
       </div>
 
@@ -1966,7 +1925,7 @@ function pickMime() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => { loadTemplates(); setShowTemplates(true); }}
+                onClick={() => setShowTemplates(true)}
                 className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-semibold hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-lg"
               >
                 📋 Enviar Plantilla Aprobada
@@ -2216,53 +2175,14 @@ function pickMime() {
       )}
 
       {showTemplates && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowTemplates(false)}>
-          <div className="bg-slate-950 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[70vh] overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center mb-4">
-              <h3 className="font-semibold text-lg">Enviar Plantilla</h3>
-              <button className="ml-auto px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm" onClick={() => setShowTemplates(false)}>✕</button>
-            </div>
-            {templates.length === 0 ? (
-              <div className="text-slate-400 text-sm py-8 text-center">
-                No hay plantillas aprobadas disponibles.<br/>
-                <span className="text-xs mt-2 block">Las plantillas deben ser aprobadas por Meta antes de poder usarse.</span>
-                <span className="text-xs mt-2 block text-emerald-400">Ve a Admin → Plantillas para sincronizar desde Meta.</span>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {templates.map((tpl) => (
-                  <button
-                    key={tpl.id}
-                    onClick={() => sendTemplate(tpl)}
-                    className="w-full text-left p-4 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800/70 hover:border-emerald-700/50 transition group"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold text-slate-200 group-hover:text-emerald-400 transition">{tpl.nombre}</span>
-                      <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-emerald-800/50">{tpl.categoria}</span>
-                      <span className="text-xs text-slate-500 ml-auto">{tpl.idioma}</span>
-                    </div>
-                    {tpl.header_text && (
-                      <div className="text-xs font-medium text-slate-300 mb-1">📋 {tpl.header_text}</div>
-                    )}
-                    <div className="text-sm text-slate-400 whitespace-pre-wrap">{tpl.body_text}</div>
-                    {tpl.footer_text && (
-                      <div className="text-xs text-slate-500 mt-2 italic">{tpl.footer_text}</div>
-                    )}
-                    {tpl.buttons && tpl.buttons.length > 0 && (
-                      <div className="flex gap-2 mt-2">
-                        {tpl.buttons.map((btn, i) => (
-                          <div key={i} className="text-xs px-2 py-1 rounded bg-slate-800/50 text-slate-400 border border-slate-700">
-                            {btn.text || btn}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <TemplatePicker
+          conversation={conversation}
+          onClose={() => setShowTemplates(false)}
+          onSent={() => {
+            setShowTemplates(false);
+            refreshMessages();
+          }}
+        />
       )}
 
       {attach.open && (
