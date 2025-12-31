@@ -99,22 +99,31 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
   }
 
   function renderTemplatePreview(tpl) {
-    let preview = tpl.body_text || ''
+    let bodyPreview = tpl.body_text || ''
 
     // Reemplazar variables con valores ingresados
     variables.forEach((val, idx) => {
-      preview = preview.replace(`{{${idx + 1}}}`, val || `{{${idx + 1}}}`)
+      bodyPreview = bodyPreview.replace(`{{${idx + 1}}}`, val || `{{${idx + 1}}}`)
     })
+
+    // Construir el contenido completo como se verá en WhatsApp
+    let fullContent = ''
+    if (tpl.header_text) fullContent += `*${tpl.header_text}*\n\n`
+    fullContent += bodyPreview
+    if (tpl.footer_text) fullContent += `\n\n_${tpl.footer_text}_`
+
+    // Formatear el texto (convertir markdown a HTML)
+    const formattedContent = fullContent
+      .replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
+      .replace(/_([^_]+)_/g, '<em>$1</em>')
+      .replace(/\n/g, '<br/>')
 
     return (
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        {tpl.header_text && (
-          <div className="font-semibold text-sm mb-2">{tpl.header_text}</div>
-        )}
-        <div className="text-sm whitespace-pre-wrap">{preview}</div>
-        {tpl.footer_text && (
-          <div className="text-xs text-gray-500 mt-2">{tpl.footer_text}</div>
-        )}
+        <div
+          className="text-sm"
+          dangerouslySetInnerHTML={{ __html: formattedContent }}
+        />
       </div>
     )
   }
