@@ -1836,16 +1836,26 @@ function pickMime() {
                    ? 'ml-auto bg-emerald-600/20 border-emerald-700'
                    : 'bg-slate-800 border-slate-700'}
                  ${isHighlighted ? 'ring-2 ring-yellow-400 bg-yellow-900/20' : ''}`}>
-            {m.tipo === "text" && m.text && (
-              // Detectar si es un mensaje de ubicación
-              /\[Ubicación\s+([-\d.]+),\s*([-\d.]+)\]/i.test(m.text) || 
-              /ubicación:\s*([-\d.]+),\s*([-\d.]+)/i.test(m.text) ? (
-                <LocationMessage text={m.text} />
-              ) : (
-                <div className="text-sm whitespace-pre-wrap">{m.text}</div>
-              )
+            {/* Renderizar ubicaciones */}
+            {(m.tipo === "location" || 
+              (m.tipo === "text" && m.text && (
+                /\[Ubicación\s+([-\d.]+),\s*([-\d.]+)\]/i.test(m.text) || 
+                /ubicación:\s*([-\d.]+),\s*([-\d.]+)/i.test(m.text)
+              ))
+            ) && (
+              <LocationMessage text={m.text || m.cuerpo || ''} />
             )}
-            {m.tipo !== "text" && <MediaBubble m={m} onOpen={openMedia} onImageLoad={scrollToBottom} />}
+            
+            {/* Renderizar texto normal */}
+            {m.tipo === "text" && m.text && 
+             !/\[Ubicación\s+([-\d.]+),\s*([-\d.]+)\]/i.test(m.text) && 
+             !/ubicación:\s*([-\d.]+),\s*([-\d.]+)/i.test(m.text) && (
+              <div className="text-sm whitespace-pre-wrap">{m.text}</div>
+            )}
+            
+            {/* Renderizar media */}
+            {m.tipo !== "text" && m.tipo !== "location" && <MediaBubble m={m} onOpen={openMedia} onImageLoad={scrollToBottom} />}
+
 
               <div className="mt-1 flex items-center gap-2 relative">
                 <div className="text-[10px] text-slate-400">

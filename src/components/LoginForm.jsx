@@ -41,8 +41,8 @@ export default function LoginForm() {
 
   const hasError = mensaje.startsWith("Error:");
   const formClass =
-    `w-full p-6 sm:p-7 rounded-2xl border transition-all duration-200 text-left
-    bg-slate-950/60 backdrop-blur-lg border-white/8 shadow-[0_12px_50px_rgba(0,0,0,0.35)]
+    `w-full p-6 sm:p-7 rounded-2xl transition-all duration-200 text-left
+    bg-white/5 backdrop-blur-xl shadow-[0_12px_50px_rgba(0,0,0,0.3)]
     ${hasError ? "animate-shake" : "hover:-translate-y-0.5 hover:shadow-[0_18px_70px_rgba(16,185,129,0.16)]"}`;
 
   return (
@@ -56,7 +56,7 @@ export default function LoginForm() {
       <input
         type="email"
         placeholder="Email"
-        className="w-full mb-4 p-3 rounded-xl bg-slate-950/70 border border-white/12 text-slate-100 outline-none
+        className="w-full mb-4 p-3 rounded-xl bg-white/5 border border-white/10 text-slate-100 outline-none
                    transition-all duration-150 placeholder:text-slate-500
                    focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-300/60"
         value={email}
@@ -67,7 +67,7 @@ export default function LoginForm() {
       <input
         type="password"
         placeholder="Contrase\u00f1a"
-        className="w-full mb-5 p-3 rounded-xl bg-slate-950/70 border border-white/12 text-slate-100 outline-none
+        className="w-full mb-5 p-3 rounded-xl bg-white/5 border border-white/10 text-slate-100 outline-none
                    transition-all duration-150 placeholder:text-slate-500
                    focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-300/60"
         value={password}
