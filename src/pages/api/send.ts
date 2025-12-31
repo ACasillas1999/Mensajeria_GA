@@ -72,10 +72,10 @@ async function ensureAudioCompatible(file: File): Promise<{ buffer: Buffer; file
     const outBuf = await fs.readFile(tmpOut);
     try {
       await fs.unlink(tmpIn);
-    } catch {}
+    } catch { }
     try {
       await fs.unlink(tmpOut);
-    } catch {}
+    } catch { }
     const base = (file.name || "audio").replace(/\.[^.]*$/, "");
     return { buffer: outBuf, filename: `${base}.mp3`, mime: "audio/mpeg" };
   }
@@ -146,14 +146,51 @@ export const POST: APIRoute = async ({ request, locals }) => {
         );
       }
 
-      const data = await sendText({ to, body: text });
-      const msgId = data?.messages?.[0]?.id || null;
+      // Detectar si es un mensaje de ubicación
+      const locationMatch = text.match(/\[Ubicación\s+([-\d.]+),\s*([-\d.]+)\]/i);
 
-      await pool.query(
-        `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, usuario_id)
-         VALUES (?,?,?,?,?,?,?,?)`,
-        [conversacion_id, 1, "text", text, msgId, now, "sent", usuario_id]
-      );
+      if (locationMatch) {
+        // Enviar como ubicación de WhatsApp
+        const latitude = parseFloat(locationMatch[1]);
+        const longitude = parseFloat(locationMatch[2]);
+
+        const locationBody = {
+          messaging_product: "whatsapp",
+          to,
+          type: "location",
+          location: {
+            latitude,
+            longitude,
+            name: "Ubicación compartida",
+            address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+          }
+        };
+
+        const { data } = await axios.post(
+          `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`,
+          locationBody,
+          { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
+        );
+
+        const msgId = data?.messages?.[0]?.id || null;
+
+        await pool.query(
+          `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, usuario_id)
+           VALUES (?,?,?,?,?,?,?,?)`,
+          [conversacion_id, 1, "location", text, msgId, now, "sent", usuario_id]
+        );
+      } else {
+        // Enviar como texto normal
+        const data = await sendText({ to, body: text });
+        const msgId = data?.messages?.[0]?.id || null;
+
+        await pool.query(
+          `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, usuario_id)
+           VALUES (?,?,?,?,?,?,?,?)`,
+          [conversacion_id, 1, "text", text, msgId, now, "sent", usuario_id]
+        );
+      }
+
       // Get default status ID if conversation doesn't have one
       const [statusCheck] = await pool.query(
         `SELECT status_id FROM conversaciones WHERE id=?`,
@@ -172,7 +209,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
           [text, now, conversacion_id]
         );
       }
-      return new Response(JSON.stringify({ ok: true, data }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
 
     // --- FORM-DATA (archivo y/o texto) ---
