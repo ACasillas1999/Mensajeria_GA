@@ -4,6 +4,7 @@ import LoginForm from "../components/LoginForm.jsx";
 
 const base = import.meta.env.BASE_URL || "/";
 const user = (Astro.locals as any).user;
+const logoSrc = `${base}logo-gawhats.png`;
 if (user) {
   return Astro.redirect(base);
 }
@@ -12,13 +13,14 @@ if (user) {
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Login —preubaaa Mensajería Web GA</title>
+    <title>Login Mensajería Web GA</title>
         <link rel="icon" type="image/png" href="/logo-gawhats.png" sizes="32x32" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body class="min-h-screen flex items-center justify-center bg-animated text-white">
     <div id="login-wrap" class="p-6 text-center opacity-0 translate-y-2 transition-all duration-300">
+      <img src={logoSrc} alt="Logo Mensajería Web GA" class="mx-auto mb-6 w-28 h-28 object-contain drop-shadow-lg" loading="lazy" />
       <h1 class="text-3xl font-bold mb-6 text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.2)]">Mensajería Web GA</h1>
       <LoginForm client:load />
     </div>
