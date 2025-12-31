@@ -81,15 +81,46 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Guardar mensaje en BD
     if (waMessageId) {
+      // Obtener el contenido de la plantilla desde la BD
+      const [templateRows] = await pool.query(
+        `SELECT body_text, header_text, footer_text FROM plantillas WHERE nombre = ? LIMIT 1`,
+        [body.template_name]
+      );
+
+      let templateContent = `[Plantilla: ${body.template_name}]`;
+      let shortContent = `[Plantilla: ${body.template_name}]`;
+
+      if (templateRows && (templateRows as any[]).length > 0) {
+        const tpl = (templateRows as any[])[0];
+        // Construir el contenido completo con header, body (con variables reemplazadas) y footer
+        let fullContent = '';
+        if (tpl.header_text) fullContent += `*${tpl.header_text}*\n\n`;
+
+        // Reemplazar variables en el body_text con los parámetros
+        let bodyText = tpl.body_text || '';
+        if (body.variables && Array.isArray(body.variables)) {
+          body.variables.forEach((paramValue: string, idx: number) => {
+            bodyText = bodyText.replace(new RegExp(`\\{\\{${idx + 1}\\}\\}`, 'g'), paramValue);
+          });
+        }
+        fullContent += bodyText;
+
+        if (tpl.footer_text) fullContent += `\n\n_${tpl.footer_text}_`;
+
+        templateContent = fullContent;
+        // Para el preview en la lista, usar solo las primeras 60 caracteres del body
+        shortContent = bodyText.substring(0, 60) + (bodyText.length > 60 ? '...' : '');
+      }
+
       await pool.query(
         `INSERT INTO mensajes (conversacion_id, from_me, tipo, cuerpo, wa_msg_id, ts, status, usuario_id)
          VALUES (?, 1, 'template', ?, ?, UNIX_TIMESTAMP(), 'sent', ?)`,
-        [conversacion_id, `[Plantilla: ${body.template_name}]`, waMessageId, user.id]
+        [conversacion_id, templateContent, waMessageId, user.id]
       );
 
       await pool.query(
         `UPDATE conversaciones SET ultimo_msg = ?, ultimo_ts = UNIX_TIMESTAMP() WHERE id = ?`,
-        [`[Plantilla: ${body.template_name}]`, conversacion_id]
+        [shortContent, conversacion_id]
       );
     }
 

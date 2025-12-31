@@ -5,6 +5,19 @@ import { useRealtimeChat } from '../hooks/useRealtimeChat.js'
 
 const BASE = import.meta.env.BASE_URL || '';
 
+// Función para formatear texto de plantillas (convertir markdown a HTML)
+function formatTemplateText(text) {
+  if (!text) return '';
+
+  return text
+    // Negritas: *texto* -> <strong>texto</strong>
+    .replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
+    // Cursivas: _texto_ -> <em>texto</em>
+    .replace(/_([^_]+)_/g, '<em>$1</em>')
+    // Saltos de línea
+    .replace(/\n/g, '<br/>');
+}
+
 export default function ChatView({ conversation }) {
   const [msgs, setMsgs] = useState([])
   const [text, setText] = useState('')
@@ -355,11 +368,19 @@ export default function ChatView({ conversation }) {
               </div>
             )
           }
+          // Para mensajes de tipo template, aplicar formato especial
+          const isTemplate = m.tipo === 'template';
+          const formattedContent = isTemplate ? formatTemplateText(m.cuerpo) : m.cuerpo;
+
           return (
             <div key={m.id} className={common}>
               {QuotedMessage}
-              <div className="whitespace-pre-wrap text-sm flex items-end">
-                <span>{m.cuerpo}</span>
+              <div className={`text-sm flex items-end ${isTemplate ? 'template-message' : 'whitespace-pre-wrap'}`}>
+                {isTemplate ? (
+                  <div className="flex-1" dangerouslySetInnerHTML={{ __html: formattedContent }} />
+                ) : (
+                  <span className="whitespace-pre-wrap">{formattedContent}</span>
+                )}
                 {renderStatus(m)}
               </div>
             </div>

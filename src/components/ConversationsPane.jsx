@@ -34,6 +34,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [sending, setSending] = useState(false);
+  const [templateVariables, setTemplateVariables] = useState([]);
 
   async function load(search = "", st = estado) {
     setLoading(true);
@@ -133,18 +134,55 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   // Cargar plantillas cuando se abre el modal
   useEffect(() => {
     if (showNewChat && templates.length === 0) {
-      setTemplates([
-        {
-          id: "ga_notificarchofer",
-          nombre: "ga_notificarchofer",
-          idioma: "en_US",
-          categoria: "UTILITY",
-          body_text: "Notificación al chofer.",
-        },
-      ]);
-      setSelectedTemplate("ga_notificarchofer");
+      loadTemplates();
     }
   }, [showNewChat, templates.length]);
+
+  async function loadTemplates() {
+    try {
+      const res = await fetch(`${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/'));
+      const data = await res.json();
+      if (data.ok && data.items && data.items.length > 0) {
+        setTemplates(data.items);
+        setSelectedTemplate(data.items[0].nombre);
+        // Detectar variables en la primera plantilla
+        detectTemplateVariables(data.items[0]);
+      } else {
+        // Fallback si no hay plantillas
+        setTemplates([]);
+        setSelectedTemplate('');
+        setTemplateVariables([]);
+      }
+    } catch (err) {
+      console.error('Error cargando plantillas:', err);
+      setTemplates([]);
+      setTemplateVariables([]);
+    }
+  }
+
+  // Detectar variables en la plantilla seleccionada
+  function detectTemplateVariables(template) {
+    if (!template || !template.body_text) {
+      setTemplateVariables([]);
+      return;
+    }
+
+    // Extraer variables del body_text (formato {{1}}, {{2}}, etc.)
+    const matches = template.body_text.match(/\{\{(\d+)\}\}/g) || [];
+    const varCount = matches.length;
+
+    // Crear array de variables vacías
+    setTemplateVariables(new Array(varCount).fill(''));
+  }
+
+  // Manejar cambio de plantilla
+  function handleTemplateChange(templateName) {
+    setSelectedTemplate(templateName);
+    const template = templates.find(t => t.nombre === templateName);
+    if (template) {
+      detectTemplateVariables(template);
+    }
+  }
 
   async function startNewConversation() {
     if (!newPhone.trim() || !selectedTemplate) return;
@@ -167,20 +205,30 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
       // Si tiene 13 dígitos y empieza con 521, dejarlo como está
 
       const tpl = templates.find(t => t.nombre === selectedTemplate);
+
+      // Preparar payload con variables si existen
+      const payload = {
+        phone: formattedPhone,
+        template_name: selectedTemplate,
+        language_code: tpl?.idioma || 'es',
+      };
+
+      // Agregar variables solo si hay y están llenas
+      if (templateVariables.length > 0) {
+        payload.variables = templateVariables;
+      }
+
       const r = await fetch(`${BASE}/api/start-conversation`.replace(/\/\//g, '/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: formattedPhone,
-          template_name: selectedTemplate,
-          language_code: tpl?.idioma || 'es',
-        }),
+        body: JSON.stringify(payload),
       });
 
       const j = await r.json();
       if (j.ok) {
         setShowNewChat(false);
         setNewPhone("");
+        setTemplateVariables([]);
         load(); // Recargar lista
         // Abrir la conversación recién creada
         if (j.conversacion_id && onSelect) {
@@ -467,7 +515,11 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
 
       {/* Modal para nueva conversación */}
       {showNewChat && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowNewChat(false)}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => {
+          setShowNewChat(false);
+          setNewPhone("");
+          setTemplateVariables([]);
+        }}>
           <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 w-96 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-4">Nueva Conversación</h3>
 
@@ -489,20 +541,76 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
                 <label className="block text-sm text-slate-300 mb-1">Plantilla</label>
                 <select
                   value={selectedTemplate}
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
+                  onChange={(e) => handleTemplateChange(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm outline-none focus:border-emerald-400"
                 >
-                  {templates.length === 0 && <option value="">Cargando...</option>}
+                  {templates.length === 0 && <option value="">Cargando plantillas...</option>}
                   {templates.map(t => (
-                    <option key={t.id} value={t.nombre}>{t.nombre}</option>
+                    <option key={t.id} value={t.nombre}>
+                      {t.nombre} ({t.categoria})
+                    </option>
                   ))}
                 </select>
-                <p className="text-xs text-slate-500 mt-1">Solo plantillas aprobadas por WhatsApp</p>
+                {templates.length === 0 ? (
+                  <p className="text-xs text-amber-400 mt-1">⚠️ No hay plantillas aprobadas. Sincroniza desde Meta Business.</p>
+                ) : (
+                  <p className="text-xs text-slate-500 mt-1">
+                    {templates.length} plantilla{templates.length !== 1 ? 's' : ''} disponible{templates.length !== 1 ? 's' : ''}
+                  </p>
+                )}
+
+                {/* Formulario de variables */}
+                {templateVariables.length > 0 && (
+                  <div className="mt-3 p-3 bg-amber-950/20 border border-amber-700/50 rounded">
+                    <p className="text-sm text-amber-300 mb-2 font-medium">Variables requeridas:</p>
+                    <div className="space-y-2">
+                      {templateVariables.map((val, idx) => (
+                        <div key={idx}>
+                          <label className="block text-xs text-slate-300 mb-1">
+                            Variable {idx + 1} <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={val}
+                            onChange={(e) => {
+                              const newVars = [...templateVariables];
+                              newVars[idx] = e.target.value;
+                              setTemplateVariables(newVars);
+                            }}
+                            placeholder={`Valor para {{${idx + 1}}}`}
+                            className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview de la plantilla seleccionada */}
+                {selectedTemplate && templates.length > 0 && (
+                  <div className="mt-3 p-3 bg-slate-950 border border-slate-700 rounded text-xs">
+                    <p className="text-slate-400 mb-1">Vista previa:</p>
+                    <div className="text-slate-300 whitespace-pre-wrap">
+                      {(() => {
+                        let preview = templates.find(t => t.nombre === selectedTemplate)?.body_text || '';
+                        // Reemplazar variables con valores ingresados
+                        templateVariables.forEach((val, idx) => {
+                          preview = preview.replace(`{{${idx + 1}}}`, val || `{{${idx + 1}}}`);
+                        });
+                        return preview;
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 pt-2">
                 <button
-                  onClick={() => setShowNewChat(false)}
+                  onClick={() => {
+                    setShowNewChat(false);
+                    setNewPhone("");
+                    setTemplateVariables([]);
+                  }}
                   className="flex-1 px-4 py-2 text-sm rounded bg-slate-800 hover:bg-slate-700 border border-slate-700"
                   disabled={sending}
                 >
@@ -510,7 +618,12 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
                 </button>
                 <button
                   onClick={startNewConversation}
-                  disabled={!newPhone.trim() || !selectedTemplate || sending}
+                  disabled={
+                    !newPhone.trim() ||
+                    !selectedTemplate ||
+                    sending ||
+                    (templateVariables.length > 0 && templateVariables.some(v => !v.trim()))
+                  }
                   className="flex-1 px-4 py-2 text-sm rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sending ? 'Enviando...' : 'Iniciar Chat'}
