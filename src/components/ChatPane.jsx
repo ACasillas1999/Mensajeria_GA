@@ -937,14 +937,14 @@ function pickMime() {
   async function sendTemplate(tpl) {
     if (!conversation) return;
     try {
-      const r = await fetch(`${BASE}/api/templates`.replace(/\/\//g, '/'), {
+      const r = await fetch(`${BASE}/api/send-template`.replace(/\/\//g, '/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: conversation.wa_user,
-          template_name: tpl.nombre,
-          language_code: tpl.idioma || 'es',
           conversacion_id: conversation.id,
+          to: conversation.wa_user,
+          template: tpl.nombre,
+          lang: tpl.idioma || 'es',
         }),
       });
       const j = await r.json();
@@ -952,7 +952,7 @@ function pickMime() {
         setShowTemplates(false);
         refreshMessages();
       } else {
-        alert(j.error || 'No se pudo enviar la plantilla');
+        alert(j.error?.message || j.error || 'No se pudo enviar la plantilla');
       }
     } catch {
       alert('Error de red');
