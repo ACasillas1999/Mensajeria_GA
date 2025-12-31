@@ -5,9 +5,11 @@ const { title = "Mensajería Web GA" } = Astro.props as { title?: string };
 const path = Astro.url.pathname;
 const base = import.meta.env.BASE_URL || "/";
 
-const linkBase = "group w-12 h-12 grid place-items-center rounded-xl transition";
-const idle = "text-slate-400 hover:text-white hover:bg-slate-800";
-const active = "text-white bg-slate-800";
+const linkBase =
+  "group w-12 h-12 grid place-items-center rounded-xl transition";
+const idle =
+  "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800";
+const active = "text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-800";
 const isActive = (href: string) =>
   path === href ||
   path.startsWith(href) ||
@@ -17,8 +19,8 @@ const isActive = (href: string) =>
     : idle;
 
 const user: any = (Astro.locals as any).user;
-const isAdmin = ((user?.rol || "").toLowerCase() === "admin");
-const initial = ((user?.nombre || "U").toString().slice(0, 1).toUpperCase());
+const isAdmin = (user?.rol || "").toLowerCase() === "admin";
+const initial = (user?.nombre || "U").toString().slice(0, 1).toUpperCase();
 
 // Helper to build URLs with base path
 const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
@@ -32,23 +34,55 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
     <link rel="icon" type="image/png" href="/logo-gawhats.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/logo-gawhats.png" />
     <meta name="theme-color" content="#0f172a" />
+
+    <!-- Theme initialization script - runs before page render to prevent flash -->
+    <script is:inline>
+      (function () {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme) {
+          document.documentElement.classList.toggle(
+            "dark",
+            savedTheme === "dark",
+          );
+        } else {
+          const prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          document.documentElement.classList.toggle("dark", prefersDark);
+        }
+      })();
+    </script>
   </head>
 
-  <body class="min-h-screen bg-slate-900 text-slate-100">
+  <body
+    class="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+  >
     <!-- Topbar -->
-    <header class="fixed top-0 inset-x-0 h-14 z-40 bg-slate-950/90 backdrop-blur border-b border-slate-800">
+    <header
+      class="fixed top-0 inset-x-0 h-14 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur border-b border-slate-200 dark:border-slate-800"
+    >
       <div class="h-full max-w-7xl mx-auto px-4 flex items-center">
         <h1 class="text-lg font-semibold text-emerald-400">{title}</h1>
         <div class="ml-auto flex items-center gap-3">
-          {user && (
-            <div class="text-right leading-tight">
-              <div class="text-sm text-slate-200 truncate">{user.nombre}</div>
-              <div class="text-[11px] text-slate-400 truncate">
-                {user.rol}{user.sucursal ? ` · ${user.sucursal}` : ""}
+          <!-- Theme Toggle -->
+          <ThemeToggle client:load />
+
+          {
+            user && (
+              <div class="text-right leading-tight">
+                <div class="text-sm text-slate-800 dark:text-slate-200 truncate">
+                  {user.nombre}
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  {user.rol}
+                  {user.sucursal ? ` · ${user.sucursal}` : ""}
+                </div>
               </div>
-            </div>
-          )}
-          <div class="w-8 h-8 rounded-full bg-emerald-600/20 border border-emerald-700 grid place-items-center text-emerald-300 text-xs">
+            )
+          }
+          <div
+            class="w-8 h-8 rounded-full bg-emerald-600/20 border border-emerald-700 grid place-items-center text-emerald-300 text-xs"
+          >
             {initial}
           </div>
         </div>
@@ -56,46 +90,133 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
     </header>
 
     <!-- Sidebar -->
-    <aside class="fixed left-0 top-14 bottom-0 w-16 z-30 bg-slate-950 border-r border-slate-800">
+    <aside
+      class="fixed left-0 top-14 bottom-0 w-16 z-30 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800"
+    >
       <nav class="h-full flex flex-col items-center py-4 gap-2">
-        <a href={href("/")}              class={`${linkBase} ${isActive("/")}`}><i data-feather="home"></i><span class="sr-only">Inicio</span></a>
-        <a href={href("/dashboard")}     class={`${linkBase} ${isActive("/dashboard")}`}><i data-feather="bar-chart-2"></i><span class="sr-only">Dashboard</span></a>
-        <a href={href("/mensajes")}      class={`${linkBase} ${isActive("/mensajes")}`}><i data-feather="message-square"></i><span class="sr-only">Mensajes</span></a>
-        <a href={href("/pipeline")}      class={`${linkBase} ${isActive("/pipeline")}`} title="Pipeline / CRM"><i data-feather="trello"></i><span class="sr-only">Pipeline</span></a>
-        <a href={href("/clientes")}      class={`${linkBase} ${isActive("/clientes")}`}><i data-feather="users"></i><span class="sr-only">Clientes</span></a>
-               {isAdmin && (
-          <>
-            <a href={href("/admin/usuarios")} class={`${linkBase} ${isActive("/admin/usuarios")}`}><i data-feather="user-check"></i><span class="sr-only">Usuarios</span></a>
-            <a href={href("/admin/asignacion")} class={`${linkBase} ${isActive("/admin/asignacion")}`}>
-              <i data-feather="share-2"></i><span class="sr-only">Asignacion</span>
-            </a>
-            <a href={href("/admin/auditoria")} class={`${linkBase} ${isActive("/admin/auditoria")}`} title="Auditoria en vivo">
-              <i data-feather="eye"></i><span class="sr-only">Auditoria</span>
-            </a>
-            <a href={href("/admin/crear-plantilla")} class={`${linkBase} ${isActive("/admin/crear-plantilla")}`} title="Crear plantillas">
-              <i data-feather="file-plus"></i><span class="sr-only">Plantillas</span>
-            </a>
-            <a href={href("/admin/auto-respuestas")} class={`${linkBase} ${isActive("/admin/auto-respuestas")}`} title="Auto-respuestas">
-              <i data-feather="cpu"></i><span class="sr-only">Auto-respuestas</span>
-            </a>
-            <a href={href("/admin/mensajes-no-reconocidos")} class={`${linkBase} ${isActive("/admin/mensajes-no-reconocidos")}`} title="Mensajes no reconocidos">
-              <i data-feather="help-circle"></i><span class="sr-only">Mensajes no reconocidos</span>
-            </a>
-            <a href={href("/admin/estados")} class={`${linkBase} ${isActive("/admin/estados")}`} title="Gestión de Estados">
-              <i data-feather="tag"></i><span class="sr-only">Estados</span>
-            </a>
-            <a href={href("/admin/diagrama")} class={`${linkBase} ${isActive("/admin/diagrama")}`}>
-              <i data-feather="git-branch"></i><span class="sr-only">Diagrama</span>
-            </a>
-          </>
-        )}
-
+        <a href={href("/")} class={`${linkBase} ${isActive("/")}`}
+          ><i data-feather="home"></i><span class="sr-only">Inicio</span></a
+        >
+        <a
+          href={href("/dashboard")}
+          class={`${linkBase} ${isActive("/dashboard")}`}
+          ><i data-feather="bar-chart-2"></i><span class="sr-only"
+            >Dashboard</span
+          ></a
+        >
+        <a
+          href={href("/mensajes")}
+          class={`${linkBase} ${isActive("/mensajes")}`}
+          ><i data-feather="message-square"></i><span class="sr-only"
+            >Mensajes</span
+          ></a
+        >
+        <a
+          href={href("/pipeline")}
+          class={`${linkBase} ${isActive("/pipeline")}`}
+          title="Pipeline / CRM"
+          ><i data-feather="trello"></i><span class="sr-only">Pipeline</span></a
+        >
+        <a
+          href={href("/clientes")}
+          class={`${linkBase} ${isActive("/clientes")}`}
+          ><i data-feather="users"></i><span class="sr-only">Clientes</span></a
+        >
+        {
+          isAdmin && (
+            <>
+              <a
+                href={href("/admin/usuarios")}
+                class={`${linkBase} ${isActive("/admin/usuarios")}`}
+              >
+                <>
+                  <i data-feather="user-check" />
+                  <span class="sr-only">Usuarios</span>
+                </>
+              </a>
+              <a
+                href={href("/admin/asignacion")}
+                class={`${linkBase} ${isActive("/admin/asignacion")}`}
+              >
+                <>
+                  <i data-feather="share-2" />
+                  <span class="sr-only">Asignacion</span>
+                </>
+              </a>
+              <a
+                href={href("/admin/auditoria")}
+                class={`${linkBase} ${isActive("/admin/auditoria")}`}
+                title="Auditoria en vivo"
+              >
+                <>
+                  <i data-feather="eye" />
+                  <span class="sr-only">Auditoria</span>
+                </>
+              </a>
+              <a
+                href={href("/admin/crear-plantilla")}
+                class={`${linkBase} ${isActive("/admin/crear-plantilla")}`}
+                title="Crear plantillas"
+              >
+                <>
+                  <i data-feather="file-plus" />
+                  <span class="sr-only">Plantillas</span>
+                </>
+              </a>
+              <a
+                href={href("/admin/auto-respuestas")}
+                class={`${linkBase} ${isActive("/admin/auto-respuestas")}`}
+                title="Auto-respuestas"
+              >
+                <>
+                  <i data-feather="cpu" />
+                  <span class="sr-only">Auto-respuestas</span>
+                </>
+              </a>
+              <a
+                href={href("/admin/mensajes-no-reconocidos")}
+                class={`${linkBase} ${isActive("/admin/mensajes-no-reconocidos")}`}
+                title="Mensajes no reconocidos"
+              >
+                <>
+                  <i data-feather="help-circle" />
+                  <span class="sr-only">Mensajes no reconocidos</span>
+                </>
+              </a>
+              <a
+                href={href("/admin/estados")}
+                class={`${linkBase} ${isActive("/admin/estados")}`}
+                title="Gestión de Estados"
+              >
+                <>
+                  <i data-feather="tag" />
+                  <span class="sr-only">Estados</span>
+                </>
+              </a>
+              <a
+                href={href("/admin/diagrama")}
+                class={`${linkBase} ${isActive("/admin/diagrama")}`}
+              >
+                <>
+                  <i data-feather="git-branch" />
+                  <span class="sr-only">Diagrama</span>
+                </>
+              </a>
+            </>
+          )
+        }
 
         <div class="mt-auto"></div>
 
-        <a href={href("/config")} class={`${linkBase} ${isActive("/config")}`}><i data-feather="settings"></i><span class="sr-only">Config</span></a>
+        <a href={href("/config")} class={`${linkBase} ${isActive("/config")}`}
+          ><i data-feather="settings"></i><span class="sr-only">Config</span></a
+        >
 
-        <a href={href("/logout")} class={`${linkBase} ${idle}`} title="Cerrar sesión">
+        <a
+          href={href("/logout")}
+          class={`${linkBase} ${idle}`}
+          title="Cerrar sesión"
+        >
           <i data-feather="log-out"></i>
           <span class="sr-only">Cerrar sesión</span>
         </a>
@@ -103,7 +224,10 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
     </aside>
 
     <!-- Contenido -->
-    <main id="page-root" class="pt-14 pl-16 min-h-screen opacity-0 transition-opacity duration-150">
+    <main
+      id="page-root"
+      class="pt-14 pl-16 min-h-screen opacity-0 transition-opacity duration-150"
+    >
       <div class="mx-auto p-2">
         <slot />
       </div>
@@ -116,7 +240,8 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
         window.feather?.replace();
 
         const root = document.getElementById("page-root");
-        if (root) requestAnimationFrame(() => root.classList.remove("opacity-0"));
+        if (root)
+          requestAnimationFrame(() => root.classList.remove("opacity-0"));
 
         // Smooth cross-page fade using simple CSS
         const isSameOrigin = (url) => {
@@ -134,7 +259,8 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
           const href = a.getAttribute("href");
           const target = a.getAttribute("target");
           const download = a.hasAttribute("download");
-          const modifier = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+          const modifier =
+            e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
           if (!href || target === "_blank" || download || modifier) return;
           if (!isSameOrigin(href)) return;
           if (!root) {
@@ -161,8 +287,3 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
     </script>
   </body>
 </html>
-
-
-
-
-

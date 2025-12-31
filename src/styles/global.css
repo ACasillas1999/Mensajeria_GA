@@ -9,13 +9,55 @@ body {
 input::placeholder {
   color: #94a3b8;
 }
+
 /* Scroll fino */
 .thin-scroll::-webkit-scrollbar { width: 8px; }
 .thin-scroll::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 8px; }
 .thin-scroll { scrollbar-width: thin; scrollbar-color: #1f2937 transparent; }
 
-/* Suaviza tipografía y colores por defecto */
-:root { color-scheme: dark; }
+/* Theme Variables */
+:root {
+  /* Light mode colors */
+  --bg-primary: 248 250 252; /* slate-50 */
+  --bg-secondary: 241 245 249; /* slate-100 */
+  --bg-tertiary: 226 232 240; /* slate-200 */
+  --bg-elevated: 255 255 255; /* white */
+  --bg-hover: 241 245 249; /* slate-100 */
+  
+  --text-primary: 15 23 42; /* slate-900 */
+  --text-secondary: 51 65 85; /* slate-700 */
+  --text-tertiary: 100 116 139; /* slate-500 */
+  
+  --border-primary: 226 232 240; /* slate-200 */
+  --border-secondary: 203 213 225; /* slate-300 */
+  
+  --accent-primary: 16 185 129; /* emerald-500 */
+  --accent-secondary: 5 150 105; /* emerald-600 */
+}
+
+.dark {
+  /* Dark mode colors */
+  --bg-primary: 15 23 42; /* slate-900 */
+  --bg-secondary: 30 41 59; /* slate-800 */
+  --bg-tertiary: 51 65 85; /* slate-700 */
+  --bg-elevated: 30 41 59; /* slate-800 */
+  --bg-hover: 51 65 85; /* slate-700 */
+  
+  --text-primary: 248 250 252; /* slate-50 */
+  --text-secondary: 226 232 240; /* slate-200 */
+  --text-tertiary: 148 163 184; /* slate-400 */
+  
+  --border-primary: 51 65 85; /* slate-700 */
+  --border-secondary: 71 85 105; /* slate-600 */
+  
+  --accent-primary: 16 185 129; /* emerald-500 */
+  --accent-secondary: 5 150 105; /* emerald-600 */
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
 
 /* Animations */
 @keyframes gradientShift {
