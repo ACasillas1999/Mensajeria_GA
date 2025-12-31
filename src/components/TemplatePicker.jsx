@@ -19,9 +19,19 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
       const res = await fetch(`${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/'))
       const data = await res.json()
       console.log('[TemplatePicker] Datos recibidos:', data)
+      console.log('[TemplatePicker] data.ok:', data.ok)
+      console.log('[TemplatePicker] data.items:', data.items)
       if (data.ok) {
-        console.log('[TemplatePicker] Plantillas:', data.items)
-        setTemplates(data.items || [])
+        const items = data.items || []
+        console.log('[TemplatePicker] Plantillas cargadas:', items.length)
+        console.log('[TemplatePicker] Primera plantilla:', items[0])
+        if (items[0]) {
+          console.log('[TemplatePicker] body_text tipo:', typeof items[0].body_text)
+          console.log('[TemplatePicker] body_text valor:', items[0].body_text)
+        }
+        setTemplates(items)
+      } else {
+        console.error('[TemplatePicker] API retornó ok:false')
       }
     } catch (err) {
       console.error('Error cargando plantillas:', err)
@@ -167,28 +177,33 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {templates.map(tpl => (
-                    <button
-                      key={tpl.id}
-                      onClick={() => selectTemplate(tpl)}
-                      className="w-full text-left p-4 border rounded-lg hover:border-green-500 hover:bg-green-50 transition"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="font-semibold flex items-center gap-2">
-                          {tpl.nombre}
-                          {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(tpl.header_type) && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title={`Requiere ${tpl.header_type}`}>
-                              {tpl.header_type === 'IMAGE' ? '🖼️' : tpl.header_type === 'VIDEO' ? '🎥' : '📄'}
-                            </span>
-                          )}
+                  {templates.map(tpl => {
+                    console.log('[TemplatePicker] Renderizando plantilla:', tpl.nombre, 'body_text:', typeof tpl.body_text, tpl.body_text)
+                    return (
+                      <button
+                        key={tpl.id}
+                        onClick={() => selectTemplate(tpl)}
+                        className="w-full text-left p-4 border rounded-lg hover:border-green-500 hover:bg-green-50 transition"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="font-semibold flex items-center gap-2">
+                            {tpl.nombre}
+                            {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(tpl.header_type) && (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title={`Requiere ${tpl.header_type}`}>
+                                {tpl.header_type === 'IMAGE' ? '🖼️' : tpl.header_type === 'VIDEO' ? '🎥' : '📄'}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
+                            {tpl.categoria}
+                          </span>
                         </div>
-                        <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
-                          {tpl.categoria}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 line-clamp-2">{tpl.body_text}</p>
-                    </button>
-                  ))}
+                        <p className="text-sm text-gray-700 line-clamp-2">
+                          {typeof tpl.body_text === 'string' ? tpl.body_text : JSON.stringify(tpl.body_text)}
+                        </p>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>
