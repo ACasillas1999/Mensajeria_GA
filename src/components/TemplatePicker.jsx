@@ -133,9 +133,9 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
       .replace(/\n/g, '<br/>')
 
     return (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+      <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-4">
         <div
-          className="text-sm"
+          className="text-sm text-slate-300"
           dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       </div>
@@ -145,33 +145,33 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-slate-950 border border-slate-800 rounded-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b border-slate-800">
           <div>
-            <h3 className="text-lg font-semibold">Enviar plantilla</h3>
-            <p className="text-sm text-gray-600">Para: {conversation.wa_profile_name || conversation.wa_user}</p>
+            <h3 className="text-lg font-semibold text-slate-200">Enviar plantilla</h3>
+            <p className="text-sm text-slate-400">Para: {conversation.wa_profile_name || conversation.wa_user}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-2xl">×</button>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
             <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-green-600 border-t-transparent"></div>
-              <p className="mt-2 text-gray-600">Cargando plantillas...</p>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-600 border-t-transparent"></div>
+              <p className="mt-2 text-slate-400">Cargando plantillas...</p>
             </div>
           ) : !selectedTemplate ? (
             // Lista de plantillas
             <div>
-              <p className="text-sm text-gray-600 mb-4">Selecciona una plantilla aprobada:</p>
+              <p className="text-sm text-slate-400 mb-4">Selecciona una plantilla aprobada:</p>
               {templates.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-slate-400">
                   <p>No hay plantillas aprobadas</p>
-                  <a href="/plantillas" className="text-green-600 hover:underline mt-2 inline-block">
+                  <a href="/plantillas" className="text-emerald-400 hover:underline mt-2 inline-block">
                     Ir a gestión de plantillas
                   </a>
                 </div>
@@ -183,22 +183,22 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                       <button
                         key={tpl.id}
                         onClick={() => selectTemplate(tpl)}
-                        className="w-full text-left p-4 border rounded-lg hover:border-green-500 hover:bg-green-50 transition"
+                        className="w-full text-left p-4 border border-slate-800 rounded-lg bg-slate-900/50 hover:bg-slate-800/70 hover:border-emerald-700/50 transition group"
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <div className="font-semibold flex items-center gap-2">
+                          <div className="font-semibold text-slate-200 group-hover:text-emerald-400 transition flex items-center gap-2">
                             {tpl.nombre}
                             {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(tpl.header_type) && (
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title={`Requiere ${tpl.header_type}`}>
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-400 border border-amber-700/50" title={`Requiere ${tpl.header_type}`}>
                                 {tpl.header_type === 'IMAGE' ? '🖼️' : tpl.header_type === 'VIDEO' ? '🎥' : '📄'}
                               </span>
                             )}
                           </div>
-                          <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
+                          <span className="text-xs px-2 py-1 rounded bg-slate-800 text-emerald-400 border border-emerald-800/50">
                             {tpl.categoria}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700 line-clamp-2">
+                        <p className="text-sm text-slate-400 line-clamp-2 whitespace-pre-wrap">
                           {typeof tpl.body_text === 'string' ? tpl.body_text : JSON.stringify(tpl.body_text)}
                         </p>
                       </button>
@@ -211,14 +211,14 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
             // Formulario de variables y preview
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-semibold">{selectedTemplate.nombre}</h4>
+                <h4 className="font-semibold text-slate-200">{selectedTemplate.nombre}</h4>
                 <button
                   onClick={() => {
                     setSelectedTemplate(null)
                     setVariables([])
                     setHeaderMediaUrl('')
                   }}
-                  className="text-sm text-gray-600 hover:text-gray-800"
+                  className="text-sm text-slate-400 hover:text-emerald-400"
                 >
                   ← Cambiar plantilla
                 </button>
@@ -226,11 +226,11 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
 
               {/* Header Media Input */}
               {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(selectedTemplate.header_type) && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <p className="text-sm font-medium mb-2">
-                    Header {selectedTemplate.header_type} <span className="text-red-500">*</span>
+                <div className="bg-amber-950/20 border border-amber-700/50 rounded-lg p-4">
+                  <p className="text-sm font-medium text-amber-300 mb-2">
+                    Header {selectedTemplate.header_type} <span className="text-red-400">*</span>
                   </p>
-                  <p className="text-xs text-gray-600 mb-3">
+                  <p className="text-xs text-slate-400 mb-3">
                     Esta plantilla requiere un {selectedTemplate.header_type.toLowerCase()} en el header.
                   </p>
                   <input
@@ -238,19 +238,19 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                     value={headerMediaUrl}
                     onChange={e => setHeaderMediaUrl(e.target.value)}
                     placeholder={`URL del ${selectedTemplate.header_type.toLowerCase()} (https://...)`}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-slate-200 outline-none focus:border-emerald-400"
                   />
                 </div>
               )}
 
               {variables.length > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium mb-3">Variables de la plantilla:</p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-4">
+                  <p className="text-sm font-medium text-slate-300 mb-3">Variables de la plantilla:</p>
                   <div className="space-y-3">
                     {variables.map((val, idx) => (
                       <div key={idx}>
-                        <label className="block text-sm mb-1">
-                          Variable {idx + 1} <span className="text-red-500">*</span>
+                        <label className="block text-sm text-slate-400 mb-1">
+                          Variable {idx + 1} <span className="text-red-400">*</span>
                         </label>
                         <input
                           type="text"
@@ -261,7 +261,7 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                             setVariables(newVars)
                           }}
                           placeholder={`Ingresa el valor para {{${idx + 1}}}`}
-                          className="w-full border rounded px-3 py-2"
+                          className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-slate-200 outline-none focus:border-emerald-400"
                         />
                       </div>
                     ))}
@@ -270,7 +270,7 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
               )}
 
               <div>
-                <p className="text-sm font-medium mb-2">Vista previa:</p>
+                <p className="text-sm font-medium text-slate-300 mb-2">Vista previa:</p>
                 {renderTemplatePreview(selectedTemplate)}
               </div>
             </div>
@@ -279,10 +279,10 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
 
         {/* Footer */}
         {selectedTemplate && (
-          <div className="border-t p-4 flex gap-2">
+          <div className="border-t border-slate-800 p-4 flex gap-2">
             <button
               onClick={onClose}
-              className="flex-1 py-2 border rounded hover:bg-gray-50"
+              className="flex-1 py-2 border border-slate-700 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
             >
               Cancelar
             </button>
@@ -293,7 +293,7 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                 (variables.length > 0 && variables.some(v => !v.trim())) ||
                 (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(selectedTemplate.header_type) && !headerMediaUrl.trim())
               }
-              className="flex-1 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {sending ? 'Enviando...' : 'Enviar plantilla'}
             </button>
