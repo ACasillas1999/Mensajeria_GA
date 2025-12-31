@@ -41,25 +41,24 @@ export default function LoginForm() {
 
   const hasError = mensaje.startsWith("Error:");
   const formClass =
-    `w-full p-7 sm:p-8 rounded-2xl border transition-all duration-300 text-left
-    bg-gradient-to-b from-slate-900/70 via-slate-900/60 to-slate-950/70
-    backdrop-blur-xl border-white/5 shadow-[0_16px_70px_rgba(0,0,0,0.55)]
-    ${hasError ? "animate-shake" : "hover:-translate-y-0.5 hover:shadow-[0_20px_80px_rgba(16,185,129,0.18)]"}`;
+    `w-full p-6 sm:p-7 rounded-2xl border transition-all duration-200 text-left
+    bg-slate-900/80 backdrop-blur-lg border-white/8 shadow-[0_12px_50px_rgba(0,0,0,0.4)]
+    ${hasError ? "animate-shake" : "hover:-translate-y-0.5 hover:shadow-[0_16px_60px_rgba(16,185,129,0.14)]"}`;
 
   return (
     <form onSubmit={handleSubmit} className={formClass}>
       <div className="mb-5 text-center">
         <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-200/80 font-semibold">Panel privado</p>
-        <h2 className="text-2xl font-semibold text-white mt-2">Iniciar sesi\u00f3n</h2>
-        <p className="text-sm text-slate-300/80 mt-1">Usa tus credenciales corporativas para continuar.</p>
+        <h2 className="text-2xl font-semibold text-white mt-1">Iniciar sesi\u00f3n</h2>
+        <p className="text-sm text-slate-300/80 mt-2">Usa tus credenciales corporativas para continuar.</p>
       </div>
 
       <input
         type="email"
         placeholder="Email"
-        className="w-full mb-4 p-3 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 outline-none
-                   transition-all duration-200 placeholder:text-slate-500
-                   focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-300/60"
+        className="w-full mb-4 p-3 rounded-xl bg-slate-950/60 border border-white/10 text-slate-100 outline-none
+                   transition-all duration-150 placeholder:text-slate-500
+                   focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-300/60"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
@@ -68,9 +67,9 @@ export default function LoginForm() {
       <input
         type="password"
         placeholder="Contrase\u00f1a"
-        className="w-full mb-5 p-3 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 outline-none
-                   transition-all duration-200 placeholder:text-slate-500
-                   focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-300/60"
+        className="w-full mb-5 p-3 rounded-xl bg-slate-950/60 border border-white/10 text-slate-100 outline-none
+                   transition-all duration-150 placeholder:text-slate-500
+                   focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-300/60"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
@@ -79,9 +78,8 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 mt-1 rounded-xl text-black font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
-                   bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-400 hover:brightness-110
-                   shadow-lg shadow-emerald-500/25 hover:shadow-emerald-400/40 hover:-translate-y-0.5"
+        className="w-full py-3 mt-1 rounded-xl text-slate-950 font-semibold transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed
+                   bg-emerald-400 hover:bg-emerald-300 shadow-md shadow-emerald-500/25 hover:-translate-y-0.5"
       >
         {loading ? "Entrando..." : "Entrar"}
       </button>

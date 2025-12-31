@@ -21,33 +21,22 @@ if (user) {
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
-  <body class="min-h-screen relative overflow-hidden flex items-center justify-center bg-animated text-white">
-    <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute -left-16 top-6 w-80 h-80 bg-emerald-500/12 blur-[120px]"></div>
-      <div class="absolute -right-8 bottom-0 w-96 h-96 bg-cyan-500/10 blur-[140px]"></div>
-    </div>
-
-    <div id="login-wrap" class="relative max-w-3xl w-full px-6 text-center opacity-0 translate-y-2 transition-all duration-500">
-      <div class="flex flex-col items-center gap-3 mb-6">
-        <div class="p-3 rounded-2xl bg-white/5 border border-white/10 shadow-[0_15px_60px_rgba(6,182,212,0.15)]">
-          <img src={logoSrc} alt="Logo Mensajer&iacute;a Web GA" class="w-20 h-20 object-contain drop-shadow-lg" loading="lazy" />
+  <body class="min-h-screen flex items-center justify-center bg-animated text-white">
+    <div id="login-wrap" class="w-full max-w-2xl px-6 text-center opacity-0 translate-y-2 transition-all duration-500">
+      <div class="flex flex-col items-center gap-4 mb-8">
+        <div class="p-4 rounded-3xl bg-white/6 border border-white/10 shadow-lg">
+          <img src={logoSrc} alt="Logo Mensajer&iacute;a Web GA" class="w-28 h-28 md:w-32 md:h-32 object-contain drop-shadow-lg" loading="lazy" />
         </div>
         <p class="text-xs font-semibold tracking-[0.18em] text-emerald-100/80 uppercase">Acceso seguro</p>
-        <div class="relative">
-          <div class="absolute inset-0 blur-2xl bg-emerald-500/30 rounded-full"></div>
-          <h1 class="relative text-4xl md:text-[40px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-emerald-200 to-cyan-200 drop-shadow-[0_0_25px_rgba(16,185,129,0.25)]" style="font-family: 'Space Grotesk', 'Inter', 'Segoe UI', system-ui, sans-serif;">
-            Mensajer&iacute;a Web GA
-          </h1>
-        </div>
-        <p class="text-slate-200/80 text-sm md:text-base">Centraliza tus conversaciones y plantillas en un panel moderno y simple.</p>
+        <h1 class="text-4xl md:text-[42px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-emerald-200 to-cyan-200 drop-shadow-[0_0_20px_rgba(16,185,129,0.2)]" style="font-family: 'Space Grotesk', 'Inter', 'Segoe UI', system-ui, sans-serif;">
+          Mensajer&iacute;a Web GA
+        </h1>
+        <p class="text-slate-200/85 text-sm md:text-base">Centraliza tus conversaciones y plantillas en un panel moderno y simple.</p>
       </div>
 
-      <div class="relative max-w-md mx-auto">
-        <div class="absolute -inset-[1px] rounded-[28px] bg-gradient-to-br from-emerald-500/50 via-cyan-400/35 to-emerald-500/50 blur-lg opacity-70"></div>
-        <div class="relative rounded-[26px] bg-slate-950/70 border border-white/10 shadow-[0_18px_80px_rgba(0,0,0,0.55)] backdrop-blur-xl p-1">
-          <div class="rounded-[22px] bg-slate-900/70 border border-white/5 p-2 sm:p-3">
-            <LoginForm client:load />
-          </div>
+      <div class="max-w-lg mx-auto rounded-3xl bg-slate-950/75 border border-white/8 shadow-[0_16px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl p-2">
+        <div class="rounded-2xl bg-slate-900/80 border border-white/5 p-2 sm:p-4">
+          <LoginForm client:load />
         </div>
       </div>
     </div>
