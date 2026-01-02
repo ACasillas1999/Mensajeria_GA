@@ -34,11 +34,13 @@ export default function LocationMessage({ text }) {
   useEffect(() => {
     if (!coords || !mapContainerRef.current || mapError) return;
 
+    console.log('[LocationMessage] Intentando cargar mapa para:', coords);
     let timeoutId;
     const loadMapbox = async () => {
       try {
         // Cargar Mapbox GL JS dinámicamente
         if (!window.mapboxgl) {
+          console.log('[LocationMessage] Cargando Mapbox GL JS...');
           const link = document.createElement('link');
           link.rel = 'stylesheet';
           link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
@@ -57,6 +59,7 @@ export default function LocationMessage({ text }) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
 
+        console.log('[LocationMessage] Mapbox GL JS cargado, creando mapa...');
         const mapboxgl = window.mapboxgl;
         mapboxgl.accessToken = MAPBOX_TOKEN;
 
@@ -78,21 +81,22 @@ export default function LocationMessage({ text }) {
 
         // Timeout para detectar si el mapa no carga
         timeoutId = setTimeout(() => {
-          console.warn('Mapa tardando en cargar, usando fallback');
+          console.warn('[LocationMessage] Mapa tardando en cargar, usando fallback');
           setMapError(true);
-        }, 5000);
+        }, 3000); // Reducido a 3 segundos
 
         map.on('load', () => {
+          console.log('[LocationMessage] Mapa cargado correctamente');
           clearTimeout(timeoutId);
           map.resize();
-          
-          new mapboxgl.Marker({ color: '#ed6b1f' })
+
+          new mapboxgl.Marker({ color: '#10b981' })
             .setLngLat([coords.lon, coords.lat])
             .addTo(map);
         });
 
         map.on('error', (e) => {
-          console.error('Error en Mapbox:', e);
+          console.error('[LocationMessage] Error en Mapbox:', e);
           clearTimeout(timeoutId);
           setMapError(true);
         });
@@ -101,7 +105,7 @@ export default function LocationMessage({ text }) {
         mapRef.current = map;
 
       } catch (error) {
-        console.error('Error cargando Mapbox:', error);
+        console.error('[LocationMessage] Error cargando Mapbox:', error);
         setMapError(true);
       }
     };
