@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Mapbox API Key
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWNhc2lsbGFzNzY2IiwiYSI6ImNsdW12cTZyMjB4NnMya213MDdseXp6ZGgifQ.t7-l1lQfd8mgHILM5YrdNw';
@@ -6,6 +6,7 @@ const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWNhc2lsbGFzNzY2IiwiYSI6ImNsdW12cTZyMjB4NnMya21
 export default function LocationMessage({ text }) {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+  const [mapError, setMapError] = useState(false);
 
   // Extraer coordenadas del texto
   const extractCoordinates = (txt) => {
@@ -31,83 +32,90 @@ export default function LocationMessage({ text }) {
   const coords = extractCoordinates(text);
 
   useEffect(() => {
-    if (!coords || !mapContainerRef.current) return;
+    if (!coords || !mapContainerRef.current || mapError) return;
 
+    let timeoutId;
     const loadMapbox = async () => {
-      // Cargar Mapbox GL JS dinámicamente
-      if (!window.mapboxgl) {
-        // Cargar CSS
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-        document.head.appendChild(link);
+      try {
+        // Cargar Mapbox GL JS dinámicamente
+        if (!window.mapboxgl) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+          document.head.appendChild(link);
 
-        // Cargar JS
-        const script = document.createElement('script');
-        script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-        await new Promise((resolve) => {
-          script.onload = resolve;
-          document.head.appendChild(script);
+          const script = document.createElement('script');
+          script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+        }
+
+        while (!window.mapboxgl) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        const mapboxgl = window.mapboxgl;
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+
+        if (mapRef.current) {
+          mapRef.current.remove();
+        }
+
+        const map = new mapboxgl.Map({
+          container: mapContainerRef.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [coords.lon, coords.lat],
+          zoom: 15,
+          scrollZoom: false,
+          dragPan: true,
+          dragRotate: false,
+          touchZoomRotate: false,
+          attributionControl: false
         });
-      }
 
-      // Esperar a que mapboxgl esté disponible
-      while (!window.mapboxgl) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+        // Timeout para detectar si el mapa no carga
+        timeoutId = setTimeout(() => {
+          console.warn('Mapa tardando en cargar, usando fallback');
+          setMapError(true);
+        }, 5000);
 
-      const mapboxgl = window.mapboxgl;
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-
-      // Limpiar mapa anterior si existe
-      if (mapRef.current) {
-        mapRef.current.remove();
-      }
-
-      // Crear mapa
-      const map = new mapboxgl.Map({
-        container: mapContainerRef.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [coords.lon, coords.lat],
-        zoom: 15,
-        scrollZoom: false,
-        dragPan: true,
-        dragRotate: false,
-        touchZoomRotate: false
-      });
-
-      // Esperar a que el mapa se cargue completamente antes de agregar marcador
-      map.on('load', () => {
-        // Forzar resize para asegurar renderizado correcto
-        setTimeout(() => {
+        map.on('load', () => {
+          clearTimeout(timeoutId);
           map.resize();
-        }, 100);
-        
-        // Agregar marcador después de que el mapa esté cargado
-        new mapboxgl.Marker({ color: '#ed6b1f' })
-          .setLngLat([coords.lon, coords.lat])
-          .setPopup(
-            new mapboxgl.Popup({ offset: 25 })
-              .setHTML(`<div style="padding: 4px; font-size: 12px;">📍 ${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}</div>`)
-          )
-          .addTo(map);
-      });
+          
+          new mapboxgl.Marker({ color: '#ed6b1f' })
+            .setLngLat([coords.lon, coords.lat])
+            .addTo(map);
+        });
 
-      // Agregar controles de navegación
-      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        map.on('error', (e) => {
+          console.error('Error en Mapbox:', e);
+          clearTimeout(timeoutId);
+          setMapError(true);
+        });
 
-      mapRef.current = map;
+        map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+        mapRef.current = map;
+
+      } catch (error) {
+        console.error('Error cargando Mapbox:', error);
+        setMapError(true);
+      }
     };
 
     loadMapbox();
 
     return () => {
+      clearTimeout(timeoutId);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
-  }, [coords]);
+  }, [coords, mapError]);
 
   if (!coords) {
     return <div className="text-sm whitespace-pre-wrap">{text}</div>;
@@ -115,15 +123,39 @@ export default function LocationMessage({ text }) {
 
   const googleMapsUrl = `https://www.google.com/maps?q=${coords.lat},${coords.lon}`;
   const wazeUrl = `https://waze.com/ul?ll=${coords.lat},${coords.lon}&navigate=yes`;
+  
+  // URL para imagen estática de Google Maps como fallback
+  const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coords.lat},${coords.lon}&zoom=15&size=600x300&markers=color:orange%7C${coords.lat},${coords.lon}&key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8`;
 
   return (
     <div className="space-y-2">
       {/* Mapa */}
-      <div 
-        ref={mapContainerRef} 
-        className="w-full h-48 rounded-lg overflow-hidden border border-slate-700"
-        style={{ minHeight: '192px' }}
-      />
+      {mapError ? (
+        // Fallback: Imagen estática de Google Maps
+        <a 
+          href={googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full h-48 rounded-lg overflow-hidden border border-slate-700 relative group cursor-pointer"
+        >
+          <img 
+            src={staticMapUrl}
+            alt="Mapa de ubicación"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
+            <span className="opacity-0 group-hover:opacity-100 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+              🗺️ Abrir en Google Maps
+            </span>
+          </div>
+        </a>
+      ) : (
+        <div 
+          ref={mapContainerRef} 
+          className="w-full h-48 rounded-lg overflow-hidden border border-slate-700"
+          style={{ minHeight: '192px' }}
+        />
+      )}
       
       {/* Información y botones */}
       <div className="flex flex-col gap-2">
