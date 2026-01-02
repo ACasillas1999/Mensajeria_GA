@@ -41,7 +41,7 @@ export default function LoginForm() {
 
   const hasError = mensaje.startsWith("Error:");
   const formClass =
-    `w-full p-6 sm:p-7 rounded-2xl transition-all duration-200 text-left
+    `w-full max-w-md mx-auto p-6 sm:p-7 rounded-2xl transition-all duration-200 text-left
     bg-white/5 backdrop-blur-xl shadow-[0_12px_50px_rgba(0,0,0,0.3)]
     ${hasError ? "animate-shake" : "hover:-translate-y-0.5 hover:shadow-[0_18px_70px_rgba(16,185,129,0.16)]"}`;
 

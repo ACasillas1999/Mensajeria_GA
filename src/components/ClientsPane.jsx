@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 
 const BASE = import.meta.env.BASE_URL || '';
+const QuickChatModal = lazy(() => import('./QuickChatModal.jsx'));
 
 export default function ClientsPane() {
   const [items, setItems] = useState([]);
@@ -9,6 +10,7 @@ export default function ClientsPane() {
   const [view, setView] = useState("all"); // 'all', 'recent', 'favorites'
   const [sortBy, setSortBy] = useState("recent"); // 'recent', 'name', 'messages'
   const [stats, setStats] = useState({ total: 0, recent: 0, favorites: 0 });
+  const [quickViewId, setQuickViewId] = useState(null);
 
   async function load(search = "") {
     setLoading(true);
@@ -235,14 +237,24 @@ export default function ClientsPane() {
                   )}
                 </div>
 
-                {/* Botón de acción */}
-                <a
-                  href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
-                  data-astro-prefetch="tap"
-                  className="block w-full px-3 py-2 text-center rounded-lg bg-emerald-600/10 border border-emerald-600/30 text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all font-medium text-sm"
-                >
-                  Abrir conversación →
-                </a>
+                {/* Botones de acción */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setQuickViewId(c.id)}
+                    className="flex-1 px-3 py-2 text-center rounded-lg bg-sky-600/10 border border-sky-600/30 text-sky-300 hover:bg-sky-600/20 transition-all font-medium text-sm"
+                  >
+                    👁️ Vista rápida
+                  </button>
+                  <a
+                    href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
+                    data-astro-prefetch="tap"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 px-3 py-2 text-center rounded-lg bg-emerald-600/10 border border-emerald-600/30 text-emerald-400 hover:bg-emerald-600/20 transition-all font-medium text-sm"
+                  >
+                    🔗 Abrir
+                  </a>
+                </div>
               </div>
             );
           })}
@@ -256,6 +268,20 @@ export default function ClientsPane() {
           <div className="text-slate-400">No se encontraron clientes</div>
           <div className="text-sm text-slate-500 mt-2">Intenta con otro término de búsqueda</div>
         </div>
+      )}
+
+      {/* Quick View Modal */}
+      {quickViewId && (
+        <Suspense fallback={null}>
+          <QuickChatModal
+            conversationId={quickViewId}
+            onClose={() => setQuickViewId(null)}
+            onOpenFull={() => {
+              window.open(`${BASE}/mensajes?conversation_id=${quickViewId}`.replace(/\/\//g, '/'), '_blank');
+              setQuickViewId(null);
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );

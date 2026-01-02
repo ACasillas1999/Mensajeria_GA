@@ -24,6 +24,30 @@ const initial = (user?.nombre || "U").toString().slice(0, 1).toUpperCase();
 
 // Helper to build URLs with base path
 const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
+
+const mainLinks = [
+  { href: "/", icon: "home", label: "Inicio" },
+  { href: "/dashboard", icon: "bar-chart-2", label: "Dashboard" },
+  { href: "/mensajes", icon: "message-square", label: "Mensajes" },
+  { href: "/pipeline", icon: "trello", label: "Pipeline / CRM" },
+  { href: "/clientes", icon: "users", label: "Clientes" },
+];
+
+const adminLinks = [
+  { href: "/admin/usuarios", icon: "user-check", label: "Usuarios" },
+  { href: "/admin/asignacion", icon: "share-2", label: "Asignacion" },
+  { href: "/admin/auditoria", icon: "eye", label: "Auditoria en vivo" },
+  { href: "/admin/crear-plantilla", icon: "file-plus", label: "Plantillas" },
+  { href: "/admin/auto-respuestas", icon: "cpu", label: "Auto-respuestas" },
+  { href: "/admin/mensajes-no-reconocidos", icon: "help-circle", label: "Mensajes no reconocidos" },
+  { href: "/admin/estados", icon: "tag", label: "Gestión de Estados" },
+  { href: "/admin/diagrama", icon: "git-branch", label: "Diagrama" },
+];
+
+const footerLinks = [
+  { href: "/config", icon: "settings", label: "Config" },
+  { href: "/logout", icon: "log-out", label: "Cerrar sesión", forceIdle: true },
+];
 ---
 
 <html lang="es">
@@ -43,12 +67,19 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
     <header
       class="fixed top-0 inset-x-0 h-14 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur border-b border-slate-200 dark:border-slate-800"
     >
-      <div class="h-full max-w-7xl mx-auto px-4 flex items-center">
-        <h1 class="text-lg font-semibold text-emerald-400">{title}</h1>
-        <div class="ml-auto flex items-center gap-3">
+      <div class="h-full max-w-7xl mx-auto px-4 flex items-center gap-3">
+        <button
+          id="mobile-nav-open"
+          class="md:hidden p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/80 text-slate-700 dark:text-slate-200 hover:border-emerald-400/70 transition"
+          aria-label="Abrir menú"
+        >
+          <i data-feather="menu"></i>
+        </button>
+        <h1 class="text-lg sm:text-xl font-semibold text-emerald-400 truncate">{title}</h1>
+        <div class="ml-auto flex items-center gap-3 min-w-0">
           {
             user && (
-              <div class="text-right leading-tight">
+              <div class="text-right leading-tight max-w-[200px] sm:max-w-xs">
                 <div class="text-sm text-slate-800 dark:text-slate-200 truncate">
                   {user.nombre}
                 </div>
@@ -70,151 +101,121 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
 
     <!-- Sidebar -->
     <aside
-      class="fixed left-0 top-14 bottom-0 w-16 z-30 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800"
+      class="hidden md:block fixed left-0 top-14 bottom-0 w-16 z-30 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800"
     >
       <nav class="h-full flex flex-col items-center py-4 gap-2">
-        <a href={href("/")} class={`${linkBase} ${isActive("/")}`}
-          ><i data-feather="home"></i><span class="sr-only">Inicio</span></a
-        >
-        <a
-          href={href("/dashboard")}
-          class={`${linkBase} ${isActive("/dashboard")}`}
-          ><i data-feather="bar-chart-2"></i><span class="sr-only"
-            >Dashboard</span
-          ></a
-        >
-        <a
-          href={href("/mensajes")}
-          class={`${linkBase} ${isActive("/mensajes")}`}
-          ><i data-feather="message-square"></i><span class="sr-only"
-            >Mensajes</span
-          ></a
-        >
-        <a
-          href={href("/pipeline")}
-          class={`${linkBase} ${isActive("/pipeline")}`}
-          title="Pipeline / CRM"
-          ><i data-feather="trello"></i><span class="sr-only">Pipeline</span></a
-        >
-        <a
-          href={href("/clientes")}
-          class={`${linkBase} ${isActive("/clientes")}`}
-          ><i data-feather="users"></i><span class="sr-only">Clientes</span></a
-        >
-        {
-          isAdmin && (
-            <>
-              <a
-                href={href("/admin/usuarios")}
-                class={`${linkBase} ${isActive("/admin/usuarios")}`}
-              >
-                <>
-                  <i data-feather="user-check" />
-                  <span class="sr-only">Usuarios</span>
-                </>
-              </a>
-              <a
-                href={href("/admin/asignacion")}
-                class={`${linkBase} ${isActive("/admin/asignacion")}`}
-              >
-                <>
-                  <i data-feather="share-2" />
-                  <span class="sr-only">Asignacion</span>
-                </>
-              </a>
-              <a
-                href={href("/admin/auditoria")}
-                class={`${linkBase} ${isActive("/admin/auditoria")}`}
-                title="Auditoria en vivo"
-              >
-                <>
-                  <i data-feather="eye" />
-                  <span class="sr-only">Auditoria</span>
-                </>
-              </a>
-              <a
-                href={href("/admin/crear-plantilla")}
-                class={`${linkBase} ${isActive("/admin/crear-plantilla")}`}
-                title="Crear plantillas"
-              >
-                <>
-                  <i data-feather="file-plus" />
-                  <span class="sr-only">Plantillas</span>
-                </>
-              </a>
-              <a
-                href={href("/admin/auto-respuestas")}
-                class={`${linkBase} ${isActive("/admin/auto-respuestas")}`}
-                title="Auto-respuestas"
-              >
-                <>
-                  <i data-feather="cpu" />
-                  <span class="sr-only">Auto-respuestas</span>
-                </>
-              </a>
-              <a
-                href={href("/admin/mensajes-no-reconocidos")}
-                class={`${linkBase} ${isActive("/admin/mensajes-no-reconocidos")}`}
-                title="Mensajes no reconocidos"
-              >
-                <>
-                  <i data-feather="help-circle" />
-                  <span class="sr-only">Mensajes no reconocidos</span>
-                </>
-              </a>
-              <a
-                href={href("/admin/estados")}
-                class={`${linkBase} ${isActive("/admin/estados")}`}
-                title="Gestión de Estados"
-              >
-                <>
-                  <i data-feather="tag" />
-                  <span class="sr-only">Estados</span>
-                </>
-              </a>
-              <a
-                href={href("/admin/diagrama")}
-                class={`${linkBase} ${isActive("/admin/diagrama")}`}
-              >
-                <>
-                  <i data-feather="git-branch" />
-                  <span class="sr-only">Diagrama</span>
-                </>
-              </a>
-            </>
-          )
-        }
+        {mainLinks.map((link) => (
+          <a
+            href={href(link.href)}
+            class={`${linkBase} ${isActive(link.href)}`}
+            title={link.label}
+          >
+            <i data-feather={link.icon}></i>
+            <span class="sr-only">{link.label}</span>
+          </a>
+        ))}
+        {isAdmin &&
+          adminLinks.map((link) => (
+            <a
+              href={href(link.href)}
+              class={`${linkBase} ${isActive(link.href)}`}
+              title={link.label}
+            >
+              <i data-feather={link.icon}></i>
+              <span class="sr-only">{link.label}</span>
+            </a>
+          ))}
 
         <div class="mt-auto"></div>
 
-        <a href={href("/config")} class={`${linkBase} ${isActive("/config")}`}
-          ><i data-feather="settings"></i><span class="sr-only">Config</span></a
-        >
-
-        <a
-          href={href("/logout")}
-          class={`${linkBase} ${idle}`}
-          title="Cerrar sesión"
-        >
-          <i data-feather="log-out"></i>
-          <span class="sr-only">Cerrar sesión</span>
-        </a>
+        {footerLinks.map((link) => (
+          <a
+            href={href(link.href)}
+            class={`${linkBase} ${link.forceIdle ? idle : isActive(link.href)}`}
+            title={link.label}
+          >
+            <i data-feather={link.icon}></i>
+            <span class="sr-only">{link.label}</span>
+          </a>
+        ))}
       </nav>
     </aside>
+
+    <!-- Mobile navigation drawer -->
+    <div id="mobile-nav" class="md:hidden fixed inset-0 z-50 hidden">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-nav-overlay></div>
+      <div
+        id="mobile-nav-panel"
+        class="relative h-full w-[78%] max-w-xs bg-slate-950 border-r border-slate-800 shadow-2xl -translate-x-full transition-transform duration-200"
+      >
+        <div class="h-14 px-4 flex items-center justify-between border-b border-slate-800">
+          <div class="text-sm font-semibold text-emerald-300">Menú</div>
+          <button
+            id="mobile-nav-close"
+            class="p-2 rounded-lg hover:bg-slate-800 transition"
+            aria-label="Cerrar menú"
+          >
+            <i data-feather="x"></i>
+          </button>
+        </div>
+        <div class="p-3 space-y-6 overflow-y-auto h-[calc(100%-3.5rem)]">
+          <div class="space-y-1">
+            {mainLinks.map((link) => (
+              <a
+                href={href(link.href)}
+                class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive(link.href)} hover:bg-slate-900/70`}
+              >
+                <i data-feather={link.icon}></i>
+                <span>{link.label}</span>
+              </a>
+            ))}
+          </div>
+
+          {isAdmin && (
+            <div class="space-y-1">
+              <div class="text-[11px] uppercase tracking-[0.08em] text-slate-500 px-2">
+                Admin
+              </div>
+              {adminLinks.map((link) => (
+                <a
+                  href={href(link.href)}
+                  class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive(link.href)} hover:bg-slate-900/70`}
+                >
+                  <i data-feather={link.icon}></i>
+                  <span>{link.label}</span>
+                </a>
+              ))}
+            </div>
+          )}
+
+          <div class="space-y-1 pt-2 border-t border-slate-800">
+            {footerLinks.map((link) => (
+              <a
+                href={href(link.href)}
+                class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${link.forceIdle ? idle : isActive(link.href)} hover:bg-slate-900/70`}
+              >
+                <i data-feather={link.icon}></i>
+                <span>{link.label}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Contenido -->
     <main
       id="page-root"
-      class="pt-14 pl-16 min-h-screen opacity-0 transition-opacity duration-150"
+      class="pt-16 md:pt-14 md:pl-16 pl-0 min-h-screen opacity-0 transition-opacity duration-150"
     >
-      <div class="mx-auto p-2">
+      <div class="mx-auto px-3 sm:px-4 md:px-5 pb-6">
         <slot />
       </div>
     </main>
 
     <script src="https://unpkg.com/feather-icons" defer></script>
     <script is:inline define:vars={{ base }}>
-      // Icons + page transitions
+      // Icons + page transitions + mobile drawer
       window.addEventListener("DOMContentLoaded", () => {
         window.feather?.replace();
 
@@ -262,6 +263,34 @@ const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
           setTimeout(navigate, 200);
           root.classList.add("opacity-0");
         });
+
+        const mobileNav = document.getElementById("mobile-nav");
+        const mobilePanel = document.getElementById("mobile-nav-panel");
+        const openBtn = document.getElementById("mobile-nav-open");
+        const closeBtn = document.getElementById("mobile-nav-close");
+        const overlay = mobileNav?.querySelector("[data-nav-overlay]");
+
+        const closeMobileNav = () => {
+          if (!mobileNav || !mobilePanel) return;
+          mobilePanel.classList.add("-translate-x-full");
+          setTimeout(() => mobileNav.classList.add("hidden"), 180);
+        };
+
+        const openMobileNav = () => {
+          if (!mobileNav || !mobilePanel) return;
+          mobileNav.classList.remove("hidden");
+          requestAnimationFrame(() => mobilePanel.classList.remove("-translate-x-full"));
+        };
+
+        openBtn?.addEventListener("click", openMobileNav);
+        closeBtn?.addEventListener("click", closeMobileNav);
+        overlay?.addEventListener("click", closeMobileNav);
+        mobileNav?.addEventListener("keydown", (ev) => {
+          if (ev.key === "Escape") closeMobileNav();
+        });
+        mobileNav
+          ?.querySelectorAll("a")
+          .forEach((a) => a.addEventListener("click", closeMobileNav));
       });
     </script>
   </body>

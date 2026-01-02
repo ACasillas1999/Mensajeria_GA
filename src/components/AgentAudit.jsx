@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 
 const BASE = import.meta.env.BASE_URL || '';
+const QuickChatModal = lazy(() => import('./QuickChatModal.jsx'));
 
 export default function AgentAudit() {
   const [data, setData] = useState({ agents: [], activeChats: [] });
   const [loading, setLoading] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [viewMode, setViewMode] = useState('overview'); // overview | agent-detail
+  const [quickViewId, setQuickViewId] = useState(null);
 
   async function load() {
     try {
@@ -114,15 +116,24 @@ export default function AgentAudit() {
                 </div>
                 <div className="text-sm text-slate-400 truncate">{chat.ultimo_msg || '-'}</div>
                 <div className="text-xs text-slate-500 mt-1">{formatTimestamp(chat.ultimo_ts)}</div>
-                <div className="mt-2">
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQuickViewId(chat.conversacion_id);
+                    }}
+                    className="flex-1 text-xs px-2 py-1 rounded bg-sky-600/20 border border-sky-700 text-sky-300 hover:bg-sky-600/30 transition"
+                  >
+                    👁️ Vista rápida
+                  </button>
                   <a
                     href={`${BASE}/mensajes?conversation_id=${chat.conversacion_id}`.replace(/\/\//g, '/')}
                     data-astro-prefetch="tap"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 inline-block"
+                    className="flex-1 text-xs px-2 py-1 rounded bg-emerald-600/20 border border-emerald-700 text-emerald-300 hover:bg-emerald-600/30 transition text-center"
                   >
-                    Ver chat completo →
+                    🔗 Ver chat
                   </a>
                 </div>
               </div>
@@ -260,20 +271,45 @@ export default function AgentAudit() {
               </div>
               <div className="text-right shrink-0">
                 <div className="text-xs text-sky-400 mb-1">👤 {chat.agente_nombre || 'Sin asignar'}</div>
-                <a
-                  href={`${BASE}/mensajes?conversation_id=${chat.conversacion_id}`.replace(/\/\//g, '/')}
-                  data-astro-prefetch="tap"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 inline-block"
-                >
-                  Espiar →
-                </a>
+                <div className="flex gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQuickViewId(chat.conversacion_id);
+                    }}
+                    className="text-xs px-2 py-1 rounded bg-sky-600/20 border border-sky-700 text-sky-300 hover:bg-sky-600/30 transition"
+                  >
+                    👁️ Vista
+                  </button>
+                  <a
+                    href={`${BASE}/mensajes?conversation_id=${chat.conversacion_id}`.replace(/\/\//g, '/')}
+                    data-astro-prefetch="tap"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 inline-block"
+                  >
+                    Espiar →
+                  </a>
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Quick View Modal */}
+      {quickViewId && (
+        <Suspense fallback={null}>
+          <QuickChatModal
+            conversationId={quickViewId}
+            onClose={() => setQuickViewId(null)}
+            onOpenFull={() => {
+              window.open(`${BASE}/mensajes?conversation_id=${quickViewId}`.replace(/\/\//g, '/'), '_blank');
+              setQuickViewId(null);
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

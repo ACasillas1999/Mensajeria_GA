@@ -171,10 +171,10 @@ export default function DashboardAdvanced() {
 
   return (
     <div className="max-w-7xl mx-auto px-2 md:px-4 space-y-6">
-      <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+      <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-4 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
         <div className="text-sm font-medium text-slate-300">Periodo:</div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <button
             onClick={() => setDateRange('7')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -218,25 +218,25 @@ export default function DashboardAdvanced() {
         </div>
 
         {dateRange === 'custom' && (
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto md:ml-4">
             <input
               type="date"
               value={customStartDate}
               onChange={(e) => setCustomStartDate(e.target.value)}
-              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm"
+              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm w-full sm:w-auto"
             />
             <span className="text-slate-500">a</span>
             <input
               type="date"
               value={customEndDate}
               onChange={(e) => setCustomEndDate(e.target.value)}
-              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm"
+              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm w-full sm:w-auto"
             />
           </div>
         )}
       </div>
 
-      <div className="flex gap-2 border-b border-slate-700">
+      <div className="flex gap-2 border-b border-slate-700 overflow-x-auto pb-1">
         <button
           onClick={() => setSelectedTab('overview')}
           className={`px-4 py-2 font-medium transition-colors ${

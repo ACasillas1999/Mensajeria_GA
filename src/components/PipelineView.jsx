@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { AppDataProvider } from '../contexts/AppDataContext.jsx';
 import StatusFieldsModal from './StatusFieldsModal.jsx';
 import CycleHistoryModal from './CycleHistoryModal.jsx';
 import ConversationTraceView from './ConversationTraceView.jsx';
 
 const BASE = import.meta.env.BASE_URL || '';
+const QuickChatModal = lazy(() => import('./QuickChatModal.jsx'));
 
 function PipelineViewInner() {
   const [pipeline, setPipeline] = useState([]);
@@ -16,6 +17,7 @@ function PipelineViewInner() {
   const [statusChangeModal, setStatusChangeModal] = useState({ show: false, conversation: null, newStatusId: null, status: null });
   const [cycleHistoryModal, setCycleHistoryModal] = useState({ show: false, conversationId: null, conversationName: null });
   const [traceViewModal, setTraceViewModal] = useState({ show: false, conversationId: null });
+  const [quickViewId, setQuickViewId] = useState(null);
 
   async function loadPipeline() {
     setLoading(true);
@@ -207,19 +209,7 @@ function PipelineViewInner() {
     changeConversationStatus(conversationId, toStatusId, fromStatusId, fieldData);
   }
 
-  function openConversation(conversationId) {
-    // Usar navegación del lado del cliente en lugar de recarga completa
-    const url = `${BASE}/mensajes?conversation_id=${conversationId}`.replace(/\/\//g, '/');
-    
-    // Crear y hacer clic en un link temporal para aprovechar el router de Astro
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('data-astro-prefetch', 'tap');
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+
 
   function formatTimestamp(ts) {
     if (!ts) return '';
@@ -333,8 +323,7 @@ function PipelineViewInner() {
                       key={conv.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, conv, column.status.id)}
-                      onClick={() => openConversation(conv.id)}
-                      className="p-3 rounded-lg bg-slate-900 border border-slate-700 hover:bg-slate-800 hover:border-slate-600 cursor-move transition-all"
+                      className="p-3 rounded-lg bg-slate-900 border border-slate-700 hover:bg-slate-800 hover:border-slate-600 transition-all"
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
@@ -439,6 +428,29 @@ function PipelineViewInner() {
                           {formatTimestamp(conv.ultimo_msg_entrante_ts)}
                         </span>
                       </div>
+
+                      {/* Botones de acción */}
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setQuickViewId(conv.id);
+                          }}
+                          className="flex-1 px-2 py-1 text-xs rounded bg-sky-600/20 border border-sky-700 text-sky-300 hover:bg-sky-600/30 transition"
+                        >
+                          👁️ Vista rápida
+                        </button>
+                        <a
+                          href={`${BASE}/mensajes?conversation_id=${conv.id}`.replace(/\/\//g, '/')}
+                          data-astro-prefetch="tap"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 px-2 py-1 text-xs rounded bg-emerald-600/20 border border-emerald-700 text-emerald-300 hover:bg-emerald-600/30 transition text-center"
+                        >
+                          🔗 Abrir
+                        </a>
+                      </div>
                     </div>
                   ))
                 )}
@@ -482,6 +494,20 @@ function PipelineViewInner() {
           conversationId={traceViewModal.conversationId}
           onClose={() => setTraceViewModal({ show: false, conversationId: null })}
         />
+      )}
+
+      {/* Quick View Modal */}
+      {quickViewId && (
+        <Suspense fallback={null}>
+          <QuickChatModal
+            conversationId={quickViewId}
+            onClose={() => setQuickViewId(null)}
+            onOpenFull={() => {
+              window.open(`${BASE}/mensajes?conversation_id=${quickViewId}`.replace(/\/\//g, '/'), '_blank');
+              setQuickViewId(null);
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );
