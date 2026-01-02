@@ -208,7 +208,17 @@ function PipelineViewInner() {
   }
 
   function openConversation(conversationId) {
-    window.location.href = `${BASE}/mensajes?conversation_id=${conversationId}`.replace(/\/\//g, '/');
+    // Usar navegación del lado del cliente en lugar de recarga completa
+    const url = `${BASE}/mensajes?conversation_id=${conversationId}`.replace(/\/\//g, '/');
+    
+    // Crear y hacer clic en un link temporal para aprovechar el router de Astro
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('data-astro-prefetch', 'tap');
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function formatTimestamp(ts) {

@@ -117,6 +117,7 @@ export default function AgentAudit() {
                 <div className="mt-2">
                   <a
                     href={`${BASE}/mensajes?conversation_id=${chat.conversacion_id}`.replace(/\/\//g, '/')}
+                    data-astro-prefetch="tap"
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 inline-block"
@@ -261,6 +262,7 @@ export default function AgentAudit() {
                 <div className="text-xs text-sky-400 mb-1">👤 {chat.agente_nombre || 'Sin asignar'}</div>
                 <a
                   href={`${BASE}/mensajes?conversation_id=${chat.conversacion_id}`.replace(/\/\//g, '/')}
+                  data-astro-prefetch="tap"
                   target="_blank"
                   rel="noreferrer"
                   className="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 inline-block"
