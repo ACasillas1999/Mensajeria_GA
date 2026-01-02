@@ -30,7 +30,7 @@ export default function LoginForm() {
           window.location.href = next || "/";
         }, 500);
       } else {
-        setMensaje(`Error: ${data?.error ?? "Usuario o contrase\u00f1a incorrectos."}`);
+        setMensaje(`Error: ${data?.error ?? "Usuario o contraseña incorrectos."}`);
       }
     } catch {
       setMensaje("Error: red o servidor.");
@@ -49,7 +49,7 @@ export default function LoginForm() {
     <form onSubmit={handleSubmit} className={formClass}>
       <div className="mb-6 text-left">
         <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-200/80 font-semibold">Panel privado</p>
-        <h2 className="text-2xl font-semibold text-white mt-1">Iniciar sesi\u00f3n</h2>
+        <h2 className="text-2xl font-semibold text-white mt-1">Iniciar sesión</h2>
         <p className="text-sm text-slate-300/80 mt-2">Usa tus credenciales corporativas para continuar.</p>
       </div>
 
@@ -66,7 +66,7 @@ export default function LoginForm() {
 
       <input
         type="password"
-        placeholder="Contrase\u00f1a"
+        placeholder="Contraseña"
         className="w-full mb-5 p-3 rounded-xl bg-white/5 border border-white/10 text-slate-100 outline-none
                    transition-all duration-150 placeholder:text-slate-500
                    focus:ring-2 focus:ring-emerald-300/50 focus:border-emerald-300/60"
