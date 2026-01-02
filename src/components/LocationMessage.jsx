@@ -76,14 +76,22 @@ export default function LocationMessage({ text }) {
         touchZoomRotate: false
       });
 
-      // Agregar marcador
-      new mapboxgl.Marker({ color: '#ed6b1f' })
-        .setLngLat([coords.lon, coords.lat])
-        .setPopup(
-          new mapboxgl.Popup({ offset: 25 })
-            .setHTML(`<div style="padding: 4px; font-size: 12px;">📍 ${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}</div>`)
-        )
-        .addTo(map);
+      // Esperar a que el mapa se cargue completamente antes de agregar marcador
+      map.on('load', () => {
+        // Forzar resize para asegurar renderizado correcto
+        setTimeout(() => {
+          map.resize();
+        }, 100);
+        
+        // Agregar marcador después de que el mapa esté cargado
+        new mapboxgl.Marker({ color: '#ed6b1f' })
+          .setLngLat([coords.lon, coords.lat])
+          .setPopup(
+            new mapboxgl.Popup({ offset: 25 })
+              .setHTML(`<div style="padding: 4px; font-size: 12px;">📍 ${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}</div>`)
+          )
+          .addTo(map);
+      });
 
       // Agregar controles de navegación
       map.addControl(new mapboxgl.NavigationControl(), 'top-right');
