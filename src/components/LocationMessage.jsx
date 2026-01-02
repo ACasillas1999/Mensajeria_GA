@@ -6,7 +6,8 @@ const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWNhc2lsbGFzNzY2IiwiYSI6ImNsdW12cTZyMjB4NnMya21
 export default function LocationMessage({ text }) {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
-  const [mapError, setMapError] = useState(false);
+  const [mapError, setMapError] = useState(true); // Empezar con fallback por defecto
+  const [showMap, setShowMap] = useState(false); // Solo mostrar mapa cuando el usuario lo pida
 
   // Extraer coordenadas del texto
   const extractCoordinates = (txt) => {
@@ -32,9 +33,9 @@ export default function LocationMessage({ text }) {
   const coords = extractCoordinates(text);
 
   useEffect(() => {
-    if (!coords || !mapContainerRef.current || mapError) return;
+    if (!coords || !mapContainerRef.current || !showMap) return;
 
-    console.log('[LocationMessage] Intentando cargar mapa para:', coords);
+    console.log('[LocationMessage] Usuario solicitó mapa interactivo para:', coords);
     let timeoutId;
     const loadMapbox = async () => {
       try {
@@ -81,13 +82,15 @@ export default function LocationMessage({ text }) {
 
         // Timeout para detectar si el mapa no carga
         timeoutId = setTimeout(() => {
-          console.warn('[LocationMessage] Mapa tardando en cargar, usando fallback');
+          console.warn('[LocationMessage] Mapa tardando en cargar, volviendo a fallback');
           setMapError(true);
-        }, 3000); // Reducido a 3 segundos
+          setShowMap(false);
+        }, 5000);
 
         map.on('load', () => {
-          console.log('[LocationMessage] Mapa cargado correctamente');
+          console.log('[LocationMessage] Mapa interactivo cargado correctamente');
           clearTimeout(timeoutId);
+          setMapError(false);
           map.resize();
 
           new mapboxgl.Marker({ color: '#10b981' })
@@ -99,6 +102,7 @@ export default function LocationMessage({ text }) {
           console.error('[LocationMessage] Error en Mapbox:', e);
           clearTimeout(timeoutId);
           setMapError(true);
+          setShowMap(false);
         });
 
         map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
@@ -107,6 +111,7 @@ export default function LocationMessage({ text }) {
       } catch (error) {
         console.error('[LocationMessage] Error cargando Mapbox:', error);
         setMapError(true);
+        setShowMap(false);
       }
     };
 
@@ -119,7 +124,7 @@ export default function LocationMessage({ text }) {
         mapRef.current = null;
       }
     };
-  }, [coords, mapError]);
+  }, [coords, showMap]);
 
   if (!coords) {
     return <div className="text-sm whitespace-pre-wrap">{text}</div>;
@@ -134,28 +139,39 @@ export default function LocationMessage({ text }) {
   return (
     <div className="space-y-2">
       {/* Mapa */}
-      {mapError ? (
-        // Fallback: Imagen estática de Google Maps
-        <a 
-          href={googleMapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full h-48 rounded-lg overflow-hidden border border-slate-700 relative group cursor-pointer"
-        >
-          <img 
+      {!showMap || mapError ? (
+        // Fallback: Imagen estática de Google Maps con opción de ver mapa interactivo
+        <div className="relative w-full h-48 rounded-lg overflow-hidden border border-slate-700 group">
+          <img
             src={staticMapUrl}
             alt="Mapa de ubicación"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
-            <span className="opacity-0 group-hover:opacity-100 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-              🗺️ Abrir en Google Maps
-            </span>
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
+            <div className="opacity-0 group-hover:opacity-100 transition flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setShowMap(true);
+                  setMapError(false);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                🗺️ Ver mapa interactivo
+              </button>
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition text-center"
+              >
+                Abrir en Google Maps
+              </a>
+            </div>
           </div>
-        </a>
+        </div>
       ) : (
-        <div 
-          ref={mapContainerRef} 
+        <div
+          ref={mapContainerRef}
           className="w-full h-48 rounded-lg overflow-hidden border border-slate-700"
           style={{ minHeight: '192px' }}
         />
