@@ -129,8 +129,6 @@ export default function AgentAudit() {
                   <a
                     href={`${BASE}/mensajes?conversation_id=${chat.conversacion_id}`.replace(/\/\//g, '/')}
                     data-astro-prefetch="tap"
-                    target="_blank"
-                    rel="noreferrer"
                     className="flex-1 text-xs px-2 py-1 rounded bg-emerald-600/20 border border-emerald-700 text-emerald-300 hover:bg-emerald-600/30 transition text-center"
                   >
                     🔗 Ver chat
@@ -284,8 +282,6 @@ export default function AgentAudit() {
                   <a
                     href={`${BASE}/mensajes?conversation_id=${chat.conversacion_id}`.replace(/\/\//g, '/')}
                     data-astro-prefetch="tap"
-                    target="_blank"
-                    rel="noreferrer"
                     className="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 inline-block"
                   >
                     Espiar →
@@ -304,8 +300,7 @@ export default function AgentAudit() {
             conversationId={quickViewId}
             onClose={() => setQuickViewId(null)}
             onOpenFull={() => {
-              window.open(`${BASE}/mensajes?conversation_id=${quickViewId}`.replace(/\/\//g, '/'), '_blank');
-              setQuickViewId(null);
+              window.location.href = `${BASE}/mensajes?conversation_id=${quickViewId}`.replace(/\/\//g, '/');
             }}
           />
         </Suspense>

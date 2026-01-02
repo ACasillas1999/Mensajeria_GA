@@ -443,8 +443,6 @@ function PipelineViewInner() {
                         <a
                           href={`${BASE}/mensajes?conversation_id=${conv.id}`.replace(/\/\//g, '/')}
                           data-astro-prefetch="tap"
-                          target="_blank"
-                          rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
                           className="flex-1 px-2 py-1 text-xs rounded bg-emerald-600/20 border border-emerald-700 text-emerald-300 hover:bg-emerald-600/30 transition text-center"
                         >
@@ -503,8 +501,7 @@ function PipelineViewInner() {
             conversationId={quickViewId}
             onClose={() => setQuickViewId(null)}
             onOpenFull={() => {
-              window.open(`${BASE}/mensajes?conversation_id=${quickViewId}`.replace(/\/\//g, '/'), '_blank');
-              setQuickViewId(null);
+              window.location.href = `${BASE}/mensajes?conversation_id=${quickViewId}`.replace(/\/\//g, '/');
             }}
           />
         </Suspense>
