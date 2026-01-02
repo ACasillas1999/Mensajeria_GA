@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState, useCallback, memo } from "react";
+import { useEffect, useRef, useState, useCallback, memo, lazy, Suspense } from "react";
 import MediaModal from "./MediaModal.jsx";
 import QuickReplies from "./QuickReplies.jsx";
 import ConversationTraceView from "./ConversationTraceView.jsx";
-import TemplatePicker from "./TemplatePicker.jsx";
-import LocationMessage from "./LocationMessage.jsx";
-import LocationPicker from "./LocationPicker.jsx";
+
+// Lazy load heavy components
+const TemplatePicker = lazy(() => import("./TemplatePicker.jsx"));
+const LocationPicker = lazy(() => import("./LocationPicker.jsx"));
+const LocationMessage = lazy(() => import("./LocationMessage.jsx"));
 import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 import { useAppData } from "../contexts/AppDataContext.jsx";
 
