@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import MediaModal from "./MediaModal.jsx";
 import QuickReplies from "./QuickReplies.jsx";
 import ConversationTraceView from "./ConversationTraceView.jsx";
@@ -16,7 +16,7 @@ const ding = typeof Audio !== "undefined"
   : null;
 
 /* Muestra imágenes / videos / audios / docs / stickers */
-function MediaBubble({ m, onOpen, onImageLoad }) {
+const MediaBubble = memo(function MediaBubble({ m, onOpen, onImageLoad }) {
   const mime = (m.mime_type || "").toLowerCase();
   const kind =
     m.tipo ||
@@ -83,7 +83,7 @@ function MediaBubble({ m, onOpen, onImageLoad }) {
   }
 
   return <div className="text-sm whitespace-pre-wrap">{m.text}</div>;
-}
+});
 
 function StatusBadge({ s }) {
   if (!s) return null;

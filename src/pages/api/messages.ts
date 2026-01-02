@@ -5,16 +5,16 @@ import { pool } from "../../lib/db";
 export const GET: APIRoute = async ({ request }) => {
   const startTime = Date.now();
   try {
-    const url   = new URL(request.url);
-    const cid   = url.searchParams.get("conversation_id");
-    const limit = Math.min(Number(url.searchParams.get("limit") || 150), 500);
-    const before= url.searchParams.get("before");
-    const q     = (url.searchParams.get("q") || "").trim();
+    const url = new URL(request.url);
+    const cid = url.searchParams.get("conversation_id");
+    const limit = Math.min(Number(url.searchParams.get("limit") || 50), 500);
+    const before = url.searchParams.get("before");
+    const q = (url.searchParams.get("q") || "").trim();
 
     console.log(`[API /messages] Request for conversation ${cid}, limit ${limit}`);
 
     if (!cid) {
-      return new Response(JSON.stringify({ ok:false, error:"conversation_id requerido" }), { status: 400 });
+      return new Response(JSON.stringify({ ok: false, error: "conversation_id requerido" }), { status: 400 });
     }
 
     const params: any[] = [cid];
@@ -73,7 +73,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     const items = rows.map(r => {
       let text = r.cuerpo ?? "";
-      if ((!text || String(text).trim()==="") && r.tipo && r.tipo!=="text") text = `[${r.tipo}]`;
+      if ((!text || String(text).trim() === "") && r.tipo && r.tipo !== "text") text = `[${r.tipo}]`;
       return {
         id: r.id,
         conversation_id: r.conversacion_id,
@@ -102,12 +102,12 @@ export const GET: APIRoute = async ({ request }) => {
     const duration = Date.now() - startTime;
     console.log(`[API /messages] Completed in ${duration}ms, returning ${items.length} items`);
 
-    return new Response(JSON.stringify({ ok:true, items }), {
+    return new Response(JSON.stringify({ ok: true, items }), {
       headers: { "Content-Type": "application/json" },
     });
-  } catch (e:any) {
+  } catch (e: any) {
     console.error(`[API /messages] ERROR:`, e?.message || e);
-    return new Response(JSON.stringify({ ok:false, error: e?.message || "Error" }), { status: 500 });
+    return new Response(JSON.stringify({ ok: false, error: e?.message || "Error" }), { status: 500 });
   }
 
 };
