@@ -626,16 +626,13 @@ function pickMime() {
         setItems(messages);
         setTotalMessages(j.total || messages.length);
         setHasMore(messages.length === limit);
+        
+        // Cargar eventos del sistema DESPUÉS (no crítico para UI inicial)
+        setTimeout(() => loadSystemEvents(), 50);
       }
 
-      // 2. Cargar eventos del sistema
-      const eventsStartTime = performance.now();
-      await loadSystemEvents();
-      const eventsTime = performance.now() - eventsStartTime;
-      console.log(`[ChatPane] 📌 Eventos cargados en ${eventsTime.toFixed(0)}ms`);
-
       const totalTime = performance.now() - loadStartTime;
-      console.log(`[ChatPane] ✅ Carga total completada en ${totalTime.toFixed(0)}ms`);
+      console.log(`[ChatPane] ✅ Carga de mensajes completada en ${totalTime.toFixed(0)}ms`);
     } catch (err) {
       if (err.name === 'AbortError') {
         console.log(`[ChatPane] ⏹️ Carga cancelada (nueva carga en proceso)`);
@@ -1085,10 +1082,13 @@ function pickMime() {
     console.log(`[ChatPane] 🚀 useEffect disparado para conversación ${conversation.id}`);
     const effectStartTime = performance.now();
 
-    // Cargar datos (load() maneja la cancelación de requests duplicados internamente)
-    Promise.all([load(), loadComments()]).then(() => {
+    // Cargar solo mensajes primero (crítico)
+    load().then(() => {
       const effectTime = performance.now() - effectStartTime;
-      console.log(`[ChatPane] ⚡ useEffect completado en ${effectTime.toFixed(0)}ms`);
+      console.log(`[ChatPane] ⚡ Mensajes cargados en ${effectTime.toFixed(0)}ms`);
+      
+      // Cargar comentarios DESPUÉS (no crítico)
+      setTimeout(() => loadComments(), 100);
     }).catch((err) => {
       if (err.name !== 'AbortError') {
         console.error('[ChatPane] Error en useEffect:', err);
