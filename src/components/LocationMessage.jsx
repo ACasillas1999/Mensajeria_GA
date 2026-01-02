@@ -1,14 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-
-// Mapbox API Key
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWNhc2lsbGFzNzY2IiwiYSI6ImNsdW12cTZyMjB4NnMya213MDdseXp6ZGgifQ.t7-l1lQfd8mgHILM5YrdNw';
-
 export default function LocationMessage({ text }) {
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const [mapError, setMapError] = useState(true); // Empezar con fallback por defecto
-  const [showMap, setShowMap] = useState(false); // Solo mostrar mapa cuando el usuario lo pida
-
   // Extraer coordenadas del texto
   const extractCoordinates = (txt) => {
     const patterns = [
@@ -32,175 +22,44 @@ export default function LocationMessage({ text }) {
 
   const coords = extractCoordinates(text);
 
-  useEffect(() => {
-    if (!coords || !mapContainerRef.current || !showMap) return;
-
-    console.log('[LocationMessage] Usuario solicitó mapa interactivo para:', coords);
-    let timeoutId;
-    const loadMapbox = async () => {
-      try {
-        // Cargar Mapbox GL JS dinámicamente
-        if (!window.mapboxgl) {
-          console.log('[LocationMessage] Cargando Mapbox GL JS...');
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-          document.head.appendChild(link);
-
-          const script = document.createElement('script');
-          script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-          await new Promise((resolve, reject) => {
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-        }
-
-        while (!window.mapboxgl) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
-        console.log('[LocationMessage] Mapbox GL JS cargado, creando mapa...');
-        const mapboxgl = window.mapboxgl;
-        mapboxgl.accessToken = MAPBOX_TOKEN;
-
-        if (mapRef.current) {
-          mapRef.current.remove();
-        }
-
-        const map = new mapboxgl.Map({
-          container: mapContainerRef.current,
-          style: 'mapbox://styles/mapbox/streets-v12',
-          center: [coords.lon, coords.lat],
-          zoom: 15,
-          scrollZoom: false,
-          dragPan: true,
-          dragRotate: false,
-          touchZoomRotate: false,
-          attributionControl: false
-        });
-
-        // Timeout para detectar si el mapa no carga
-        timeoutId = setTimeout(() => {
-          console.warn('[LocationMessage] Mapa tardando en cargar, volviendo a fallback');
-          setMapError(true);
-          setShowMap(false);
-        }, 5000);
-
-        map.on('load', () => {
-          console.log('[LocationMessage] Mapa interactivo cargado correctamente');
-          clearTimeout(timeoutId);
-          setMapError(false);
-          map.resize();
-
-          new mapboxgl.Marker({ color: '#10b981' })
-            .setLngLat([coords.lon, coords.lat])
-            .addTo(map);
-        });
-
-        map.on('error', (e) => {
-          console.error('[LocationMessage] Error en Mapbox:', e);
-          clearTimeout(timeoutId);
-          setMapError(true);
-          setShowMap(false);
-        });
-
-        map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
-        mapRef.current = map;
-
-      } catch (error) {
-        console.error('[LocationMessage] Error cargando Mapbox:', error);
-        setMapError(true);
-        setShowMap(false);
-      }
-    };
-
-    loadMapbox();
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, [coords, showMap]);
-
   if (!coords) {
     return <div className="text-sm whitespace-pre-wrap">{text}</div>;
   }
 
   const googleMapsUrl = `https://www.google.com/maps?q=${coords.lat},${coords.lon}`;
   const wazeUrl = `https://waze.com/ul?ll=${coords.lat},${coords.lon}&navigate=yes`;
-  
-  // URL para imagen estática de Google Maps como fallback
-  const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coords.lat},${coords.lon}&zoom=15&size=600x300&markers=color:orange%7C${coords.lat},${coords.lon}&key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8`;
 
   return (
     <div className="space-y-2">
-      {/* Mapa */}
-      {!showMap || mapError ? (
-        // Fallback: Imagen estática de Google Maps con opción de ver mapa interactivo
-        <div className="relative w-full h-48 rounded-lg overflow-hidden border border-slate-700 group">
-          <img
-            src={staticMapUrl}
-            alt="Mapa de ubicación"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
-            <div className="opacity-0 group-hover:opacity-100 transition flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setShowMap(true);
-                  setMapError(false);
-                }}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-              >
-                🗺️ Ver mapa interactivo
-              </button>
-              <a
-                href={googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition text-center"
-              >
-                Abrir en Google Maps
-              </a>
-            </div>
+      {/* Información de ubicación */}
+      <div className="flex items-start gap-2 p-3 bg-slate-900/50 border border-slate-700 rounded-lg">
+        <div className="text-2xl">📍</div>
+        <div className="flex-1">
+          <div className="text-sm font-medium text-slate-200 mb-1">Ubicación compartida</div>
+          <div className="text-xs text-slate-400">
+            {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
           </div>
         </div>
-      ) : (
-        <div
-          ref={mapContainerRef}
-          className="w-full h-48 rounded-lg overflow-hidden border border-slate-700"
-          style={{ minHeight: '192px' }}
-        />
-      )}
-      
-      {/* Información y botones */}
-      <div className="flex flex-col gap-2">
-        <div className="text-xs text-slate-400">
-          📍 {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
-        </div>
-        
-        <div className="flex gap-2">
-          <a
-            href={googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 px-3 py-2 text-xs rounded-lg bg-blue-600/20 border border-blue-700 text-blue-300 hover:bg-blue-600/30 transition text-center font-medium"
-          >
-            🗺️ Abrir en Google Maps
-          </a>
-          <a
-            href={wazeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 px-3 py-2 text-xs rounded-lg bg-purple-600/20 border border-purple-700 text-purple-300 hover:bg-purple-600/30 transition text-center font-medium"
-          >
-            🚗 Abrir en Waze
-          </a>
-        </div>
+      </div>
+
+      {/* Botones de navegación */}
+      <div className="flex gap-2">
+        <a
+          href={googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 px-3 py-2 text-xs rounded-lg bg-blue-600/20 border border-blue-700 text-blue-300 hover:bg-blue-600/30 transition text-center font-medium"
+        >
+          🗺️ Abrir en Google Maps
+        </a>
+        <a
+          href={wazeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 px-3 py-2 text-xs rounded-lg bg-purple-600/20 border border-purple-700 text-purple-300 hover:bg-purple-600/30 transition text-center font-medium"
+        >
+          🚗 Abrir en Waze
+        </a>
       </div>
     </div>
   );
