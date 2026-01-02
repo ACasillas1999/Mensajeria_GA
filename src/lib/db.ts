@@ -9,8 +9,11 @@ export const pool = mysql.createPool({
   password: process.env.DB_PASS!,
   database: process.env.DB_NAME!,
   connectionLimit: 50, // Aumentado de 10 a 50 para soportar más usuarios simultáneos
-  charset: "utf8mb4", // <-- usa charset; el _general_ci es collation
+  charset: "utf8mb4",
   timezone: '-06:00', // Zona horaria CST (México)
   waitForConnections: true,
-  queueLimit: 0, // Sin límite de cola, espera si no hay conexiones disponibles
+  queueLimit: 100, // Limitar cola a 100 (antes 0 = infinito, causaba delays de 55s)
+  connectTimeout: 10000, // 10 segundos timeout para conectar
+  acquireTimeout: 10000, // 10 segundos timeout para adquirir conexión del pool
+  timeout: 60000, // 60 segundos timeout para queries
 });
