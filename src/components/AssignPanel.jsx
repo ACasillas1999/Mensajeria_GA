@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -8,7 +8,7 @@ export default function AssignPanel() {
   const [sucursales, setSucursales] = useState([]);
   const [statuses, setStatuses] = useState([]); // Estados dinámicos
 
-  const [fltEstado, setFltEstado] = useState(""); // Cambiado a vacío (todos)
+  const [fltEstado, setFltEstado] = useState(""); // '' = todos
   const [fltAsignado, setFltAsignado] = useState("null"); // null = sin asignar
   const [fltSuc, setFltSuc] = useState("");
   const [search, setSearch] = useState("");
@@ -87,9 +87,9 @@ export default function AssignPanel() {
     <div className="grid grid-cols-12 gap-4">
       {/* izquierda: filtros y conversaciones */}
       <section className="col-span-12 lg:col-span-7 space-y-3">
-        <div className="sticky top-14 z-10 bg-slate-950/90 backdrop-blur px-3 py-2 rounded-lg border border-slate-800 flex flex-wrap gap-2 items-center">
+        <div className="sticky top-14 z-10 bg-slate-950/90 backdrop-blur px-3 py-2 rounded-lg border border-slate-800 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <select value={fltEstado} onChange={e=>setFltEstado(e.target.value)}
-            className="px-3 py-2 rounded bg-slate-900 border border-slate-700">
+            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto">
             <option value="">Todos los estados</option>
             {statuses.map(s => (
               <option key={s.id} value={s.id}>
@@ -99,15 +99,15 @@ export default function AssignPanel() {
           </select>
 
           <select value={fltAsignado} onChange={e=>setFltAsignado(e.target.value)}
-            className="px-3 py-2 rounded bg-slate-900 border border-slate-700">
+            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto">
             <option value="null">Sin asignar</option>
             <option value="any">Cualquiera</option>
           </select>
 
-                    <select
+          <select
             value={fltAgent}
             onChange={e=>{ setFltAgent(e.target.value); if (e.target.value) setFltAsignado('any'); }}
-            className="px-3 py-2 rounded bg-slate-900 border border-slate-700"
+            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto"
           >
             <option value="">(Todos los agentes)</option>
             {agents.map(a => (
@@ -115,12 +115,14 @@ export default function AssignPanel() {
             ))}
           </select>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar conversación..."
-            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 flex-1 min-w-[200px] outline-none focus:border-emerald-400" />
+            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:flex-1 min-w-0 outline-none focus:border-emerald-400" />
 
-          <label className="ml-auto inline-flex items-center gap-2 text-sm text-slate-300">
-            <input type="checkbox" className="accent-emerald-500" checked={groupByAgent} onChange={e=>setGroupByAgent(e.target.checked)} /> Agrupar por agente
-          </label>
-          <button onClick={load} className="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700 text-sm">Refrescar</button>
+          <div className="flex flex-wrap gap-2 sm:ml-auto items-center">
+            <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+              <input type="checkbox" className="accent-emerald-500" checked={groupByAgent} onChange={e=>setGroupByAgent(e.target.checked)} /> Agrupar por agente
+            </label>
+            <button onClick={load} className="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700 text-sm w-full sm:w-auto">Refrescar</button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-3">
@@ -141,8 +143,8 @@ export default function AssignPanel() {
                       <div className="text-xs text-slate-400 truncate">{c.ultimo_msg || '-'}</div>
                     </div>
                   </div>
-                  <div className="mt-2 flex gap-2">
-                    <select className="bg-slate-900 border border-slate-700 rounded px-2 py-1"
+                  <div className="mt-2 flex gap-2 flex-wrap">
+                    <select className="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-full sm:w-auto"
                       onChange={(e)=>assign(c.id, Number(e.target.value))} defaultValue="">
                       <option value="" disabled>Asignar a</option>
                       {agents.map(a => (
@@ -151,7 +153,7 @@ export default function AssignPanel() {
                     </select>
                     <a
                       href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
-                      className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm"
+                      className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm w-full sm:w-auto text-center"
                     >
                       Ver chat
                     </a>
@@ -183,21 +185,21 @@ export default function AssignPanel() {
                           <div className="text-xs text-slate-400 truncate">{c.ultimo_msg || '-'}</div>
                         </div>
                       </div>
-                      <div className="mt-2 flex gap-2">
-                        <select className="bg-slate-900 border border-slate-700 rounded px-2 py-1"
+                      <div className="mt-2 flex gap-2 flex-wrap">
+                        <select className="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-full sm:w-auto"
                           onChange={(e)=>assign(c.id, Number(e.target.value))} value={c.asignado_a || ""}>
                           <option value="">(Sin asignar)</option>
                           {agents.map(a => (
                             <option key={a.id} value={a.id}>{a.nombre} ({a.sucursal || '-'})</option>
                           ))}
                         </select>
-                        <button onClick={()=>assign(c.id, null)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm">Quitar</button>
-                      <a
-                        href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
-                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm"
-                      >
-                        Ver chat
-                      </a>
+                        <button onClick={()=>assign(c.id, null)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm w-full sm:w-auto">Quitar</button>
+                        <a
+                          href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
+                          className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm w-full sm:w-auto text-center"
+                        >
+                          Ver chat
+                        </a>
                       </div>
                     </div>
                   ))}
@@ -224,18 +226,18 @@ export default function AssignPanel() {
                               <div className="text-xs text-slate-400 truncate">{c.ultimo_msg || '-'}</div>
                             </div>
                           </div>
-                          <div className="mt-2 flex gap-2">
-                            <select className="bg-slate-900 border border-slate-700 rounded px-2 py-1"
+                          <div className="mt-2 flex gap-2 flex-wrap">
+                            <select className="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-full sm:w-auto"
                               onChange={(e)=>assign(c.id, Number(e.target.value))} value={c.asignado_a || ""}>
                               <option value="">(Sin asignar)</option>
                               {agents.map(a => (
                                 <option key={a.id} value={a.id}>{a.nombre} ({a.sucursal || '-'})</option>
                               ))}
                             </select>
-                            <button onClick={()=>assign(c.id, null)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm">Quitar</button>
+                            <button onClick={()=>assign(c.id, null)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm w-full sm:w-auto">Quitar</button>
                             <a
                               href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
-                              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm"
+                              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm w-full sm:w-auto text-center"
                             >
                               Ver chat
                             </a>
@@ -256,7 +258,7 @@ export default function AssignPanel() {
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
           <div className="flex gap-2 items-center">
             <select value={fltSuc} onChange={e=>setFltSuc(e.target.value)}
-              className="px-3 py-2 rounded bg-slate-900 border border-slate-700">
+              className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto">
               <option value="">Todas las sucursales</option>
               {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
             </select>
