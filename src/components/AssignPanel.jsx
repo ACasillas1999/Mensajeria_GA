@@ -87,48 +87,37 @@ export default function AssignPanel() {
     <div className="grid grid-cols-12 gap-4">
       {/* izquierda: filtros y conversaciones */}
       <section className="col-span-12 lg:col-span-7 space-y-3">
-        <div className="sticky top-14 z-10 bg-slate-950/90 backdrop-blur px-3 py-2 rounded-lg border border-slate-800 space-y-2">
-          <div className="flex items-center justify-between sm:hidden">
-            <span className="text-sm font-semibold text-slate-200">Filtros</span>
-            <button
-              onClick={() => setFiltersOpen((v) => !v)}
-              className="text-xs px-3 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200"
-            >
-              {filtersOpen ? 'Ocultar' : 'Mostrar'}
-            </button>
-          </div>
+        <div className="sticky top-14 z-10 bg-slate-950/90 backdrop-blur px-3 py-2 rounded-lg border border-slate-800 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <select value={fltEstado} onChange={e=>setFltEstado(e.target.value)}
+            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto">
+            <option value="">Todos los estados</option>
+            {statuses.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.icon} {s.name}
+              </option>
+            ))}
+          </select>
 
-          <div className={`${filtersOpen ? 'grid' : 'hidden sm:grid'} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:items-center`}>
-            <select value={fltEstado} onChange={e=>setFltEstado(e.target.value)}
-              className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full">
-              <option value="">Todos los estados</option>
-              {statuses.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.icon} {s.name}
-                </option>
-              ))}
-            </select>
+          <select value={fltAsignado} onChange={e=>setFltAsignado(e.target.value)}
+            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto">
+            <option value="null">Sin asignar</option>
+            <option value="any">Cualquiera</option>
+          </select>
 
-            <select value={fltAsignado} onChange={e=>setFltAsignado(e.target.value)}
-              className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full">
-              <option value="null">Sin asignar</option>
-              <option value="any">Cualquiera</option>
-            </select>
+          <select
+            value={fltAgent}
+            onChange={e=>{ setFltAgent(e.target.value); if (e.target.value) setFltAsignado('any'); }}
+            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto"
+          >
+            <option value="">(Todos los agentes)</option>
+            {agents.map(a => (
+              <option key={a.id} value={a.id}>{a.nombre}{a.sucursal ? (' - ' + a.sucursal) : ''}</option>
+            ))}
+          </select>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar conversación..."
+            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:flex-1 min-w-0 outline-none focus:border-emerald-400" />
 
-            <select
-              value={fltAgent}
-              onChange={e=>{ setFltAgent(e.target.value); if (e.target.value) setFltAsignado('any'); }}
-              className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full"
-            >
-              <option value="">(Todos los agentes)</option>
-              {agents.map(a => (
-                <option key={a.id} value={a.id}>{a.nombre}{a.sucursal ? (' - ' + a.sucursal) : ''}</option>
-              ))}
-            </select>
-
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar conversación..."
-              className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full col-span-1 sm:col-span-2 lg:col-span-3 outline-none focus:border-emerald-400" />
-
+          <div className="flex flex-wrap gap-2 sm:ml-auto items-center">
             <label className="inline-flex items-center gap-2 text-sm text-slate-300">
               <input type="checkbox" className="accent-emerald-500" checked={groupByAgent} onChange={e=>setGroupByAgent(e.target.checked)} /> Agrupar por agente
             </label>
