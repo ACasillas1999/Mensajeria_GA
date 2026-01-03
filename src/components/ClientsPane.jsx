@@ -21,7 +21,7 @@ export default function ClientsPane() {
         const allItems = j.items || [];
         setItems(allItems);
 
-        // Calcular estadísticas
+        // Calcular estadísticas básicas
         const now = Math.floor(Date.now() / 1000);
         const dayAgo = now - 86400;
         setStats({
@@ -56,7 +56,6 @@ export default function ClientsPane() {
       return (a.title || a.wa_user).localeCompare(b.title || b.wa_user);
     }
     if (sortBy === 'messages') {
-      // Aquí podrías ordenar por cantidad de mensajes si tienes ese dato
       return 0;
     }
     // 'recent' por defecto
@@ -83,27 +82,27 @@ export default function ClientsPane() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-2xl font-bold text-slate-100">Clientes</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && load(q)}
-              placeholder="Buscar por nombre o número..."
-              className="w-64 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 transition"
+              placeholder="Buscar por nombre o numero..."
+              className="w-full sm:w-64 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 transition"
             />
             <button
               onClick={() => load(q)}
-              className="px-4 py-2 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-500 transition font-medium"
+              className="w-full sm:w-auto px-4 py-2 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-500 transition font-medium"
             >
-              🔍 Buscar
+              Buscar
             </button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           <div className="p-4 rounded-lg bg-slate-900/60 border border-slate-700">
             <div className="text-xs text-slate-400">Total clientes</div>
             <div className="text-2xl font-bold text-slate-100 mt-1">{stats.total}</div>
@@ -119,8 +118,8 @@ export default function ClientsPane() {
         </div>
 
         {/* Tabs and Sort */}
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setView('all')}
               className={`px-4 py-2 text-sm rounded-lg transition ${
@@ -149,16 +148,16 @@ export default function ClientsPane() {
                   : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
               }`}
             >
-              ⭐ Favoritos
+              Favoritos
             </button>
           </div>
 
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg outline-none focus:border-emerald-400"
+            className="px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg outline-none focus:border-emerald-400 w-full sm:w-auto"
           >
-            <option value="recent">Más recientes</option>
+            <option value="recent">Mas recientes</option>
             <option value="name">Por nombre</option>
           </select>
         </div>
@@ -174,7 +173,7 @@ export default function ClientsPane() {
 
       {/* Grid de clientes */}
       {!loading && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {sorted.map(c => {
             const isRecent = Number(c.last_at || 0) > (Math.floor(Date.now() / 1000) - 86400);
             const isFavorite = c.is_favorite === true || c.is_favorite === 1;
@@ -188,7 +187,7 @@ export default function ClientsPane() {
                 <div className="absolute top-2 right-2 flex gap-1">
                   {isFavorite && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400 border border-yellow-700/50">
-                      ⭐
+                      ★
                     </span>
                   )}
                   {isRecent && (
@@ -211,7 +210,7 @@ export default function ClientsPane() {
                   </div>
                 </div>
 
-                {/* Último mensaje */}
+                {/* Ultimo mensaje */}
                 {c.last_text && (
                   <div className="mb-3 p-2 rounded bg-slate-900/60 border border-slate-800">
                     <div className="text-xs text-slate-400 line-clamp-2">
@@ -237,20 +236,20 @@ export default function ClientsPane() {
                   )}
                 </div>
 
-                {/* Botones de acción */}
-                <div className="flex gap-2">
+                {/* Botones de accion */}
+                <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={() => setQuickViewId(c.id)}
-                    className="flex-1 px-3 py-2 text-center rounded-lg bg-sky-600/10 border border-sky-600/30 text-sky-300 hover:bg-sky-600/20 transition-all font-medium text-sm"
+                    className="flex-1 min-w-[140px] px-3 py-2 text-center rounded-lg bg-sky-600/10 border border-sky-600/30 text-sky-300 hover:bg-sky-600/20 transition-all font-medium text-sm"
                   >
-                    👁️ Vista rápida
+                    Vista rapida
                   </button>
                   <a
                     href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
                     data-astro-prefetch="tap"
-                    className="flex-1 px-3 py-2 text-center rounded-lg bg-emerald-600/10 border border-emerald-600/30 text-emerald-400 hover:bg-emerald-600/20 transition-all font-medium text-sm"
+                    className="flex-1 min-w-[140px] px-3 py-2 text-center rounded-lg bg-emerald-600/10 border border-emerald-600/30 text-emerald-400 hover:bg-emerald-600/20 transition-all font-medium text-sm"
                   >
-                    🔗 Abrir
+                    Abrir
                   </a>
                 </div>
               </div>
@@ -262,9 +261,8 @@ export default function ClientsPane() {
       {/* Empty state */}
       {!loading && sorted.length === 0 && (
         <div className="p-12 text-center">
-          <div className="text-6xl mb-4">🔍</div>
           <div className="text-slate-400">No se encontraron clientes</div>
-          <div className="text-sm text-slate-500 mt-2">Intenta con otro término de búsqueda</div>
+          <div className="text-sm text-slate-500 mt-2">Intenta con otro termino de busqueda</div>
         </div>
       )}
 
