@@ -100,35 +100,35 @@ export default function UsersAdmin() {
   return (
     <div className="space-y-4">
       {/* filtros */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         <select value={filtroRol} onChange={e=>setFiltroRol(e.target.value)}
-          className="px-3 py-2 rounded bg-slate-900 border border-slate-700">
+          className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto">
           <option value="">Todos los roles</option>
           <option value="AGENTE">AGENTE</option>
           <option value="ADMIN">ADMIN</option>
         </select>
         <select value={filtroSuc} onChange={e=>setFiltroSuc(e.target.value)}
-          className="px-3 py-2 rounded bg-slate-900 border border-slate-700">
+          className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto">
           <option value="">Todas las sucursales</option>
           {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
         </select>
         <button
           type="button"
           onClick={createSucursalQuick}
-          className="px-3 py-2 rounded bg-slate-800 border border-slate-700 text-sm"
+          className="px-3 py-2 rounded bg-slate-800 border border-slate-700 text-sm w-full sm:w-auto"
         >
           + Sucursal
         </button>
         <button
           onClick={() => setModal(true)}
-          className="ml-auto px-3 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400"
+          className="w-full sm:w-auto sm:ml-auto px-3 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400"
         >
           + Nuevo usuario
         </button>
       </div>
 
       {/* tabla */}
-      <div className="overflow-x-auto border border-slate-800 rounded">
+      <div className="overflow-x-auto border border-slate-800 rounded bg-slate-950/60">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-900">
             <tr>
@@ -209,7 +209,7 @@ export default function UsersAdmin() {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={()=>setModal(false)} />
           <div className="absolute inset-0 p-4 flex items-center justify-center">
-            <form onSubmit={createUser} className="bg-slate-900 border border-slate-700 rounded-xl p-4 w-full max-w-lg space-y-3">
+            <form onSubmit={createUser} className="bg-slate-900 border border-slate-700 rounded-xl p-4 w-full max-w-lg space-y-3 max-h-[90vh] overflow-y-auto">
               <h2 className="text-lg font-semibold">Nuevo usuario</h2>
               <input className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2"
                 placeholder="Nombre" required
