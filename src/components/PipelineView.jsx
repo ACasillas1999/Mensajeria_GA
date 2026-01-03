@@ -107,7 +107,7 @@ function PipelineViewInner() {
       if (!data.ok) {
         alert(data.error || 'No se pudo completar el ciclo');
       } else {
-        alert(`✅ ${data.message}\n\nLa conversación ha sido reseteada a "${data.new_status.name}"`);
+        alert(`Listo. ${data.message}\n\nLa conversación se reseteó a "${data.new_status.name}"`);
         loadPipeline(); // Recargar pipeline para reflejar el cambio
       }
     } catch (e) {
@@ -209,8 +209,6 @@ function PipelineViewInner() {
     changeConversationStatus(conversationId, toStatusId, fromStatusId, fieldData);
   }
 
-
-
   function formatTimestamp(ts) {
     if (!ts) return '';
     const date = new Date(Number(ts) * 1000);
@@ -230,7 +228,7 @@ function PipelineViewInner() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-100">Pipeline de Conversaciones</h2>
           <p className="text-sm text-slate-400">
@@ -238,11 +236,11 @@ function PipelineViewInner() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100"
+            className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 w-full sm:w-auto"
           >
             <option value="all">Todas las conversaciones</option>
             <option value="assigned_to_me">Asignadas a mí</option>
@@ -250,7 +248,7 @@ function PipelineViewInner() {
 
           <button
             onClick={loadPipeline}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold transition"
+            className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold transition"
           >
             🔄 Actualizar
           </button>
@@ -259,7 +257,7 @@ function PipelineViewInner() {
 
       {/* Métricas */}
       {metrics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           <div className="p-3 rounded-lg bg-slate-900/60 border border-slate-700">
             <div className="text-xs text-slate-400">Total</div>
             <div className="text-2xl font-bold text-slate-100">{metrics.total}</div>
@@ -278,183 +276,183 @@ function PipelineViewInner() {
         <div className="p-12 text-center text-slate-400">Cargando pipeline...</div>
       ) : (
         <div className="overflow-x-auto pb-4">
-          <div className="flex gap-3 min-w-min flex-nowrap">
+          <div className="flex gap-3 min-w-min flex-nowrap touch-pan-x">
             {pipeline.map((column) => (
               <div
                 key={column.status.id}
-                className="flex flex-col w-80 flex-shrink-0"
-              onDragOver={(e) => handleDragOver(e, column.status.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, column.status.id)}
-            >
-              {/* Column Header */}
-              <div
-                className="p-3 rounded-t-lg border-t-4 flex items-center justify-between flex-shrink-0"
-                style={{
-                  borderTopColor: column.status.color,
-                  backgroundColor: `${column.status.color}15`,
-                }}
+                className="flex flex-col w-[280px] sm:w-80 flex-shrink-0"
+                onDragOver={(e) => handleDragOver(e, column.status.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, column.status.id)}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{column.status.icon}</span>
-                  <span className="font-semibold text-slate-100">{column.status.name}</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">
-                  {column.count}
-                </span>
-              </div>
-
-              {/* Column Body with scroll */}
-              <div
-                className={`p-2 space-y-2 rounded-b-lg border border-t-0 transition-colors overflow-y-auto ${
-                  dragOverColumn === column.status.id
-                    ? 'bg-emerald-950/30 border-emerald-600'
-                    : 'bg-slate-900/40 border-slate-700'
-                }`}
-                style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '200px' }}
-              >
-                {column.conversations.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-500">
-                    Sin conversaciones
+                {/* Column Header */}
+                <div
+                  className="p-3 rounded-t-lg border-t-4 flex items-center justify-between flex-shrink-0"
+                  style={{
+                    borderTopColor: column.status.color,
+                    backgroundColor: `${column.status.color}15`,
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{column.status.icon}</span>
+                    <span className="font-semibold text-slate-100">{column.status.name}</span>
                   </div>
-                ) : (
-                  column.conversations.map((conv) => (
-                    <div
-                      key={conv.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, conv, column.status.id)}
-                      className="p-3 rounded-lg bg-slate-900 border border-slate-700 hover:bg-slate-800 hover:border-slate-600 transition-all"
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm text-slate-100 truncate">
-                            {conv.wa_profile_name || conv.wa_user}
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">
+                    {column.count}
+                  </span>
+                </div>
+
+                {/* Column Body with scroll */}
+                <div
+                  className={`p-2 space-y-2 rounded-b-lg border border-t-0 transition-colors overflow-y-auto ${
+                    dragOverColumn === column.status.id
+                      ? 'bg-emerald-950/30 border-emerald-600'
+                      : 'bg-slate-900/40 border-slate-700'
+                  }`}
+                  style={{ maxHeight: 'calc(100vh - 340px)', minHeight: '200px' }}
+                >
+                  {column.conversations.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-slate-500">
+                      Sin conversaciones
+                    </div>
+                  ) : (
+                    column.conversations.map((conv) => (
+                      <div
+                        key={conv.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, conv, column.status.id)}
+                        className="p-3 rounded-lg bg-slate-900 border border-slate-700 hover:bg-slate-800 hover:border-slate-600 transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-slate-100 truncate">
+                              {conv.wa_profile_name || conv.wa_user}
+                            </div>
+                            <div className="text-xs text-slate-400 truncate">{conv.wa_user}</div>
                           </div>
-                          <div className="text-xs text-slate-400 truncate">{conv.wa_user}</div>
+                          <div className="flex items-center gap-1">
+                            {conv.cycle_count > 0 && (
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCycleHistoryModal({
+                                    show: true,
+                                    conversationId: conv.id,
+                                    conversationName: conv.wa_profile_name || conv.wa_user
+                                  });
+                                }}
+                                className="text-xs px-1.5 py-0.5 rounded bg-purple-900/40 text-purple-300 border border-purple-700/50 cursor-pointer hover:bg-purple-900/60 transition-colors"
+                                title={`Cliente recurrente - Ciclo #${conv.cycle_count + 1} - Click para ver historial`}
+                              >
+                                🔁 {conv.cycle_count + 1}
+                              </span>
+                            )}
+                            {!conv.dentro_ventana_24h && (
+                              <span
+                                className="text-xs px-1.5 py-0.5 rounded bg-amber-900/40 text-amber-300"
+                                title="Fuera de ventana 24h"
+                              >
+                                ⏱️
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {conv.cycle_count > 0 && (
-                            <span
+
+                        {conv.ultimo_msg && (
+                          <div className="text-xs text-slate-400 line-clamp-2 mb-2">
+                            {conv.ultimo_msg}
+                          </div>
+                        )}
+
+                        {/* Mostrar campos personalizados si existen */}
+                        {conv.field_data && (() => {
+                          try {
+                            const fieldData = typeof conv.field_data === 'string'
+                              ? JSON.parse(conv.field_data)
+                              : conv.field_data;
+
+                            return Object.keys(fieldData).length > 0 && (
+                              <div className="mb-2 p-2 rounded bg-slate-800/50 border border-slate-700/50">
+                                <div className="text-[10px] text-slate-400 mb-1 font-semibold">Información:</div>
+                                <div className="space-y-0.5">
+                                  {Object.entries(fieldData).map(([key, value]) => (
+                                    <div key={key} className="text-xs flex items-start gap-1">
+                                      <span className="text-slate-400">
+                                        {key.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}:
+                                      </span>
+                                      <span className="text-emerald-300 font-medium truncate">{value}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          } catch (err) {
+                            console.error('Error parsing field_data:', err);
+                            return null;
+                          }
+                        })()}
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {conv.assigned_to_name ? (
+                              <span className="text-slate-500">👤 {conv.assigned_to_name}</span>
+                            ) : (
+                              <span className="text-slate-600">Sin asignar</span>
+                            )}
+                            {/* Botón de trazabilidad */}
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setCycleHistoryModal({
-                                  show: true,
-                                  conversationId: conv.id,
-                                  conversationName: conv.wa_profile_name || conv.wa_user
-                                });
+                                setTraceViewModal({ show: true, conversationId: conv.id });
                               }}
-                              className="text-xs px-1.5 py-0.5 rounded bg-purple-900/40 text-purple-300 border border-purple-700/50 cursor-pointer hover:bg-purple-900/60 transition-colors"
-                              title={`Cliente recurrente - Ciclo #${conv.cycle_count + 1} - Click para ver historial`}
+                              className="px-1.5 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 text-purple-300 border border-purple-700/50 transition-colors"
+                              title="Ver trazabilidad completa"
                             >
-                              🔄 {conv.cycle_count + 1}
-                            </span>
-                          )}
-                          {!conv.dentro_ventana_24h && (
-                            <span
-                              className="text-xs px-1.5 py-0.5 rounded bg-amber-900/40 text-amber-300"
-                              title="Fuera de ventana 24h"
+                              🔍
+                            </button>
+                            {/* Botón completar ciclo */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCompleteCycle(conv.id, conv.wa_profile_name || conv.wa_user);
+                              }}
+                              className="px-1.5 py-0.5 rounded bg-green-900/30 hover:bg-green-900/50 text-green-300 border border-green-700/50 transition-colors"
+                              title="Completar ciclo"
                             >
-                              ⏰
-                            </span>
-                          )}
+                              ✔️
+                            </button>
+                          </div>
+                          <span className="text-slate-500">
+                            {formatTimestamp(conv.ultimo_msg_entrante_ts)}
+                          </span>
                         </div>
-                      </div>
 
-                      {conv.ultimo_msg && (
-                        <div className="text-xs text-slate-400 line-clamp-2 mb-2">
-                          {conv.ultimo_msg}
-                        </div>
-                      )}
-
-                      {/* Mostrar campos personalizados si existen */}
-                      {conv.field_data && (() => {
-                        try {
-                          const fieldData = typeof conv.field_data === 'string'
-                            ? JSON.parse(conv.field_data)
-                            : conv.field_data;
-
-                          return Object.keys(fieldData).length > 0 && (
-                            <div className="mb-2 p-2 rounded bg-slate-800/50 border border-slate-700/50">
-                              <div className="text-[10px] text-slate-400 mb-1 font-semibold">Información:</div>
-                              <div className="space-y-0.5">
-                                {Object.entries(fieldData).map(([key, value]) => (
-                                  <div key={key} className="text-xs flex items-start gap-1">
-                                    <span className="text-slate-400">
-                                      {key.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}:
-                                    </span>
-                                    <span className="text-emerald-300 font-medium truncate">{value}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        } catch (err) {
-                          console.error('Error parsing field_data:', err);
-                          return null;
-                        }
-                      })()}
-
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          {conv.assigned_to_name ? (
-                            <span className="text-slate-500">👤 {conv.assigned_to_name}</span>
-                          ) : (
-                            <span className="text-slate-600">Sin asignar</span>
-                          )}
-                          {/* Botón de trazabilidad */}
+                        {/* Botones de acción */}
+                        <div className="flex flex-wrap gap-2 mt-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setTraceViewModal({ show: true, conversationId: conv.id });
+                              setQuickViewId(conv.id);
                             }}
-                            className="px-1.5 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 text-purple-300 border border-purple-700/50 transition-colors"
-                            title="Ver trazabilidad completa"
+                            className="flex-1 min-w-[140px] px-2 py-1 text-xs rounded bg-sky-600/20 border border-sky-700 text-sky-300 hover:bg-sky-600/30 transition"
                           >
-                            🎫
+                            👁️ Vista rápida
                           </button>
-                          {/* Botón completar ciclo */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCompleteCycle(conv.id, conv.wa_profile_name || conv.wa_user);
-                            }}
-                            className="px-1.5 py-0.5 rounded bg-green-900/30 hover:bg-green-900/50 text-green-300 border border-green-700/50 transition-colors"
-                            title="Completar ciclo"
+                          <a
+                            href={`${BASE}/mensajes?conversation_id=${conv.id}`.replace(/\/\//g, '/')}
+                            data-astro-prefetch="tap"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 min-w-[140px] px-2 py-1 text-xs rounded bg-emerald-600/20 border border-emerald-700 text-emerald-300 hover:bg-emerald-600/30 transition text-center"
                           >
-                            ✅
-                          </button>
+                            ↗️ Abrir
+                          </a>
                         </div>
-                        <span className="text-slate-500">
-                          {formatTimestamp(conv.ultimo_msg_entrante_ts)}
-                        </span>
                       </div>
-
-                      {/* Botones de acción */}
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setQuickViewId(conv.id);
-                          }}
-                          className="flex-1 px-2 py-1 text-xs rounded bg-sky-600/20 border border-sky-700 text-sky-300 hover:bg-sky-600/30 transition"
-                        >
-                          👁️ Vista rápida
-                        </button>
-                        <a
-                          href={`${BASE}/mensajes?conversation_id=${conv.id}`.replace(/\/\//g, '/')}
-                          data-astro-prefetch="tap"
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex-1 px-2 py-1 text-xs rounded bg-emerald-600/20 border border-emerald-700 text-emerald-300 hover:bg-emerald-600/30 transition text-center"
-                        >
-                          🔗 Abrir
-                        </a>
-                      </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         </div>
       )}
