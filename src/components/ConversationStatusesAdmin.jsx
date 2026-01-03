@@ -151,7 +151,7 @@ export default function ConversationStatusesAdmin() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-slate-100">Estados de Conversación</h2>
           <p className="text-sm text-slate-400">
@@ -160,7 +160,7 @@ export default function ConversationStatusesAdmin() {
         </div>
         <button
           onClick={openNewStatus}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold transition"
+          className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold transition"
         >
           + Nuevo Estado
         </button>
@@ -184,11 +184,11 @@ export default function ConversationStatusesAdmin() {
                   : 'bg-slate-900/30 border-slate-800 opacity-60'
               }`}
             >
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+                <div className="flex items-start gap-2 flex-1 min-w-0">
                   <span className="text-2xl">{s.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-slate-100">{s.name}</span>
                       {s.is_default && (
                         <span className="px-2 py-0.5 rounded-full text-xs bg-sky-900/60 border border-sky-600 text-sky-200">
@@ -213,7 +213,7 @@ export default function ConversationStatusesAdmin() {
                   title={`Color: ${s.color}`}
                 />
 
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => toggleActive(s)}
                     className={`px-3 py-1 rounded text-xs border transition ${
@@ -272,7 +272,7 @@ export default function ConversationStatusesAdmin() {
       {/* Modal Crear/Editar */}
       {modalStatus && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 rounded-xl border border-slate-700 max-w-lg w-full p-6">
+          <div className="bg-slate-900 rounded-xl border border-slate-700 max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-slate-100 mb-4">
               {modalStatus.id ? 'Editar Estado' : 'Nuevo Estado'}
             </h3>
