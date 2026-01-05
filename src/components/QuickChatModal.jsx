@@ -40,12 +40,12 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
     } catch (err) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
-        console.error('â±ï¸ Timeout: La carga tardÃ³ mÃ¡s de 10 segundos');
-        alert('â±ï¸ La carga estÃ¡ tardando demasiado. Por favor, intenta de nuevo o usa "Abrir completo".');
+        console.error('Timeout: La carga tardo más de 10 segundos');
+        alert('La carga está tardando demasiado. Por favor, intenta de nuevo o usa "Abrir completo".');
         onClose(); // Cerrar modal si hay timeout
       } else {
         console.error('Error loading quick view:', err);
-        alert('âŒ Error cargando la conversaciÃ³n. Intenta de nuevo.');
+        alert('Error cargando la conversación. Intenta de nuevo.');
       }
     } finally {
       setLoading(false);
@@ -116,13 +116,13 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
               onClick={onOpenFull}
               className="px-3 py-1.5 text-sm rounded-lg bg-emerald-100 dark:bg-emerald-600/20 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-600/30 transition"
             >
-              ðŸ”— Abrir completo
+              Abrir completo
             </button>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             >
-              âœ•
+              X
             </button>
           </div>
         </div>
@@ -133,8 +133,8 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
             <div className="absolute inset-0 bg-white/95 dark:bg-slate-950/95 flex items-center justify-center z-10">
               <div className="text-center">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-t-2 border-emerald-400 mb-3"></div>
-                <div className="text-base text-slate-700 dark:text-slate-200 font-medium">Cargando conversaciÃ³n...</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">MÃ¡ximo 10 segundos</div>
+                <div className="text-base text-slate-700 dark:text-slate-200 font-medium">Cargando conversación...</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Máximo 10 segundos</div>
               </div>
             </div>
           )}
@@ -186,7 +186,7 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
             </button>
           </div>
           <div className="text-xs text-slate-600 dark:text-slate-500 mt-2">
-            ðŸ’¡ Tip: Presiona ESC para cerrar
+            Tip: Presiona ESC para cerrar
           </div>
         </form>
       </div>
