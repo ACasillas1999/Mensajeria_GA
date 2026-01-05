@@ -348,8 +348,8 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
         {/* Primera fila: Título + acciones */}
         <div className="flex items-center gap-3 mb-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-100">Conversaciones</span>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
+            <span className="font-semibold text-slate-900 dark:text-slate-100">Conversaciones</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300">
               {items.length} abiertas
             </span>
           </div>
@@ -467,7 +467,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
                   {(c.is_favorite === true || c.is_favorite === 1) && (
                     <span className="text-yellow-400 text-xs shrink-0">⭐</span>
                   )}
-                  <div className={`font-medium leading-tight truncate ${unread ? "text-emerald-200 font-semibold" : ""}`}>
+                  <div className={`font-medium leading-tight truncate ${unread ? "text-emerald-700 dark:text-emerald-200 font-semibold" : "text-slate-900 dark:text-slate-100"}`}>
                     {c.title || `Chat ${c.id}`}
                   </div>
                 </div>
@@ -478,7 +478,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
 
               {/* Fila intermedia: Último mensaje */}
               <div className="flex items-center gap-2 mb-1">
-                <div className={`text-xs truncate flex-1 ${unread ? "text-slate-300 font-medium" : "text-slate-400"}`}>
+                <div className={`text-xs truncate flex-1 ${unread ? "text-slate-700 dark:text-slate-300 font-medium" : "text-slate-600 dark:text-slate-400"}`}>
                   {c.last_text || '-'}
                 </div>
                 {unread && unreadCounts[c.id] > 0 && (
