@@ -50,8 +50,9 @@ function PipelineViewInner() {
 
   useEffect(() => {
     loadPipeline();
-    const interval = setInterval(loadPipeline, 30000); // Actualizar cada 30s
-    return () => clearInterval(interval);
+    // Auto-refresh desactivado para evitar parpadeo
+    // const interval = setInterval(loadPipeline, 30000);
+    // return () => clearInterval(interval);
   }, [filter]);
 
   async function changeConversationStatus(conversationId, newStatusId, oldStatusId, fieldData) {
