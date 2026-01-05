@@ -119,6 +119,11 @@ function Icon({ name, className = '' }) {
   );
 }
 
+const cardClass =
+  'p-6 rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-lg dark:shadow-black/10';
+const subCardClass =
+  'p-3 rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50';
+
 export default function DashboardAdvanced() {
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
@@ -164,15 +169,15 @@ export default function DashboardAdvanced() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-slate-400">Cargando estadisticas...</div>
+        <div className="text-slate-600 dark:text-slate-400">Cargando estadisticas...</div>
       </div>
     );
   }
 
   return (
     <div className="max-w-7xl mx-auto px-2 md:px-4 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-4 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
-        <div className="text-sm font-medium text-slate-300">Periodo:</div>
+      <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-4 rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-lg dark:shadow-black/10">
+        <div className="text-sm font-medium text-slate-800 dark:text-slate-300">Periodo:</div>
 
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <button
@@ -180,7 +185,7 @@ export default function DashboardAdvanced() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               dateRange === '7'
                 ? 'bg-emerald-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
             }`}
           >
             Ultimos 7 dias
@@ -190,7 +195,7 @@ export default function DashboardAdvanced() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               dateRange === '30'
                 ? 'bg-emerald-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
             }`}
           >
             Ultimos 30 dias
@@ -200,7 +205,7 @@ export default function DashboardAdvanced() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               dateRange === '90'
                 ? 'bg-emerald-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
             }`}
           >
             Ultimos 90 dias
@@ -210,7 +215,7 @@ export default function DashboardAdvanced() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               dateRange === 'custom'
                 ? 'bg-emerald-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
             }`}
           >
             Personalizado
@@ -223,26 +228,26 @@ export default function DashboardAdvanced() {
               type="date"
               value={customStartDate}
               onChange={(e) => setCustomStartDate(e.target.value)}
-              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm w-full sm:w-auto"
+              className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-800 text-sm w-full sm:w-auto shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
             />
-            <span className="text-slate-500">a</span>
+            <span className="text-slate-600 dark:text-slate-500">a</span>
             <input
               type="date"
               value={customEndDate}
               onChange={(e) => setCustomEndDate(e.target.value)}
-              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm w-full sm:w-auto"
+              className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-800 text-sm w-full sm:w-auto shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
             />
           </div>
         )}
       </div>
 
-      <div className="flex gap-2 border-b border-slate-700 overflow-x-auto pb-1">
+      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700 overflow-x-auto pb-1">
         <button
           onClick={() => setSelectedTab('overview')}
           className={`px-4 py-2 font-medium transition-colors ${
             selectedTab === 'overview'
-              ? 'text-emerald-400 border-b-2 border-emerald-400'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'text-emerald-600 border-b-2 border-emerald-500 dark:text-emerald-400 dark:border-emerald-400'
+              : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
           Resumen
@@ -251,8 +256,8 @@ export default function DashboardAdvanced() {
           onClick={() => setSelectedTab('agents')}
           className={`px-4 py-2 font-medium transition-colors ${
             selectedTab === 'agents'
-              ? 'text-emerald-400 border-b-2 border-emerald-400'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'text-emerald-600 border-b-2 border-emerald-500 dark:text-emerald-400 dark:border-emerald-400'
+              : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
           Agentes
@@ -261,8 +266,8 @@ export default function DashboardAdvanced() {
           onClick={() => setSelectedTab('performance')}
           className={`px-4 py-2 font-medium transition-colors ${
             selectedTab === 'performance'
-              ? 'text-emerald-400 border-b-2 border-emerald-400'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'text-emerald-600 border-b-2 border-emerald-500 dark:text-emerald-400 dark:border-emerald-400'
+              : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
           Rendimiento
@@ -313,9 +318,9 @@ function OverviewTab({ stats, analytics }) {
 
       <div className="grid grid-cols-1 xl:grid-cols-[2fr,1fr] gap-4 items-stretch">
         {analytics?.hourly_activity && (
-          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10 h-full flex flex-col">
-            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2 shrink-0">
-              <Icon name="activity" className="text-emerald-400" />
+          <div className={`${cardClass} h-full flex flex-col`}>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2 shrink-0">
+              <Icon name="activity" className="text-emerald-500 dark:text-emerald-400" />
               <span>Actividad por hora del dia (ultimos 7 dias)</span>
             </h3>
             <div className="flex-1 flex items-end">
@@ -325,16 +330,16 @@ function OverviewTab({ stats, analytics }) {
         )}
 
         {stats?.statuses && (
-          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10 h-full flex flex-col">
-            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2 shrink-0">
-              <Icon name="pie" className="text-emerald-400" />
+          <div className={`${cardClass} h-full flex flex-col`}>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2 shrink-0">
+              <Icon name="pie" className="text-emerald-500 dark:text-emerald-400" />
               <span>Distribucion por estado</span>
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 overflow-y-auto pr-1">
               {stats.statuses.map(status => (
                 <div
                   key={status.id}
-                  className="p-3 rounded-lg border border-slate-700 bg-slate-900/50"
+                  className={subCardClass}
                 >
                   <div className="flex items-center gap-2 mb-2 text-sm">
                     <Icon name="tag" className="text-current" style={{ color: status.color }} />
@@ -345,8 +350,8 @@ function OverviewTab({ stats, analytics }) {
                       {status.name}
                     </span>
                   </div>
-                  <div className="text-xl font-bold text-slate-200">{status.total}</div>
-                  <div className="text-[11px] text-slate-500 mt-1">
+                  <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{status.total}</div>
+                  <div className="text-[11px] text-slate-600 dark:text-slate-500 mt-1">
                     Mis: {status.mine || 0}
                   </div>
                 </div>
@@ -357,26 +362,26 @@ function OverviewTab({ stats, analytics }) {
       </div>
 
       {analytics?.top_conversations && analytics.top_conversations.length > 0 && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
-            <Icon name="trophy" className="text-emerald-400" />
+        <div className={cardClass}>
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <Icon name="trophy" className="text-emerald-500 dark:text-emerald-400" />
             <span>Top 5 conversaciones activas (ultimos 30 dias)</span>
           </h3>
           <div className="space-y-2">
             {analytics.top_conversations.map((conv, idx) => (
               <div
                 key={conv.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-700"
+                className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-900/50 dark:border-slate-700"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-900/30 text-emerald-400 font-bold">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold dark:bg-emerald-900/30 dark:text-emerald-300">
                     {idx + 1}
                   </div>
                   <div>
-                    <div className="font-medium text-slate-200">
+                    <div className="font-medium text-slate-800 dark:text-slate-200">
                       {conv.wa_profile_name || conv.wa_user}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-600 dark:text-slate-500">
                       Agente: {conv.assigned_agent || 'Sin asignar'}
                     </div>
                   </div>
@@ -385,7 +390,7 @@ function OverviewTab({ stats, analytics }) {
                   <div className="text-lg font-bold text-emerald-400">
                     {conv.message_count}
                   </div>
-                  <div className="text-xs text-slate-500">mensajes</div>
+                  <div className="text-xs text-slate-600 dark:text-slate-500">mensajes</div>
                 </div>
               </div>
             ))}
@@ -401,9 +406,9 @@ function AgentsTab({ analytics }) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {analytics?.workload && analytics.workload.length > 0 && (
-          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
-            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
-              <Icon name="users" className="text-emerald-400" />
+          <div className={cardClass}>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+              <Icon name="users" className="text-emerald-500 dark:text-emerald-400" />
               <span>Carga de trabajo actual</span>
             </h3>
             <WorkloadChart data={analytics.workload} />
@@ -411,22 +416,22 @@ function AgentsTab({ analytics }) {
         )}
 
         {analytics?.agent_performance && analytics.agent_performance.length > 0 && (
-          <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10 xl:col-span-1">
-            <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
-              <Icon name="bar" className="text-emerald-400" />
+          <div className={`${cardClass} xl:col-span-1`}>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+              <Icon name="bar" className="text-emerald-500 dark:text-emerald-400" />
               <span>Rendimiento por agente (ultimos 30 dias)</span>
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left py-3 px-4 text-slate-400">Agente</th>
-                    <th className="text-right py-3 px-4 text-slate-400">Tiempo 1ra resp.</th>
-                    <th className="text-right py-3 px-4 text-slate-400">Conversaciones</th>
-                    <th className="text-right py-3 px-4 text-slate-400">Resueltas</th>
-                    <th className="text-right py-3 px-4 text-slate-400">Mensajes</th>
-                    <th className="text-right py-3 px-4 text-slate-400">Ciclos</th>
-                    <th className="text-right py-3 px-4 text-slate-400">Tasa resolucion</th>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Agente</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Tiempo 1ra resp.</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Conversaciones</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Resueltas</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Mensajes</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Ciclos</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Tasa resolucion</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -434,12 +439,12 @@ function AgentsTab({ analytics }) {
                     const responseTime = analytics.response_times?.find(rt => rt.agent_id === agent.agent_id);
 
                     return (
-                      <tr key={agent.agent_id} className="border-b border-slate-800 hover:bg-slate-900/50">
-                        <td className="py-3 px-4 font-medium text-slate-200">{agent.agent_name}</td>
+                      <tr key={agent.agent_id} className="border-b border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900/50">
+                        <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{agent.agent_name}</td>
                         <td className="py-3 px-4 text-right text-blue-400 font-medium">
                           {responseTime?.avg_response_time_formatted || 'N/A'}
                         </td>
-                        <td className="py-3 px-4 text-right text-slate-300">{agent.conversations_handled}</td>
+                        <td className="py-3 px-4 text-right text-slate-800 dark:text-slate-300">{agent.conversations_handled}</td>
                         <td className="py-3 px-4 text-right text-emerald-400">{agent.conversations_resolved}</td>
                         <td className="py-3 px-4 text-right text-blue-400">{agent.messages_sent}</td>
                         <td className="py-3 px-4 text-right text-purple-400">{agent.cycles_completed}</td>
