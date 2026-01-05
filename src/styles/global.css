@@ -81,3 +81,18 @@ input::placeholder {
 }
 
 .animate-shake { animation: shake 300ms ease; }
+
+/* Chat background with images */
+.bg-gray-100 {
+  background-image: url('/fondoblanco1.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.dark .bg-slate-900 {
+  background-image: url('/fondooscuro.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
