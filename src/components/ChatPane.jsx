@@ -127,7 +127,7 @@ function SystemEvent({ evento }) {
   return (
     <div className="flex justify-center my-3">
       <div className="max-w-lg px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-700/50 text-center">
-        <div className="flex items-center justify-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+        <div className="flex items-center justify-center gap-2 text-xs text-slate-700 dark:text-slate-400">
           <span className="text-base">{iconos[evento.tipo] || 'ℹ️'}</span>
           <span>{evento.texto}</span>
         </div>
@@ -1593,7 +1593,7 @@ function pickMime() {
       )}
       <div className="flex-shrink-0 h-12 px-4 flex items-center gap-3 border-b border-slate-800">
         <div className="font-medium truncate">{conversation.title || `Chat ${conversation.id}`}</div>
-        <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{conversation.wa_user}</div>
+        <div className="text-xs text-slate-700 dark:text-slate-400 truncate">{conversation.wa_user}</div>
 
         {/* Indicador de ventana de 24h */}
         {insideWindow && timeRemaining ? (
@@ -1990,8 +1990,8 @@ function pickMime() {
                 🔒
               </div>
               <div className="flex-1">
-                <h3 className="text-amber-200 font-semibold mb-1">Fuera de la ventana de 24 horas</h3>
-                <p className="text-sm text-amber-300/80 leading-relaxed">
+                <h3 className="text-amber-900 dark:text-amber-200 font-semibold mb-1">Fuera de la ventana de 24 horas</h3>
+                <p className="text-sm text-amber-800 dark:text-amber-300/80 leading-relaxed">
                   Han pasado más de 24 horas desde el último mensaje del cliente.
                   Solo puedes enviar plantillas pre-aprobadas por WhatsApp hasta que el cliente te escriba nuevamente.
                 </p>

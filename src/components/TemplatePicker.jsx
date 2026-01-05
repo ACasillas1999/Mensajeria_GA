@@ -133,9 +133,9 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
       .replace(/\n/g, '<br/>')
 
     return (
-      <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-4">
+      <div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 rounded-lg p-4">
         <div
-          className="text-sm text-slate-300"
+          className="text-sm text-slate-900 dark:text-slate-300"
           dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       </div>
@@ -145,16 +145,16 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="bg-slate-950 border border-slate-800 rounded-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-800">
+        <div className="flex items-center justify-between p-4 border-b border-slate-300 dark:border-slate-800">
           <div>
-            <h3 className="text-lg font-semibold text-slate-200">Enviar plantilla</h3>
-            <p className="text-sm text-slate-400">Para: {conversation.wa_profile_name || conversation.wa_user}</p>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-200">Enviar plantilla</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Para: {conversation.wa_profile_name || conversation.wa_user}</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-2xl">×</button>
+          <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 text-2xl">×</button>
         </div>
 
         {/* Content */}
@@ -167,7 +167,7 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
           ) : !selectedTemplate ? (
             // Lista de plantillas
             <div>
-              <p className="text-sm text-slate-400 mb-4">Selecciona una plantilla aprobada:</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Selecciona una plantilla aprobada:</p>
               {templates.length === 0 ? (
                 <div className="text-center py-8 text-slate-400">
                   <p>No hay plantillas aprobadas</p>
@@ -183,10 +183,10 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                       <button
                         key={tpl.id}
                         onClick={() => selectTemplate(tpl)}
-                        className="w-full text-left p-4 border border-slate-800 rounded-lg bg-slate-900/50 hover:bg-slate-800/70 hover:border-emerald-700/50 transition group"
+                        className="w-full text-left p-4 border border-slate-300 dark:border-slate-800 rounded-lg bg-slate-100 dark:bg-slate-900/50 hover:bg-slate-200 dark:hover:bg-slate-800/70 hover:border-emerald-700/50 transition group"
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <div className="font-semibold text-slate-200 group-hover:text-emerald-400 transition flex items-center gap-2">
+                          <div className="font-semibold text-slate-900 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition flex items-center gap-2">
                             {tpl.nombre}
                             {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(tpl.header_type) && (
                               <span className="text-xs px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-400 border border-amber-700/50" title={`Requiere ${tpl.header_type}`}>
@@ -194,11 +194,11 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                               </span>
                             )}
                           </div>
-                          <span className="text-xs px-2 py-1 rounded bg-slate-800 text-emerald-400 border border-emerald-800/50">
+                          <span className="text-xs px-2 py-1 rounded bg-emerald-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 border border-emerald-400 dark:border-emerald-800/50">
                             {tpl.categoria}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-400 line-clamp-2 whitespace-pre-wrap">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 whitespace-pre-wrap">
                           {typeof tpl.body_text === 'string' ? tpl.body_text : JSON.stringify(tpl.body_text)}
                         </p>
                       </button>
@@ -218,7 +218,7 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                     setVariables([])
                     setHeaderMediaUrl('')
                   }}
-                  className="text-sm text-slate-400 hover:text-emerald-400"
+                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-400"
                 >
                   ← Cambiar plantilla
                 </button>
@@ -238,18 +238,18 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                     value={headerMediaUrl}
                     onChange={e => setHeaderMediaUrl(e.target.value)}
                     placeholder={`URL del ${selectedTemplate.header_type.toLowerCase()} (https://...)`}
-                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-slate-200 outline-none focus:border-emerald-400"
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-200 outline-none focus:border-emerald-400"
                   />
                 </div>
               )}
 
               {variables.length > 0 && (
-                <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-4">
-                  <p className="text-sm font-medium text-slate-300 mb-3">Variables de la plantilla:</p>
+                <div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 rounded-lg p-4">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-300 mb-3">Variables de la plantilla:</p>
                   <div className="space-y-3">
                     {variables.map((val, idx) => (
                       <div key={idx}>
-                        <label className="block text-sm text-slate-400 mb-1">
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">
                           Variable {idx + 1} <span className="text-red-400">*</span>
                         </label>
                         <input
@@ -261,7 +261,7 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                             setVariables(newVars)
                           }}
                           placeholder={`Ingresa el valor para {{${idx + 1}}}`}
-                          className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-slate-200 outline-none focus:border-emerald-400"
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-200 outline-none focus:border-emerald-400"
                         />
                       </div>
                     ))}
@@ -270,7 +270,7 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
               )}
 
               <div>
-                <p className="text-sm font-medium text-slate-300 mb-2">Vista previa:</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-300 mb-2">Vista previa:</p>
                 {renderTemplatePreview(selectedTemplate)}
               </div>
             </div>
@@ -279,10 +279,10 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
 
         {/* Footer */}
         {selectedTemplate && (
-          <div className="border-t border-slate-800 p-4 flex gap-2">
+          <div className="border-t border-slate-300 dark:border-slate-800 p-4 flex gap-2">
             <button
               onClick={onClose}
-              className="flex-1 py-2 border border-slate-700 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+              className="flex-1 py-2 border border-slate-300 dark:border-slate-700 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-300"
             >
               Cancelar
             </button>
