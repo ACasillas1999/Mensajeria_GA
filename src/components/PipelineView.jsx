@@ -276,7 +276,7 @@ function PipelineViewInner() {
       {loading ? (
         <div className="p-12 text-center text-slate-400">Cargando pipeline...</div>
       ) : (
-        <div className="overflow-x-auto pb-4">
+        <div className="overflow-x-auto pb-4" style={{ colorScheme: 'light' }}>
           <div className="flex gap-3 min-w-min flex-nowrap touch-pan-x">
             {pipeline.map((column) => (
               <div
@@ -310,7 +310,7 @@ function PipelineViewInner() {
                       ? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-600'
                       : 'bg-slate-100 border-slate-200 dark:bg-slate-900/40 dark:border-slate-700'
                   }`}
-                  style={{ maxHeight: 'calc(100vh - 340px)', minHeight: '200px' }}
+                  style={{ maxHeight: 'calc(100vh - 340px)', minHeight: '200px', colorScheme: 'light' }}
                 >
                   {column.conversations.length === 0 ? (
                     <div className="p-4 text-center text-xs text-slate-500">
