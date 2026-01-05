@@ -1839,8 +1839,8 @@ function pickMime() {
                id={`msg-${m.id}`}
                className={`max-w-[75%] px-3 py-2 rounded-lg border transition-all
                  ${m.sender === 'me'
-                   ? 'ml-auto bg-emerald-600/20 border-emerald-700'
-                   : 'bg-slate-800 border-slate-700'}
+                   ? 'ml-auto bg-emerald-100 dark:bg-emerald-600/20 border-emerald-400 dark:border-emerald-700 text-emerald-900 dark:text-emerald-50'
+                   : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100'}
                  ${isHighlighted ? 'ring-2 ring-yellow-400 bg-yellow-900/20' : ''}`}>
             {/* Renderizar ubicaciones */}
             {(m.tipo === "location" || 
