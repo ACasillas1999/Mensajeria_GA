@@ -231,8 +231,8 @@ function PipelineViewInner() {
       {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-100">Pipeline de Conversaciones</h2>
-          <p className="text-sm text-slate-400">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Pipeline de Conversaciones</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Vista tipo CRM - Arrastra conversaciones entre estados
           </p>
         </div>
@@ -259,14 +259,14 @@ function PipelineViewInner() {
       {/* Métricas */}
       {metrics && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          <div className="p-3 rounded-lg bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700">
-            <div className="text-xs text-slate-400">Total</div>
-            <div className="text-2xl font-bold text-slate-100">{metrics.total}</div>
+          <div className="p-3 rounded-lg bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="text-xs text-slate-600 dark:text-slate-400">Total</div>
+            <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{metrics.total}</div>
           </div>
           {metrics.by_status.slice(0, 3).map((s, i) => (
-            <div key={i} className="p-3 rounded-lg bg-slate-900/60 border border-slate-700">
-              <div className="text-xs text-slate-400">{s.status_name}</div>
-              <div className="text-2xl font-bold text-slate-100">{s.count}</div>
+            <div key={i} className="p-3 rounded-lg bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="text-xs text-slate-600 dark:text-slate-400">{s.status_name}</div>
+              <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{s.count}</div>
             </div>
           ))}
         </div>
@@ -296,9 +296,9 @@ function PipelineViewInner() {
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{column.status.icon}</span>
-                    <span className="font-semibold text-slate-100">{column.status.name}</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">{column.status.name}</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                     {column.count}
                   </span>
                 </div>
@@ -307,8 +307,8 @@ function PipelineViewInner() {
                 <div
                   className={`p-2 space-y-2 rounded-b-lg border border-t-0 transition-colors overflow-y-auto ${
                     dragOverColumn === column.status.id
-                      ? 'bg-emerald-950/30 border-emerald-600'
-                      : 'bg-slate-900/40 border-slate-700'
+                      ? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-600'
+                      : 'bg-slate-100 border-slate-200 dark:bg-slate-900/40 dark:border-slate-700'
                   }`}
                   style={{ maxHeight: 'calc(100vh - 340px)', minHeight: '200px' }}
                 >
@@ -322,14 +322,14 @@ function PipelineViewInner() {
                         key={conv.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, conv, column.status.id)}
-                        className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all"
+                        className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm text-slate-100 truncate">
+                            <div className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">
                               {conv.wa_profile_name || conv.wa_user}
                             </div>
-                            <div className="text-xs text-slate-400 truncate">{conv.wa_user}</div>
+                            <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{conv.wa_user}</div>
                           </div>
                           <div className="flex items-center gap-1">
                             {conv.cycle_count > 0 && (
@@ -360,7 +360,7 @@ function PipelineViewInner() {
                         </div>
 
                         {conv.ultimo_msg && (
-                          <div className="text-xs text-slate-400 line-clamp-2 mb-2">
+                          <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-2">
                             {conv.ultimo_msg}
                           </div>
                         )}
@@ -373,15 +373,15 @@ function PipelineViewInner() {
                               : conv.field_data;
 
                             return Object.keys(fieldData).length > 0 && (
-                              <div className="mb-2 p-2 rounded bg-slate-800/50 border border-slate-700/50">
-                                <div className="text-[10px] text-slate-400 mb-1 font-semibold">Información:</div>
+                              <div className="mb-2 p-2 rounded bg-slate-100 border border-slate-200 dark:bg-slate-800/50 dark:border-slate-700/50">
+                                <div className="text-[10px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">Información:</div>
                                 <div className="space-y-0.5">
                                   {Object.entries(fieldData).map(([key, value]) => (
                                     <div key={key} className="text-xs flex items-start gap-1">
-                                      <span className="text-slate-400">
+                                      <span className="text-slate-600 dark:text-slate-400">
                                         {key.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}:
                                       </span>
-                                      <span className="text-emerald-300 font-medium truncate">{value}</span>
+                                      <span className="text-emerald-700 dark:text-emerald-300 font-medium truncate">{value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -396,9 +396,9 @@ function PipelineViewInner() {
                         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                           <div className="flex items-center gap-2 flex-wrap">
                             {conv.assigned_to_name ? (
-                              <span className="text-slate-500">👤 {conv.assigned_to_name}</span>
+                              <span className="text-slate-600 dark:text-slate-500">👤 {conv.assigned_to_name}</span>
                             ) : (
-                              <span className="text-slate-600">Sin asignar</span>
+                              <span className="text-slate-700 dark:text-slate-600">Sin asignar</span>
                             )}
                             {/* Botón de trazabilidad */}
                             <button
