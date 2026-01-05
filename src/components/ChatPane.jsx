@@ -2073,7 +2073,7 @@ function pickMime() {
         </button>
 
         {showComments && (
-          <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+          <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 flex-wrap">
             {/* Lista de comentarios */}
             <div className="max-h-48 overflow-y-auto thin-scroll p-3 space-y-2">
               {comments.length === 0 ? (

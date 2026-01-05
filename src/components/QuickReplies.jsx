@@ -68,7 +68,7 @@ export default function QuickReplies({ onSelect, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60" />
       <div
-        className="relative bg-slate-950 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+        className="relative bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -79,7 +79,7 @@ export default function QuickReplies({ onSelect, onClose }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar..."
-              className="px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-sm outline-none focus:border-emerald-400"
+              className="px-3 py-1.5 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm outline-none focus:border-emerald-400"
             />
             <button type="submit" className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-sm">
               Buscar
@@ -98,27 +98,27 @@ export default function QuickReplies({ onSelect, onClose }) {
 
         {/* Form crear */}
         {showForm && (
-          <form onSubmit={handleCreate} className="p-4 border-b border-slate-800 bg-slate-900/50 space-y-3">
+          <form onSubmit={handleCreate} className="p-4 border-b border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/50 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <input
                 value={form.titulo}
                 onChange={(e) => setForm(f => ({ ...f, titulo: e.target.value }))}
                 placeholder="Título *"
                 required
-                className="px-3 py-2 rounded bg-slate-900 border border-slate-700 outline-none focus:border-emerald-400"
+                className="px-3 py-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-400"
               />
               <div className="flex gap-2">
                 <input
                   value={form.categoria}
                   onChange={(e) => setForm(f => ({ ...f, categoria: e.target.value }))}
                   placeholder="Categoría"
-                  className="flex-1 px-3 py-2 rounded bg-slate-900 border border-slate-700 outline-none focus:border-emerald-400"
+                  className="flex-1 px-3 py-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-400"
                 />
                 <input
                   value={form.atajo}
                   onChange={(e) => setForm(f => ({ ...f, atajo: e.target.value }))}
                   placeholder="Atajo (/hola)"
-                  className="w-28 px-3 py-2 rounded bg-slate-900 border border-slate-700 outline-none focus:border-emerald-400"
+                  className="w-28 px-3 py-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-400"
                 />
               </div>
             </div>
@@ -128,7 +128,7 @@ export default function QuickReplies({ onSelect, onClose }) {
               placeholder="Contenido del mensaje *"
               required
               rows={3}
-              className="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 outline-none focus:border-emerald-400 resize-none"
+              className="w-full px-3 py-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-400 resize-none"
             />
             <div className="flex justify-end gap-2">
               <button
@@ -150,10 +150,10 @@ export default function QuickReplies({ onSelect, onClose }) {
 
         {/* Lista */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {loading && <div className="text-sm text-slate-400">Cargando...</div>}
+          {loading && <div className="text-sm text-slate-600 dark:text-slate-400">Cargando...</div>}
 
           {!loading && items.length === 0 && (
-            <div className="text-center text-slate-400 py-8">
+            <div className="text-center text-slate-600 dark:text-slate-400 py-8">
               No hay respuestas rápidas. ¡Crea una nueva!
             </div>
           )}
@@ -166,10 +166,10 @@ export default function QuickReplies({ onSelect, onClose }) {
                   <button
                     key={item.id}
                     onClick={() => handleSelect(item)}
-                    className="w-full text-left p-3 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800/70 hover:border-emerald-700/50 transition group"
+                    className="w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/50 hover:bg-slate-200 dark:hover:bg-slate-800/70 hover:border-emerald-700/50 transition group"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-200 group-hover:text-emerald-300">
+                      <span className="font-medium text-slate-900 dark:text-slate-200 group-hover:text-emerald-300">
                         {item.titulo}
                       </span>
                       {item.atajo && (
@@ -181,7 +181,7 @@ export default function QuickReplies({ onSelect, onClose }) {
                         {item.uso_count || 0} usos
                       </span>
                     </div>
-                    <div className="text-sm text-slate-400 mt-1 line-clamp-2">
+                    <div className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
                       {item.contenido}
                     </div>
                   </button>
