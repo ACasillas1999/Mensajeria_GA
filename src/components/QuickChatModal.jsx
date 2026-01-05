@@ -16,12 +16,21 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
 
   async function loadData() {
     setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos máximo
+
     try {
       // Cargar conversación y mensajes en paralelo
       const [convRes, msgsRes] = await Promise.all([
-        fetch(`${BASE}/api/conversations/${conversationId}`.replace(/\/\//g, '/')),
-        fetch(`${BASE}/api/messages/quick?conversation_id=${conversationId}`.replace(/\/\//g, '/'))
+        fetch(`${BASE}/api/conversations/${conversationId}`.replace(/\/\//g, '/'), {
+          signal: controller.signal
+        }),
+        fetch(`${BASE}/api/messages/quick?conversation_id=${conversationId}`.replace(/\/\//g, '/'), {
+          signal: controller.signal
+        })
       ]);
+
+      clearTimeout(timeoutId);
 
       const convData = await convRes.json();
       const msgsData = await msgsRes.json();
@@ -29,7 +38,15 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
       if (convData.ok) setConversation(convData.conversation);
       if (msgsData.ok) setMessages(msgsData.items || []);
     } catch (err) {
-      console.error('Error loading quick view:', err);
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        console.error('⏱️ Timeout: La carga tardó más de 10 segundos');
+        alert('⏱️ La carga está tardando demasiado. Por favor, intenta de nuevo o usa "Abrir completo".');
+        onClose(); // Cerrar modal si hay timeout
+      } else {
+        console.error('Error loading quick view:', err);
+        alert('❌ Error cargando la conversación. Intenta de nuevo.');
+      }
     } finally {
       setLoading(false);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -111,12 +128,13 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 relative">
           {loading && (
-            <div className="flex items-center justify-center h-full">
+            <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center z-10">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400 mb-2"></div>
-                <div className="text-sm text-slate-400">Cargando mensajes...</div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-t-2 border-emerald-400 mb-3"></div>
+                <div className="text-base text-slate-200 font-medium">Cargando conversación...</div>
+                <div className="text-xs text-slate-400 mt-1">Máximo 10 segundos</div>
               </div>
             </div>
           )}
