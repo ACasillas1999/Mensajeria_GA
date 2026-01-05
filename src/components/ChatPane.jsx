@@ -34,6 +34,8 @@ const MediaBubble = memo(function MediaBubble({ m, onOpen, onImageLoad }) {
       <button onClick={() => onOpen?.("image", src)} className="group">
         <img
           src={src}
+          loading="lazy"
+          decoding="async"
           className="max-w-[150px] rounded transition-transform group-hover:scale-105"
           alt="sticker"
           onLoad={onImageLoad}
@@ -47,6 +49,8 @@ const MediaBubble = memo(function MediaBubble({ m, onOpen, onImageLoad }) {
       <button onClick={() => onOpen?.("image", src)} className="group">
         <img
           src={src}
+          loading="lazy"
+          decoding="async"
           className="max-w-xs rounded border border-slate-700 transition-transform group-hover:scale-[1.02]"
           alt="imagen"
           onLoad={onImageLoad}

@@ -7,7 +7,7 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
     const cid = url.searchParams.get("conversation_id");
-    const limit = Math.min(Number(url.searchParams.get("limit") || 50), 500);
+    const limit = Math.min(Number(url.searchParams.get("limit") || 20), 500);
     const before = url.searchParams.get("before");
     const q = (url.searchParams.get("q") || "").trim();
 
