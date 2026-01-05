@@ -474,15 +474,15 @@ function PerformanceTab({ analytics }) {
   return (
     <div className="space-y-6">
       {analytics?.response_times && analytics.response_times.length > 0 && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
-            <Icon name="clock" className="text-emerald-400" />
+        <div className={cardClass}>
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <Icon name="clock" className="text-emerald-500 dark:text-emerald-400" />
             <span>Tiempo de primera respuesta (ultimos 30 dias)</span>
           </h3>
           <div className="space-y-3">
             {analytics.response_times.map(agent => (
               <div key={agent.agent_id} className="flex items-center gap-4">
-                <div className="w-32 text-sm font-medium text-slate-300">
+                <div className="w-32 text-sm font-medium text-slate-800 dark:text-slate-300">
                   {agent.agent_name}
                 </div>
                 <div className="flex-1">
@@ -497,7 +497,7 @@ function PerformanceTab({ analytics }) {
                   <div className="font-bold text-emerald-400">
                     {agent.avg_response_time_formatted}
                   </div>
-                  <div className="text-xs text-slate-500">promedio</div>
+                  <div className="text-xs text-slate-600 dark:text-slate-500">promedio</div>
                 </div>
               </div>
             ))}
@@ -532,24 +532,24 @@ function PerformanceTab({ analytics }) {
       )}
 
       {analytics?.daily_activity && analytics.daily_activity.length > 0 && (
-        <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
-          <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
-            <Icon name="calendar" className="text-emerald-400" />
+        <div className={cardClass}>
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <Icon name="calendar" className="text-emerald-500 dark:text-emerald-400" />
             <span>Actividad diaria (ultimos 7 dias)</span>
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="text-left py-3 px-4 text-slate-400">Fecha</th>
-                  <th className="text-right py-3 px-4 text-slate-400">Conversaciones</th>
-                  <th className="text-right py-3 px-4 text-slate-400">Mensajes</th>
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Fecha</th>
+                  <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Conversaciones</th>
+                  <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Mensajes</th>
                 </tr>
               </thead>
               <tbody>
                 {analytics.daily_activity.map(day => (
-                  <tr key={day.day} className="border-b border-slate-800">
-                    <td className="py-3 px-4 text-slate-300">
+                  <tr key={day.day} className="border-b border-slate-200 dark:border-slate-800">
+                    <td className="py-3 px-4 text-slate-800 dark:text-slate-300">
                       {new Date(day.day).toLocaleDateString('es-MX', {
                         weekday: 'short',
                         month: 'short',
@@ -579,13 +579,13 @@ function MetricCard({ title, value, subtitle, icon, color = 'slate' }) {
     blue: 'text-blue-400',
     purple: 'text-purple-400',
     amber: 'text-amber-400',
-    slate: 'text-slate-300'
+    slate: 'text-slate-800 dark:text-slate-300'
   };
 
   return (
-    <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70 shadow-lg shadow-black/10">
+    <div className={cardClass}>
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2 text-sm text-slate-300">
+        <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
           <Icon name={icon} className={`${colors[color]} opacity-90`} />
           <span>{title}</span>
         </div>
@@ -594,7 +594,7 @@ function MetricCard({ title, value, subtitle, icon, color = 'slate' }) {
         {value}
       </div>
       {subtitle && (
-        <div className="text-xs text-slate-500">{subtitle}</div>
+        <div className="text-xs text-slate-600 dark:text-slate-500">{subtitle}</div>
       )}
     </div>
   );
@@ -616,14 +616,14 @@ function HourlyActivityChart({ data }) {
 
           return (
             <div key={hour} className="flex flex-col items-center gap-1">
-              <div className="relative w-full h-32 bg-slate-900 rounded">
+              <div className="relative w-full h-32 bg-slate-100 dark:bg-slate-900 rounded">
                 <div
                   className="absolute bottom-0 w-full bg-emerald-500 rounded transition-all"
                   style={{ height: `${height}%` }}
                   title={`${hour}:00 - ${count} mensajes`}
                 />
               </div>
-              <div className="text-[10px] text-slate-500">{hour}</div>
+              <div className="text-[10px] text-slate-600 dark:text-slate-500">{hour}</div>
             </div>
           );
         })}
@@ -643,12 +643,12 @@ function WorkloadChart({ data }) {
         return (
           <div key={agent.agent_id}>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-slate-300">{agent.agent_name}</span>
-              <span className="text-sm text-slate-400">
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-300">{agent.agent_name}</span>
+              <span className="text-sm text-slate-600 dark:text-slate-400">
                 {agent.active_conversations} conversaciones ({agent.open_conversations} abiertas)
               </span>
             </div>
-            <div className="w-full bg-slate-900 rounded-full h-6">
+            <div className="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-6">
               <div
                 className="bg-emerald-500 h-6 rounded-full transition-all flex items-center justify-end pr-2"
                 style={{ width: `${percentage}%` }}
@@ -673,9 +673,9 @@ function ResponseTimeBar({ avgTime, minTime, maxTime, maxValue }) {
   const maxPercent = (maxTime / maxValue) * 100;
 
   return (
-    <div className="relative w-full h-8 bg-slate-900 rounded-full overflow-hidden">
+    <div className="relative w-full h-8 bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden">
       <div
-        className="absolute h-full bg-blue-900/30 rounded-full"
+        className="absolute h-full bg-blue-200/80 dark:bg-blue-900/30 rounded-full"
         style={{
           left: `${minPercent}%`,
           width: `${Math.max(maxPercent - minPercent, 2)}%`
