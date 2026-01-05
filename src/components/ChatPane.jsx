@@ -1584,7 +1584,7 @@ function pickMime() {
   }
 
   return (
-    <div className="relative bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl h-full flex flex-col pt-2">
+    <div className="relative bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl h-full flex flex-col pt-4">
       {loading && (
         <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
           <div className="w-12 h-12 rounded-full border-4 border-emerald-400/70 border-t-transparent animate-spin" />
