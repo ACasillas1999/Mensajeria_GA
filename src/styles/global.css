@@ -6,16 +6,53 @@ body {
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
 
+/* Soportar ambos modos */
+:root { 
+  color-scheme: light dark;
+}
+
+/* Variables para modo claro (default) */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+}
+
+/* Variables para modo oscuro */
+:root.dark {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --border-color: #334155;
+}
+
 input::placeholder {
   color: #94a3b8;
 }
+
 /* Scroll fino */
 .thin-scroll::-webkit-scrollbar { width: 8px; }
-.thin-scroll::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 8px; }
-.thin-scroll { scrollbar-width: thin; scrollbar-color: #1f2937 transparent; }
+.thin-scroll::-webkit-scrollbar-thumb { 
+  background: #475569; 
+  border-radius: 8px; 
+}
+.thin-scroll { 
+  scrollbar-width: thin; 
+  scrollbar-color: #475569 transparent; 
+}
 
-/* Suaviza tipografía y colores por defecto */
-:root { color-scheme: dark; }
+/* Scroll para modo oscuro */
+.dark .thin-scroll::-webkit-scrollbar-thumb { 
+  background: #1f2937; 
+}
+.dark .thin-scroll { 
+  scrollbar-color: #1f2937 transparent; 
+}
 
 /* Animations */
 @keyframes gradientShift {

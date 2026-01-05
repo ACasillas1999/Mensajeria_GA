@@ -39,7 +39,11 @@ const adminLinks = [
   { href: "/admin/auditoria", icon: "eye", label: "Auditoria en vivo" },
   { href: "/admin/crear-plantilla", icon: "file-plus", label: "Plantillas" },
   { href: "/admin/auto-respuestas", icon: "cpu", label: "Auto-respuestas" },
-  { href: "/admin/mensajes-no-reconocidos", icon: "help-circle", label: "Mensajes no reconocidos" },
+  {
+    href: "/admin/mensajes-no-reconocidos",
+    icon: "help-circle",
+    label: "Mensajes no reconocidos",
+  },
   { href: "/admin/estados", icon: "tag", label: "Gestión de Estados" },
   { href: "/admin/diagrama", icon: "git-branch", label: "Diagrama" },
 ];
@@ -58,6 +62,15 @@ const footerLinks = [
     <link rel="icon" type="image/png" href="/logo-gawhats.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/logo-gawhats.png" />
     <meta name="theme-color" content="#0f172a" />
+    <script is:inline>
+      // Inicializar tema antes de renderizar para evitar flash
+      const theme =
+        localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light");
+      document.documentElement.classList.toggle("dark", theme === "dark");
+    </script>
   </head>
 
   <body
@@ -75,8 +88,12 @@ const footerLinks = [
         >
           <i data-feather="menu"></i>
         </button>
-        <h1 class="text-lg sm:text-xl font-semibold text-emerald-400 truncate">{title}</h1>
+        <h1 class="text-lg sm:text-xl font-semibold text-emerald-400 truncate">
+          {title}
+        </h1>
         <div class="ml-auto flex items-center gap-3 min-w-0">
+          <!-- Theme Toggle -->
+          <div id="theme-toggle-container"></div>
           {
             user && (
               <div class="text-right leading-tight max-w-[200px] sm:max-w-xs">
@@ -104,51 +121,63 @@ const footerLinks = [
       class="hidden md:block fixed left-0 top-14 bottom-0 w-16 z-30 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800"
     >
       <nav class="h-full flex flex-col items-center py-4 gap-2">
-        {mainLinks.map((link) => (
-          <a
-            href={href(link.href)}
-            class={`${linkBase} ${isActive(link.href)}`}
-            title={link.label}
-          >
-            <i data-feather={link.icon}></i>
-            <span class="sr-only">{link.label}</span>
-          </a>
-        ))}
-        {isAdmin &&
-          adminLinks.map((link) => (
+        {
+          mainLinks.map((link) => (
             <a
               href={href(link.href)}
               class={`${linkBase} ${isActive(link.href)}`}
               title={link.label}
             >
-              <i data-feather={link.icon}></i>
+              <i data-feather={link.icon} />
               <span class="sr-only">{link.label}</span>
             </a>
-          ))}
+          ))
+        }
+        {
+          isAdmin &&
+            adminLinks.map((link) => (
+              <a
+                href={href(link.href)}
+                class={`${linkBase} ${isActive(link.href)}`}
+                title={link.label}
+              >
+                <i data-feather={link.icon} />
+                <span class="sr-only">{link.label}</span>
+              </a>
+            ))
+        }
 
         <div class="mt-auto"></div>
 
-        {footerLinks.map((link) => (
-          <a
-            href={href(link.href)}
-            class={`${linkBase} ${link.forceIdle ? idle : isActive(link.href)}`}
-            title={link.label}
-          >
-            <i data-feather={link.icon}></i>
-            <span class="sr-only">{link.label}</span>
-          </a>
-        ))}
+        {
+          footerLinks.map((link) => (
+            <a
+              href={href(link.href)}
+              class={`${linkBase} ${link.forceIdle ? idle : isActive(link.href)}`}
+              title={link.label}
+            >
+              <i data-feather={link.icon} />
+              <span class="sr-only">{link.label}</span>
+            </a>
+          ))
+        }
       </nav>
     </aside>
 
     <!-- Mobile navigation drawer -->
     <div id="mobile-nav" class="md:hidden fixed inset-0 z-50 hidden">
-      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-nav-overlay></div>
+      <div
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        data-nav-overlay
+      >
+      </div>
       <div
         id="mobile-nav-panel"
         class="relative h-full w-[78%] max-w-xs bg-slate-950 border-r border-slate-800 shadow-2xl -translate-x-full transition-transform duration-200"
       >
-        <div class="h-14 px-4 flex items-center justify-between border-b border-slate-800">
+        <div
+          class="h-14 px-4 flex items-center justify-between border-b border-slate-800"
+        >
           <div class="text-sm font-semibold text-emerald-300">Menú</div>
           <button
             id="mobile-nav-close"
@@ -160,44 +189,50 @@ const footerLinks = [
         </div>
         <div class="p-3 space-y-6 overflow-y-auto h-[calc(100%-3.5rem)]">
           <div class="space-y-1">
-            {mainLinks.map((link) => (
-              <a
-                href={href(link.href)}
-                class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive(link.href)} hover:bg-slate-900/70`}
-              >
-                <i data-feather={link.icon}></i>
-                <span>{link.label}</span>
-              </a>
-            ))}
-          </div>
-
-          {isAdmin && (
-            <div class="space-y-1">
-              <div class="text-[11px] uppercase tracking-[0.08em] text-slate-500 px-2">
-                Admin
-              </div>
-              {adminLinks.map((link) => (
+            {
+              mainLinks.map((link) => (
                 <a
                   href={href(link.href)}
                   class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive(link.href)} hover:bg-slate-900/70`}
                 >
-                  <i data-feather={link.icon}></i>
+                  <i data-feather={link.icon} />
                   <span>{link.label}</span>
                 </a>
-              ))}
-            </div>
-          )}
+              ))
+            }
+          </div>
+
+          {
+            isAdmin && (
+              <div class="space-y-1">
+                <div class="text-[11px] uppercase tracking-[0.08em] text-slate-500 px-2">
+                  Admin
+                </div>
+                {adminLinks.map((link) => (
+                  <a
+                    href={href(link.href)}
+                    class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive(link.href)} hover:bg-slate-900/70`}
+                  >
+                    <i data-feather={link.icon} />
+                    <span>{link.label}</span>
+                  </a>
+                ))}
+              </div>
+            )
+          }
 
           <div class="space-y-1 pt-2 border-t border-slate-800">
-            {footerLinks.map((link) => (
-              <a
-                href={href(link.href)}
-                class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${link.forceIdle ? idle : isActive(link.href)} hover:bg-slate-900/70`}
-              >
-                <i data-feather={link.icon}></i>
-                <span>{link.label}</span>
-              </a>
-            ))}
+            {
+              footerLinks.map((link) => (
+                <a
+                  href={href(link.href)}
+                  class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${link.forceIdle ? idle : isActive(link.href)} hover:bg-slate-900/70`}
+                >
+                  <i data-feather={link.icon} />
+                  <span>{link.label}</span>
+                </a>
+              ))
+            }
           </div>
         </div>
       </div>
@@ -279,7 +314,9 @@ const footerLinks = [
         const openMobileNav = () => {
           if (!mobileNav || !mobilePanel) return;
           mobileNav.classList.remove("hidden");
-          requestAnimationFrame(() => mobilePanel.classList.remove("-translate-x-full"));
+          requestAnimationFrame(() =>
+            mobilePanel.classList.remove("-translate-x-full"),
+          );
         };
 
         openBtn?.addEventListener("click", openMobileNav);
