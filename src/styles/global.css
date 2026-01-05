@@ -84,9 +84,9 @@ input::placeholder {
 
 /* Simple chat background */
 .chat-bg-light {
-  background-color: #ffffff;
+  background-color: #f5f5f5;
 }
 
-.chat-bg-dark {
+.dark .chat-bg-dark {
   background-color: #0f172a;
 }
