@@ -98,7 +98,7 @@ function StatusBadge({ s }) {
   if (s === "sent")      return <span title="Enviado" className="text-[10px] text-slate-400">✓</span>;
   if (s === "delivered") return <span title="Entregado" className="text-[10px] text-slate-400">✓✓</span>;
   if (s === "read")      return <span title="Leído" className="text-[10px] text-sky-400">✓✓</span>;
-  if (s === "failed")    return <span title="Fallido" className="text-[10px] text-amber-400">⚠️</span>;
+  if (s === "failed")    return <span title="Fallido" className="text-[10px] text-amber-600 dark:text-amber-400">⚠️</span>;
   return null;
 }
 
@@ -1873,7 +1873,7 @@ function pickMime() {
                   </span>
                 )}
                 {m.sender === "me" && m.usuario_nombre && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-900/30 border border-sky-700/50 text-sky-300">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-200 dark:bg-sky-900/30 border border-sky-400 dark:border-sky-700/50 text-sky-900 dark:text-sky-300">
                   👤 {m.usuario_nombre}
                 </span>
               )}
@@ -1972,7 +1972,7 @@ function pickMime() {
       {insideWindow && timeRemaining && timeRemaining <= 2 * 60 * 60 * 1000 && timeRemaining > 0 && (
         <div className="px-3 py-2 border-t border-amber-600/30 bg-amber-900/20">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-amber-400">⏰</span>
+            <span className="text-amber-600 dark:text-amber-400">⏰</span>
             <span className="text-amber-300">
               Ventana de 24h cerrando pronto: quedan <strong>{formatTimeRemaining(timeRemaining)}</strong>
             </span>
@@ -1984,9 +1984,9 @@ function pickMime() {
       {!insideWindow ? (
         <div className="border-t border-slate-800">
           {/* Mensaje explicativo mejorado */}
-          <div className="p-4 bg-gradient-to-br from-amber-950/40 to-red-950/30 border-b border-amber-800/30">
+          <div className="p-4 bg-gradient-to-br from-amber-100 dark:from-amber-950/40 to-orange-100 dark:to-red-950/30 border-b border-amber-300 dark:border-amber-800/30">
             <div className="flex items-start gap-3 mb-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-900/50 flex items-center justify-center text-xl">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-200 dark:bg-amber-900/50 flex items-center justify-center text-xl">
                 🔒
               </div>
               <div className="flex-1">
