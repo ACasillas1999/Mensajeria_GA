@@ -71,7 +71,7 @@ export default function MagicBento({ isAdmin = false }) {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50" />
         <div className="relative h-full p-4 flex flex-col gap-2.5">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-[11px] uppercase tracking-[0.08em] text-slate-400">
+            <div className="text-[11px] uppercase tracking-[0.08em] text-slate-600 dark:text-slate-400">
               {subtitle}
             </div>
             {badge && (
@@ -85,10 +85,10 @@ export default function MagicBento({ isAdmin = false }) {
               <Icon name={icon} className={accent.icon} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-lg font-semibold text-slate-100 leading-tight truncate">
+              <div className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-tight truncate">
                 {title}
               </div>
-              {desc && <div className="text-sm text-slate-400 mt-1 line-clamp-2">{desc}</div>}
+              {desc && <div className="text-sm text-slate-700 dark:text-slate-400 mt-1 line-clamp-2">{desc}</div>}
             </div>
           </div>
         </div>
