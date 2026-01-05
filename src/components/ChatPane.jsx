@@ -1659,7 +1659,7 @@ function pickMime() {
             type="button"
             onClick={() => setShowTraceView(true)}
             title="Ver trazabilidad completa (Ticket)"
-            className="h-8 px-2 rounded text-xs bg-gradient-to-r from-purple-900/40 to-blue-900/40 hover:from-purple-800/60 hover:to-blue-800/60 border border-purple-700/50 text-purple-200 transition font-medium"
+            className="h-8 px-2 rounded text-xs bg-gradient-to-r from-purple-200 dark:from-purple-900/40 to-blue-200 dark:to-blue-900/40 hover:from-purple-300 dark:hover:from-purple-800/60 hover:to-blue-300 dark:hover:to-blue-800/60 border border-purple-400 dark:border-purple-700/50 text-purple-900 dark:text-purple-200 transition font-medium"
           >
             🎫 Trazabilidad
           </button>
@@ -1668,7 +1668,7 @@ function pickMime() {
             type="button"
             onClick={handleCompleteCycle}
             title="Completar ciclo actual y reiniciar conversación"
-            className="h-8 px-2 rounded text-xs bg-gradient-to-r from-green-900/40 to-emerald-900/40 hover:from-green-800/60 hover:to-emerald-800/60 border border-green-700/50 text-green-200 transition font-medium"
+            className="h-8 px-2 rounded text-xs bg-gradient-to-r from-green-200 dark:from-green-900/40 to-emerald-200 dark:to-emerald-900/40 hover:from-green-300 dark:hover:from-green-800/60 hover:to-emerald-300 dark:hover:to-emerald-800/60 border border-green-400 dark:border-green-700/50 text-green-900 dark:text-green-200 transition font-medium"
           >
             ✅ Completar Ciclo
           </button>
@@ -1747,7 +1747,7 @@ function pickMime() {
             />
             {searchResults.length > 0 && (
               <div className="flex items-center gap-1">
-                <span className="text-xs text-slate-400 px-2">
+                <span className="text-xs text-slate-700 dark:text-slate-400 px-2">
                   {currentSearchIndex + 1} de {searchResults.length}
                 </span>
                 <button
@@ -1948,7 +1948,7 @@ function pickMime() {
       {/* Menú de sugerencias de atajos */}
       {shortcutSuggestions.length > 0 && (
         <div className="mx-3 mb-1 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow-lg">
-          <div className="text-xs text-slate-400 px-3 py-1.5 border-b border-slate-700 bg-slate-800/50">
+          <div className="text-xs text-slate-700 dark:text-slate-400 px-3 py-1.5 border-b border-slate-700 bg-slate-800/50">
             Atajos disponibles (↑↓ navegar, Tab/Enter seleccionar, Esc cerrar)
           </div>
           {shortcutSuggestions.map((s, i) => (
@@ -2084,7 +2084,7 @@ function pickMime() {
                 comments.map(c => (
                   <div key={c.id} className="bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 rounded-lg p-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-sky-300">
+                      <span className="text-xs font-medium text-sky-700 dark:text-sky-300">
                         {c.usuario_nombre || 'Usuario'}
                       </span>
                       <span className="text-[10px] text-slate-500">
@@ -2163,7 +2163,7 @@ function pickMime() {
                             {call.direction === 'outbound' ? 'Llamada saliente' : 'Llamada entrante'}
                           </span>
                         </div>
-                        <div className="text-xs text-slate-400 mt-1">
+                        <div className="text-xs text-slate-700 dark:text-slate-400 mt-1">
                           {new Date(call.start_time).toLocaleString('es-ES')}
                         </div>
                       </div>
