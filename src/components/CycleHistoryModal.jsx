@@ -58,7 +58,7 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                ðŸ”„ Historial de Ciclos
+                Historial de Ciclos
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 {conversationName}
@@ -68,7 +68,7 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
               onClick={onClose}
               className="text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl leading-none"
             >
-              Ã—
+              X
             </button>
           </div>
         </div>
@@ -86,7 +86,7 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
                 <div className="mb-6 p-4 rounded-lg bg-purple-50 border border-purple-200 dark:bg-purple-900/20 dark:border-purple-700/50">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-semibold text-purple-700 dark:text-purple-300">
-                      ðŸ”„ Ciclo Actual: #{data.conversation.cycle_count + 1}
+                      Ciclo Actual: #{data.conversation.cycle_count + 1}
                     </h4>
                     <div
                       className="px-3 py-1 rounded text-xs font-medium"
@@ -148,12 +148,12 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-lg">ðŸ”„</span>
+                            <span className="text-lg"></span>
                             <div>
                               <div className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                 <span>Ciclo #{cycle.cycle_number}</span>
                                 <span className="text-xs text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  ðŸ” Ver detalle
+                                  Ver detalle
                                 </span>
                               </div>
                               <div className="text-xs text-slate-600 dark:text-slate-400">
@@ -203,7 +203,7 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
 
                         {cycle.assigned_to_name && (
                           <div className="mt-2 text-xs text-slate-600 dark:text-slate-500">
-                            ðŸ‘¤ Atendido por: {cycle.assigned_to_name}
+                            Atendido por: {cycle.assigned_to_name}
                           </div>
                         )}
 
