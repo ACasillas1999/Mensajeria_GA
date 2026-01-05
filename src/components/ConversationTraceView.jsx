@@ -66,8 +66,8 @@ export default function ConversationTraceView({ conversationId, onClose }) {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-slate-900 border border-slate-700 rounded-xl p-8">
-          <div className="text-center text-slate-400">
+        <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-8">
+          <div className="text-center text-slate-600 dark:text-slate-400">
             Cargando trazabilidad...
           </div>
         </div>
@@ -109,29 +109,29 @@ export default function ConversationTraceView({ conversationId, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border-b border-slate-700 px-6 py-4">
+        <div className="bg-gradient-to-r from-purple-200 dark:from-purple-900/40 to-blue-200 dark:to-blue-900/40 border-b border-purple-300 dark:border-slate-700 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 🎫 Trazabilidad de Conversación
               </h2>
-              <p className="text-sm text-slate-300 mt-1">
+              <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">
                 {conversation.wa_profile_name || conversation.wa_user}
                 <span className="mx-2">•</span>
-                <span className="text-slate-400">
+                <span className="text-slate-600 dark:text-slate-400">
                   ID: {conversation.id}
                 </span>
                 <span className="mx-2">•</span>
-                <span className="text-slate-400">
+                <span className="text-slate-600 dark:text-slate-400">
                   Creado: {formatDate(conversation.creado_en)}
                 </span>
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-200 text-3xl leading-none"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-200 text-3xl leading-none"
             >
               ×
             </button>
@@ -140,7 +140,7 @@ export default function ConversationTraceView({ conversationId, onClose }) {
           {/* Estado actual */}
           <div className="mt-4 flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-400">Estado actual:</span>
+              <span className="text-sm text-slate-600 dark:text-slate-400">Estado actual:</span>
               <div
                 className="px-3 py-1 rounded-lg font-medium border text-sm"
                 style={{
@@ -152,19 +152,19 @@ export default function ConversationTraceView({ conversationId, onClose }) {
                 {conversation.current_status_icon} {conversation.current_status_name}
               </div>
             </div>
-            <div className="text-sm text-slate-400">
-              Tiempo en estado: <span className="text-slate-200 font-medium">{metrics.currentStateDurationFormatted}</span>
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              Tiempo en estado: <span className="text-slate-900 dark:text-slate-200 font-medium">{metrics.currentStateDurationFormatted}</span>
             </div>
             {conversation.assigned_to_name && (
-              <div className="text-sm text-slate-400">
-                Asignado a: <span className="text-slate-200 font-medium">👤 {conversation.assigned_to_name}</span>
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                Asignado a: <span className="text-slate-900 dark:text-slate-200 font-medium">👤 {conversation.assigned_to_name}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-slate-700 px-6 bg-slate-900/50">
+        <div className="border-b border-slate-700 px-6 bg-slate-100 dark:bg-slate-900/50">
           <div className="flex gap-1">
             {[
               { id: 'timeline', label: '📋 Timeline', icon: '📋' },
@@ -177,7 +177,7 @@ export default function ConversationTraceView({ conversationId, onClose }) {
                 className={`px-4 py-3 text-sm font-medium transition border-b-2 ${
                   activeTab === tab.id
                     ? 'text-purple-300 border-purple-500'
-                    : 'text-slate-400 border-transparent hover:text-slate-200'
+                    : 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:text-slate-200'
                 }`}
               >
                 {tab.label}
@@ -200,10 +200,10 @@ export default function ConversationTraceView({ conversationId, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-700 px-6 py-4 bg-slate-900/50">
-          <div className="flex items-center justify-between text-xs text-slate-400">
+        <div className="border-t border-slate-700 px-6 py-4 bg-slate-100 dark:bg-slate-900/50">
+          <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
             <div>
-              Tiempo de vida total: <span className="text-slate-200 font-medium">{metrics.totalLifetimeFormatted}</span>
+              Tiempo de vida total: <span className="text-slate-900 dark:text-slate-200 font-medium">{metrics.totalLifetimeFormatted}</span>
               <span className="mx-2">•</span>
               {metrics.totalStatusChanges} cambios de estado
               <span className="mx-2">•</span>
@@ -211,7 +211,7 @@ export default function ConversationTraceView({ conversationId, onClose }) {
             </div>
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition"
+              className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-200 font-medium transition"
             >
               Cerrar
             </button>
@@ -228,7 +228,7 @@ export default function ConversationTraceView({ conversationId, onClose }) {
 function TimelineTab({ timelineItems, formatDateTime }) {
   return (
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-slate-200 mb-4">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-900 dark:text-slate-200 mb-4">
         Historial Completo ({timelineItems.length} eventos)
       </h3>
 
@@ -239,7 +239,7 @@ function TimelineTab({ timelineItems, formatDateTime }) {
       ) : (
         <div className="relative">
           {/* Timeline line */}
-          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-700" />
+          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-300 dark:bg-slate-700" />
 
           <div className="space-y-4">
             {timelineItems.map((item, index) => (
@@ -307,7 +307,7 @@ function TimelineItem({ item, formatDateTime }) {
               )}
               {item.field_data && Object.keys(item.field_data).length > 0 && (
                 <div className="mt-2 p-2 bg-slate-800/50 rounded text-xs">
-                  <div className="text-slate-400 mb-1">Datos adicionales:</div>
+                  <div className="text-slate-600 dark:text-slate-400 mb-1">Datos adicionales:</div>
                   {Object.entries(item.field_data).map(([key, value]) => (
                     <div key={key} className="text-slate-300">
                       <span className="text-slate-500">{key}:</span> {String(value)}
@@ -336,7 +336,7 @@ function TimelineItem({ item, formatDateTime }) {
           title: 'Comentario interno',
           content: (
             <div className="space-y-1">
-              <div className="text-sm text-slate-300">{item.comentario}</div>
+              <div className="text-sm text-slate-700 dark:text-slate-300">{item.comentario}</div>
               <div className="text-xs text-slate-500">
                 Por: {item.usuario_nombre}
               </div>
@@ -350,7 +350,7 @@ function TimelineItem({ item, formatDateTime }) {
           title: item.tipo || 'Evento',
           content: (
             <div className="space-y-1">
-              {item.texto && <div className="text-sm text-slate-300">{item.texto}</div>}
+              {item.texto && <div className="text-sm text-slate-700 dark:text-slate-300">{item.texto}</div>}
               {item.usuario_nombre && (
                 <div className="text-xs text-slate-500">
                   Por: {item.usuario_nombre}
@@ -375,7 +375,7 @@ function TimelineItem({ item, formatDateTime }) {
     <div className="flex gap-4 relative">
       {/* Icon */}
       <div
-        className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl border-2 bg-slate-900 z-10"
+        className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl border-2 bg-white dark:bg-slate-900 z-10"
         style={{ borderColor: config.color }}
       >
         {config.icon}
@@ -384,13 +384,13 @@ function TimelineItem({ item, formatDateTime }) {
       {/* Content */}
       <div className="flex-1 pb-4">
         <div className="flex items-start justify-between gap-4 mb-2">
-          <div className="font-medium text-slate-200">{config.title}</div>
+          <div className="font-medium text-slate-900 dark:text-slate-200">{config.title}</div>
           <div className="text-xs text-slate-500 whitespace-nowrap">
             {formatDateTime(item.date)}
           </div>
         </div>
         {config.content && (
-          <div className="text-slate-400">
+          <div className="text-slate-600 dark:text-slate-400">
             {config.content}
           </div>
         )}
@@ -405,32 +405,32 @@ function TimelineItem({ item, formatDateTime }) {
 function MetricsTab({ metrics, conversation }) {
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-slate-200">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-900 dark:text-slate-200">
         Métricas de Rendimiento
       </h3>
 
       {/* KPIs generales */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
-          <div className="text-xs text-slate-400 mb-1">Tiempo total</div>
+        <div className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700">
+          <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Tiempo total</div>
           <div className="text-2xl font-bold text-emerald-400">
             {metrics.totalLifetimeFormatted}
           </div>
         </div>
-        <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
-          <div className="text-xs text-slate-400 mb-1">Estado actual</div>
+        <div className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700">
+          <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Estado actual</div>
           <div className="text-2xl font-bold text-blue-400">
             {metrics.currentStateDurationFormatted}
           </div>
         </div>
-        <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
-          <div className="text-xs text-slate-400 mb-1">Cambios de estado</div>
+        <div className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700">
+          <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Cambios de estado</div>
           <div className="text-2xl font-bold text-purple-400">
             {metrics.totalStatusChanges}
           </div>
         </div>
-        <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
-          <div className="text-xs text-slate-400 mb-1">Ciclos completados</div>
+        <div className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700">
+          <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Ciclos completados</div>
           <div className="text-2xl font-bold text-amber-400">
             {metrics.cycles.total}
           </div>
@@ -439,12 +439,12 @@ function MetricsTab({ metrics, conversation }) {
 
       {/* Tiempo por estado */}
       <div>
-        <h4 className="font-semibold text-slate-300 mb-3">Tiempo por Estado</h4>
+        <h4 className="font-semibold text-slate-900 dark:text-slate-300 mb-3">Tiempo por Estado</h4>
         <div className="space-y-2">
           {metrics.statusMetrics.map(status => (
             <div
               key={status.statusId}
-              className="p-3 rounded-lg bg-slate-800/30 border border-slate-700"
+              className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800/30 border border-slate-300 dark:border-slate-700"
             >
               <div className="flex items-center justify-between mb-2">
                 <div
@@ -456,11 +456,11 @@ function MetricsTab({ metrics, conversation }) {
                 >
                   {status.statusName}
                 </div>
-                <div className="text-sm font-medium text-slate-200">
+                <div className="text-sm font-medium text-slate-900 dark:text-slate-200">
                   {formatDuration(status.totalSeconds)}
                 </div>
               </div>
-              <div className="flex items-center gap-4 text-xs text-slate-400">
+              <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
                 <div>
                   Promedio: <span className="text-slate-300">{formatDuration(status.averageSeconds)}</span>
                 </div>
@@ -472,7 +472,7 @@ function MetricsTab({ metrics, conversation }) {
                 </div>
               </div>
               {/* Barra de progreso */}
-              <div className="mt-2 h-2 bg-slate-900 rounded-full overflow-hidden">
+              <div className="mt-2 h-2 bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
@@ -489,7 +489,7 @@ function MetricsTab({ metrics, conversation }) {
       {/* Métricas de ciclos */}
       {metrics.cycles.total > 0 && (
         <div>
-          <h4 className="font-semibold text-slate-300 mb-3">Métricas de Ciclos</h4>
+          <h4 className="font-semibold text-slate-900 dark:text-slate-300 mb-3">Métricas de Ciclos</h4>
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 rounded-lg bg-purple-900/20 border border-purple-700/50">
               <div className="text-xs text-purple-300">Duración promedio</div>
@@ -522,7 +522,7 @@ function MetricsTab({ metrics, conversation }) {
 function CyclesTab({ cycles, formatDate }) {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-slate-200">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-900 dark:text-slate-200">
         Historial de Ciclos ({cycles.length})
       </h3>
 
@@ -535,7 +535,7 @@ function CyclesTab({ cycles, formatDate }) {
           {cycles.map(cycle => (
             <div
               key={cycle.id}
-              className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-slate-600 transition-colors"
+              className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 hover:border-slate-600 transition-colors"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -544,7 +544,7 @@ function CyclesTab({ cycles, formatDate }) {
                     <div className="font-semibold text-slate-100">
                       Ciclo #{cycle.cycle_number}
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-slate-600 dark:text-slate-400">
                       {formatDate(cycle.started_at)} → {formatDate(cycle.completed_at)}
                     </div>
                   </div>
@@ -596,7 +596,7 @@ function CyclesTab({ cycles, formatDate }) {
 
               {cycle.cycle_data && Object.keys(cycle.cycle_data).length > 0 && (
                 <div className="mt-3 pt-3 border-t border-slate-700/50">
-                  <div className="text-xs text-slate-400 mb-2">Información del ciclo:</div>
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-2">Información del ciclo:</div>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(cycle.cycle_data).map(([key, value]) => (
                       <div key={key} className="text-xs">

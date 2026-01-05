@@ -82,11 +82,17 @@ input::placeholder {
 
 .animate-shake { animation: shake 300ms ease; }
 
-/* Simple chat background */
+/* Chat background with subtle pattern */
 .chat-bg-light {
-  background-color: #f5f5f5;
+  background-color: #efeae2;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,.02) 10px, rgba(0,0,0,.02) 20px),
+    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(0,0,0,.01) 10px, rgba(0,0,0,.01) 20px);
 }
 
 .chat-bg-dark {
-  background-color: #0f172a;
+  background-color: #0b141a;
+  background-image:
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.015) 10px, rgba(255,255,255,.015) 20px),
+    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,.01) 10px, rgba(255,255,255,.01) 20px);
 }
