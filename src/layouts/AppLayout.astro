@@ -330,5 +330,37 @@ const footerLinks = [
           .forEach((a) => a.addEventListener("click", closeMobileNav));
       });
     </script>
+
+    <!-- Theme Toggle Script -->
+    <script>
+      const container = document.getElementById("theme-toggle-container");
+      if (container) {
+        const isDark = document.documentElement.classList.contains("dark");
+
+        const button = document.createElement("button");
+        button.className =
+          "w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition flex items-center justify-center text-2xl";
+        button.innerHTML = isDark ? "☀️" : "🌙";
+        button.title = isDark
+          ? "Cambiar a modo claro"
+          : "Cambiar a modo oscuro";
+
+        button.addEventListener("click", () => {
+          const currentlyDark =
+            document.documentElement.classList.contains("dark");
+          const newTheme = !currentlyDark;
+
+          document.documentElement.classList.toggle("dark", newTheme);
+          localStorage.setItem("theme", newTheme ? "dark" : "light");
+
+          button.innerHTML = newTheme ? "☀️" : "🌙";
+          button.title = newTheme
+            ? "Cambiar a modo claro"
+            : "Cambiar a modo oscuro";
+        });
+
+        container.appendChild(button);
+      }
+    </script>
   </body>
 </html>
