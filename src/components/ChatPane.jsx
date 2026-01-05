@@ -1711,7 +1711,7 @@ function pickMime() {
               // Si no tiene campos requeridos, cambiar directamente
               handleStatusChange(newStatusId, null);
             }}
-            className="bg-slate-900 border border-slate-700 text-xs rounded px-2 py-1"
+            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs rounded px-2 py-1"
           >
             {statuses.map(s => (
               <option key={s.id} value={s.id}>
@@ -1723,7 +1723,7 @@ function pickMime() {
           <select
             value={conversation.asignado_a || ''}
             onChange={(e) => handleAssignAgent(e.target.value ? Number(e.target.value) : null)}
-            className="bg-slate-900 border border-slate-700 text-xs rounded px-2 py-1"
+            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs rounded px-2 py-1"
             title="Asignar a agente"
           >
             <option value="">Sin asignar</option>
@@ -1742,7 +1742,7 @@ function pickMime() {
                 if (e.key==='Escape') clearSearch();
               }}
               placeholder="Buscar en chat..."
-              className="h-8 px-2 rounded bg-slate-900 border border-slate-700 text-xs outline-none focus:border-emerald-400"
+              className="h-8 px-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs outline-none focus:border-emerald-400"
               style={{width:'160px'}}
             />
             {searchResults.length > 0 && (
