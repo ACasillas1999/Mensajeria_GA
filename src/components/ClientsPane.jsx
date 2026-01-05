@@ -90,7 +90,7 @@ export default function ClientsPane() {
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && load(q)}
               placeholder="Buscar por nombre o numero..."
-              className="w-full sm:w-64 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 transition"
+              className="w-full sm:w-64 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 transition"
             />
             <button
               onClick={() => load(q)}
@@ -181,7 +181,7 @@ export default function ClientsPane() {
             return (
               <div
                 key={c.id}
-                className="group relative p-4 rounded-xl border border-slate-800 bg-slate-950/70 hover:bg-slate-900/80 hover:border-slate-700 transition-all"
+                className="group relative p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/70 hover:bg-slate-50 dark:hover:bg-slate-900/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
               >
                 {/* Badges */}
                 <div className="absolute top-2 right-2 flex gap-1">

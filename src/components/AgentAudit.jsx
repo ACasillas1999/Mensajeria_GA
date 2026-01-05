@@ -71,7 +71,7 @@ export default function AgentAudit() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-3">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3">
             <div className="text-xs text-slate-400">Total conversaciones</div>
             <div className="text-2xl font-bold text-emerald-400">{agent?.total_conversaciones || 0}</div>
           </div>
@@ -90,7 +90,7 @@ export default function AgentAudit() {
         </div>
 
         {/* Chats activos del agente */}
-        <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-800 font-medium flex items-center gap-2">
             <span>Conversaciones activas</span>
             <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700">{agentChats.length}</span>
@@ -168,7 +168,7 @@ export default function AgentAudit() {
       </div>
 
       {/* Tabla de agentes */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-800 font-medium">Agentes</div>
         <div className="overflow-x-auto">
           <table className="w-full">

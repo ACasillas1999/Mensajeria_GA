@@ -1577,14 +1577,14 @@ function pickMime() {
 
   if (!conversation) {
     return (
-      <div className="bg-slate-950/70 border border-slate-800 rounded-xl h-[calc(100vh-14rem)] flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl h-[calc(100vh-14rem)] flex items-center justify-center">
         <p className="text-slate-400">Selecciona una conversación</p>
       </div>
     );
   }
 
   return (
-    <div className="relative bg-slate-950/70 border border-slate-800 rounded-xl h-full flex flex-col">
+    <div className="relative bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl h-full flex flex-col">
       {loading && (
         <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
           <div className="w-12 h-12 rounded-full border-4 border-emerald-400/70 border-t-transparent animate-spin" />
@@ -2008,7 +2008,7 @@ function pickMime() {
             </div>
           </div>
           {/* Campo de texto deshabilitado para mostrar que no se puede escribir */}
-          <div className="p-3 bg-slate-900/50">
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/50">
             <div className="flex items-center gap-2 opacity-40">
               <div className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800">📎</div>
               <div className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800">⚡</div>
@@ -2041,7 +2041,7 @@ function pickMime() {
             onKeyDown={onKeyDown}
             placeholder={file ? "Mensaje (opcional)..." : "Escribe un mensaje..."}
             rows={1}
-            className="resize-none flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 outline-none focus:border-emerald-400"
+            className="resize-none flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 outline-none focus:border-emerald-400"
           />
           <button type="button" onClick={() => recState.recording ? stopRecording() : startRecording()} className={`inline-flex items-center justify-center w-10 h-10 rounded ${recState.recording ? 'bg-red-600 hover:bg-red-500' : 'bg-slate-800 hover:bg-slate-700'} transition`} title={recState.recording ? 'Detener grabación' : 'Grabar audio'}>
             {recState.recording ? '⏹️' : '🎤'}

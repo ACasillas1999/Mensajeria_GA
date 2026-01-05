@@ -63,7 +63,7 @@ export default function MagicBento({ isAdmin = false }) {
       <a
         href={href}
         onMouseEnter={handleMouseEnter}
-        className={`group relative h-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 transition duration-200 ${accent.border} ${className}`}
+        className={`group relative h-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/70 transition duration-200 ${accent.border} ${className}`}
       >
         <div
           className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br ${accent.glow}`}
