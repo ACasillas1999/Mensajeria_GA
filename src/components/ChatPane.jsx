@@ -2064,7 +2064,7 @@ function pickMime() {
         <button
           type="button"
           onClick={() => setShowComments(!showComments)}
-          className="w-full px-4 py-2 flex items-center gap-2 text-sm text-slate-300 hover:bg-slate-900/50 transition"
+          className="w-full px-4 py-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900/50 transition"
         >
           <span className="flex-1 text-left font-medium">
             💬 Comentarios internos ({comments.length})
@@ -2073,7 +2073,7 @@ function pickMime() {
         </button>
 
         {showComments && (
-          <div className="border-t border-slate-800 bg-slate-950/50">
+          <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
             {/* Lista de comentarios */}
             <div className="max-h-48 overflow-y-auto thin-scroll p-3 space-y-2">
               {comments.length === 0 ? (
