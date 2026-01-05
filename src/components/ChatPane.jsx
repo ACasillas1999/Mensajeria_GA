@@ -1786,7 +1786,7 @@ function pickMime() {
       </div>
 
       {/* Mensajes */}
-      <div ref={scrollerRef} className="flex-1 overflow-y-auto thin-scroll p-4 space-y-2 chat-bg-light dark:chat-bg-dark">
+      <div ref={scrollerRef} className="flex-1 overflow-y-auto thin-scroll p-4 space-y-2 bg-gray-100 dark:bg-slate-900">
         {loading && <div className="text-sm text-slate-600 dark:text-slate-400">Cargando…</div>}
 
         {/* Botón para cargar más mensajes antiguos */}
