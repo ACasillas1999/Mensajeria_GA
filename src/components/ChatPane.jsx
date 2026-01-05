@@ -161,17 +161,17 @@ function SystemEvent({ evento }) {
 function InlineComment({ comentario }) {
   return (
     <div className="flex justify-start my-3 px-2">
-      <div className="max-w-[70%] px-4 py-3 rounded-lg bg-amber-950/30 border border-amber-800/40">
+      <div className="max-w-[70%] px-4 py-3 rounded-lg bg-amber-100 dark:bg-amber-950/30 border border-amber-400 dark:border-amber-800/40">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-sm">💬</span>
-          <span className="text-xs font-semibold text-amber-300">
+          <span className="text-xs font-semibold text-amber-900 dark:text-amber-300">
             Comentario interno - {comentario.usuario_nombre || 'Usuario'}
           </span>
         </div>
-        <div className="text-sm text-amber-100/90 whitespace-pre-wrap">
+        <div className="text-sm text-amber-900 dark:text-amber-100/90 whitespace-pre-wrap">
           {comentario.comentario}
         </div>
-        <div className="text-[10px] text-amber-600/60 mt-2">
+        <div className="text-[10px] text-amber-700 dark:text-amber-600/60 mt-2">
           {new Date(comentario.creado_en).toLocaleString()}
         </div>
       </div>
@@ -1626,7 +1626,7 @@ function pickMime() {
             title={conversation.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
             className={`h-8 px-2 rounded text-xs transition ${
               conversation.is_favorite
-                ? 'bg-yellow-600/20 border border-yellow-600/60 text-yellow-300'
+                ? 'bg-yellow-600/20 border border-yellow-600/60 text-amber-900 dark:text-yellow-300'
                 : 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-400'
             }`}
           >
