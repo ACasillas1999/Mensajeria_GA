@@ -1627,7 +1627,7 @@ function pickMime() {
             className={`h-8 px-2 rounded text-xs transition ${
               conversation.is_favorite
                 ? 'bg-yellow-600/20 border border-yellow-600/60 text-yellow-300'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
+                : 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-400'
             }`}
           >
             {conversation.is_favorite ? '⭐' : '☆'}
@@ -1640,7 +1640,7 @@ function pickMime() {
             className={`h-8 px-2 rounded text-xs ${
               conversation.is_archived
                 ? 'bg-slate-700/60 text-slate-300'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
+                : 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-400'
             }`}
           >
             📦
@@ -1650,7 +1650,7 @@ function pickMime() {
             type="button"
             onClick={loadCallHistory}
             title="Ver historial de llamadas"
-            className="h-8 px-2 rounded text-xs bg-slate-800 hover:bg-slate-700 text-slate-400"
+            className="h-8 px-2 rounded text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-400"
           >
             📞
           </button>
@@ -1754,7 +1754,7 @@ function pickMime() {
                   type="button"
                   onClick={prevSearchResult}
                   title="Anterior (↑)"
-                  className="h-8 w-8 rounded bg-slate-800 hover:bg-slate-700 text-xs"
+                  className="h-8 w-8 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs"
                 >
                   ↑
                 </button>
@@ -1762,7 +1762,7 @@ function pickMime() {
                   type="button"
                   onClick={nextSearchResult}
                   title="Siguiente (↓)"
-                  className="h-8 w-8 rounded bg-slate-800 hover:bg-slate-700 text-xs"
+                  className="h-8 w-8 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs"
                 >
                   ↓
                 </button>
@@ -1770,18 +1770,18 @@ function pickMime() {
                   type="button"
                   onClick={clearSearch}
                   title="Cerrar búsqueda (Esc)"
-                  className="h-8 w-8 rounded bg-slate-800 hover:bg-slate-700 text-xs"
+                  className="h-8 w-8 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs"
                 >
                   ✕
                 </button>
               </div>
             )}
             {searchResults.length === 0 && searchQ && (
-              <button type="button" onClick={runSearch} title="Buscar" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">🔎</button>
+              <button type="button" onClick={runSearch} title="Buscar" className="h-8 px-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs">🔎</button>
             )}
           </div>
-          <button type="button" onClick={openAttachments} title="Ver adjuntos" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📎</button>
-          <button type="button" onClick={() => setShowTemplates(true)} title="Enviar plantilla" className="h-8 px-2 rounded bg-slate-800 hover:bg-slate-700 text-xs">📋</button>
+          <button type="button" onClick={openAttachments} title="Ver adjuntos" className="h-8 px-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs">📎</button>
+          <button type="button" onClick={() => setShowTemplates(true)} title="Enviar plantilla" className="h-8 px-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs">📋</button>
         </div>
       </div>
 
@@ -1795,7 +1795,7 @@ function pickMime() {
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className="px-4 py-2 text-sm rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition disabled:opacity-50"
+              className="px-4 py-2 text-sm rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-700 transition disabled:opacity-50"
             >
               {loadingMore ? (
                 <>
@@ -1913,13 +1913,13 @@ function pickMime() {
                       onClick={() => setReactionPicker({ show: false, msgId: null })}
                     />
                     {/* Panel de emojis */}
-                    <div className="absolute bottom-full right-0 mb-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-2 flex gap-1 z-50">
+                    <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl p-2 flex gap-1 z-50">
                       {['👍', '❤️', '😂', '😮', '😢', '🙏', '👏', '🔥'].map(emoji => (
                         <button
                           key={emoji}
                           type="button"
                           onClick={() => reactToMessage(m, emoji)}
-                          className="text-2xl w-10 h-10 flex items-center justify-center rounded hover:bg-slate-800 transition transform hover:scale-110"
+                          className="text-2xl w-10 h-10 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-800 transition transform hover:scale-110"
                         >
                           {emoji}
                         </button>
@@ -2025,14 +2025,14 @@ function pickMime() {
         </div>
       ) : (
         <form onSubmit={send} className="p-3 border-t border-slate-800 flex items-center gap-2">
-          <label className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700 cursor-pointer" title="Adjuntar archivo">
+          <label className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer" title="Adjuntar archivo">
             <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
             📎
           </label>
-          <button type="button" onClick={() => setShowQuickReplies(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700" title="Respuestas rápidas">
+          <button type="button" onClick={() => setShowQuickReplies(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700" title="Respuestas rápidas">
             ⚡
           </button>
-          <button type="button" onClick={() => setShowLocationPicker(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-800 hover:bg-slate-700" title="Enviar ubicación">
+          <button type="button" onClick={() => setShowLocationPicker(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700" title="Enviar ubicación">
             📍
           </button>
           <textarea
@@ -2043,7 +2043,7 @@ function pickMime() {
             rows={1}
             className="resize-none flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 outline-none focus:border-emerald-400"
           />
-          <button type="button" onClick={() => recState.recording ? stopRecording() : startRecording()} className={`inline-flex items-center justify-center w-10 h-10 rounded ${recState.recording ? 'bg-red-600 hover:bg-red-500' : 'bg-slate-800 hover:bg-slate-700'} transition`} title={recState.recording ? 'Detener grabación' : 'Grabar audio'}>
+          <button type="button" onClick={() => recState.recording ? stopRecording() : startRecording()} className={`inline-flex items-center justify-center w-10 h-10 rounded ${recState.recording ? 'bg-red-600 hover:bg-red-500' : 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700'} transition`} title={recState.recording ? 'Detener grabación' : 'Grabar audio'}>
             {recState.recording ? '⏹️' : '🎤'}
           </button>
           {recState.recording && (
@@ -2137,13 +2137,13 @@ function pickMime() {
       {/* Modal de historial de llamadas */}
       {showCallHistory && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCallHistory(false)}>
-          <div className="bg-slate-950 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[70vh] overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-2xl max-w-2xl w-full max-h-[70vh] overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center mb-4">
               <h3 className="font-semibold text-lg">📞 Historial de Llamadas</h3>
-              <button className="ml-auto px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm" onClick={() => setShowCallHistory(false)}>✕</button>
+              <button className="ml-auto px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-sm" onClick={() => setShowCallHistory(false)}>✕</button>
             </div>
             {callHistory.length === 0 ? (
-              <div className="text-slate-400 text-sm py-8 text-center">
+              <div className="text-slate-600 dark:text-slate-400 text-sm py-8 text-center">
                 No hay llamadas registradas para esta conversación.
               </div>
             ) : (
@@ -2272,10 +2272,10 @@ function pickMime() {
 
       {attach.open && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closeAttachments}>
-          <div className="bg-slate-950 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-auto p-4" onClick={(e)=>e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-auto p-4" onClick={(e)=>e.stopPropagation()}>
             <div className="flex items-center mb-3">
               <div className="font-medium">Adjuntos</div>
-              <button className="ml-auto px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sm" onClick={closeAttachments}>Cerrar</button>
+              <button className="ml-auto px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-sm" onClick={closeAttachments}>Cerrar</button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {attach.items.map((a,i)=>{
