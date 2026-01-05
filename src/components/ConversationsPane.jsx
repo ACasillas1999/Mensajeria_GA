@@ -412,8 +412,8 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             onClick={() => setView('active')}
             className={`flex-1 px-3 py-1.5 text-xs rounded transition ${
               view === 'active'
-                ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-600/60'
-                : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                ? 'bg-emerald-100 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-400 dark:border-emerald-600/60'
+                : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-800'
             }`}
           >
             💬 Activos
@@ -422,8 +422,8 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             onClick={() => setView('favorites')}
             className={`flex-1 px-3 py-1.5 text-xs rounded transition ${
               view === 'favorites'
-                ? 'bg-yellow-600/20 text-yellow-300 border border-yellow-600/60'
-                : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                ? 'bg-yellow-100 dark:bg-yellow-600/20 text-yellow-700 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600/60'
+                : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-800'
             }`}
           >
             ⭐ Favoritos
@@ -433,7 +433,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             className={`flex-1 px-3 py-1.5 text-xs rounded transition ${
               view === 'archived'
                 ? 'bg-slate-700/60 text-slate-300 border border-slate-600'
-                : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-800'
             }`}
           >
             📦 Archivados
@@ -471,7 +471,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
                     {c.title || `Chat ${c.id}`}
                   </div>
                 </div>
-                <div className="text-[10px] text-slate-500 shrink-0">
+                <div className="text-[10px] text-slate-600 dark:text-slate-500 shrink-0">
                   {formatRelativeTime(c.last_at)}
                 </div>
               </div>
@@ -502,7 +502,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
                   </span>
                 )}
                 {c.asignado_nombre && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-sky-700/80 text-sky-400 bg-sky-900/20 flex items-center gap-1">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-sky-400 dark:border-sky-700/80 text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/20 flex items-center gap-1">
                     <span>👤</span>
                     <span>{c.asignado_nombre}</span>
                   </span>
