@@ -494,7 +494,7 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
                   <span
                     className="text-[10px] px-2 py-0.5 rounded-full border text-white"
                     style={{
-                      backgroundColor: (c.status_color || '#64748b') + '40',
+                      backgroundColor: c.status_color || '#64748b',
                       borderColor: c.status_color || '#64748b'
                     }}
                   >
