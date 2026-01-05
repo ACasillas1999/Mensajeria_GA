@@ -102,7 +102,7 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">
                     <div>Iniciado: {formatDate(data.conversation.current_cycle_started_at)}</div>
-                    <div>DuraciÃ³n: {data.conversation.current_cycle_duration_seconds
+                    <div>Duración: {data.conversation.current_cycle_duration_seconds
                       ? `${Math.floor(data.conversation.current_cycle_duration_seconds / 86400)}d ${Math.floor((data.conversation.current_cycle_duration_seconds % 86400) / 3600)}h`
                       : 'N/A'}
                     </div>
@@ -118,7 +118,7 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
                     <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{data.stats.total_cycles}</div>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-100 border border-slate-200 dark:bg-slate-800/50 dark:border-slate-700">
-                    <div className="text-xs text-slate-600 dark:text-slate-400">DuraciÃ³n Promedio</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">Duración Promedio</div>
                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{data.stats.avg_duration_formatted}</div>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-100 border border-slate-200 dark:bg-slate-800/50 dark:border-slate-700">
@@ -136,7 +136,7 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
 
                 {data?.cycles && data.cycles.length === 0 ? (
                   <div className="text-center py-8 text-slate-600 dark:text-slate-500">
-                    No hay ciclos completados aÃºn
+                    No hay ciclos completados aún.
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -210,7 +210,7 @@ export default function CycleHistoryModal({ conversationId, conversationName, on
                         {/* Cycle Data (custom fields) */}
                         {cycle.cycle_data && Object.keys(cycle.cycle_data).length > 0 && (
                           <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
-                            <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">InformaciÃ³n del ciclo:</div>
+                            <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Información del ciclo:</div>
                             <div className="grid grid-cols-2 gap-2">
                               {Object.entries(cycle.cycle_data).map(([key, value]) => (
                                 <div key={key} className="text-xs">
