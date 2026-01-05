@@ -128,7 +128,7 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 relative">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 relative pipeline-scroll">
           {loading && (
             <div className="absolute inset-0 bg-white/95 dark:bg-slate-950/95 flex items-center justify-center z-10">
               <div className="text-center">

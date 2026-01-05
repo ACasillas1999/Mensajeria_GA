@@ -227,6 +227,7 @@ function PipelineViewInner() {
   }
 
   return (
+    <>
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -276,7 +277,7 @@ function PipelineViewInner() {
       {loading ? (
         <div className="p-12 text-center text-slate-400">Cargando pipeline...</div>
       ) : (
-        <div className="overflow-x-auto pb-4 pt-4" style={{ colorScheme: 'light' }}>
+        <div className="overflow-x-auto pb-4 pt-4 pipeline-hscroll" style={{ colorScheme: 'light' }}>
           <div className="flex gap-3 min-w-min flex-nowrap touch-pan-x">
             {pipeline.map((column) => (
               <div
@@ -305,7 +306,7 @@ function PipelineViewInner() {
 
                 {/* Column Body with scroll */}
                 <div
-                  className={`p-2 space-y-2 rounded-b-lg border border-t-0 transition-colors overflow-y-auto ${
+                  className={`p-2 space-y-2 rounded-b-lg border border-t-0 transition-colors overflow-y-auto pipeline-scroll ${
                     dragOverColumn === column.status.id
                       ? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-600'
                       : 'bg-slate-100 border-slate-200 dark:bg-slate-900/40 dark:border-slate-700'
@@ -506,6 +507,66 @@ function PipelineViewInner() {
         </Suspense>
       )}
     </div>
+    <style>{`
+      .pipeline-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #e2e8f0;
+      }
+      .dark .pipeline-scroll {
+        scrollbar-color: #475569 #0f172a;
+      }
+      .pipeline-scroll::-webkit-scrollbar {
+        width: 10px;
+      }
+      .pipeline-scroll::-webkit-scrollbar-track {
+        background: #e2e8f0;
+      }
+      .pipeline-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 9999px;
+        border: 2px solid #e2e8f0;
+      }
+      .pipeline-scroll::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      .dark .pipeline-scroll::-webkit-scrollbar-track {
+        background: #0f172a;
+      }
+      .dark .pipeline-scroll::-webkit-scrollbar-thumb {
+        background: #475569;
+        border: 2px solid #0f172a;
+      }
+      .dark .pipeline-scroll::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+      .pipeline-hscroll {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+      }
+      .dark .pipeline-hscroll {
+        scrollbar-color: #475569 transparent;
+      }
+      .pipeline-hscroll::-webkit-scrollbar {
+        height: 8px;
+      }
+      .pipeline-hscroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .pipeline-hscroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 9999px;
+      }
+      .pipeline-hscroll::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      .dark .pipeline-hscroll::-webkit-scrollbar-thumb {
+        background: #475569;
+      }
+      .dark .pipeline-hscroll::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+    `}</style>
+    </>
   );
 }
 
