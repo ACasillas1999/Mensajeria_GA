@@ -276,7 +276,7 @@ function PipelineViewInner() {
       {loading ? (
         <div className="p-12 text-center text-slate-400">Cargando pipeline...</div>
       ) : (
-        <div className="overflow-x-auto pb-4" style={{ colorScheme: 'light' }}>
+        <div className="overflow-x-auto pb-4 pt-4" style={{ colorScheme: 'light' }}>
           <div className="flex gap-3 min-w-min flex-nowrap touch-pan-x">
             {pipeline.map((column) => (
               <div

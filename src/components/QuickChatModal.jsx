@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from 'react';
+﻿import { useState, useEffect, useRef, memo } from 'react';
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -17,10 +17,10 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
   async function loadData() {
     setLoading(true);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos máximo
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos mÃ¡ximo
 
     try {
-      // Cargar conversación y mensajes en paralelo
+      // Cargar conversaciÃ³n y mensajes en paralelo
       const [convRes, msgsRes] = await Promise.all([
         fetch(`${BASE}/api/conversations/${conversationId}`.replace(/\/\//g, '/'), {
           signal: controller.signal
@@ -40,12 +40,12 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
     } catch (err) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
-        console.error('⏱️ Timeout: La carga tardó más de 10 segundos');
-        alert('⏱️ La carga está tardando demasiado. Por favor, intenta de nuevo o usa "Abrir completo".');
+        console.error('â±ï¸ Timeout: La carga tardÃ³ mÃ¡s de 10 segundos');
+        alert('â±ï¸ La carga estÃ¡ tardando demasiado. Por favor, intenta de nuevo o usa "Abrir completo".');
         onClose(); // Cerrar modal si hay timeout
       } else {
         console.error('Error loading quick view:', err);
-        alert('❌ Error cargando la conversación. Intenta de nuevo.');
+        alert('âŒ Error cargando la conversaciÃ³n. Intenta de nuevo.');
       }
     } finally {
       setLoading(false);
@@ -88,7 +88,7 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -96,33 +96,33 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-4xl h-[85vh] bg-slate-950 rounded-xl border border-slate-800 shadow-2xl flex flex-col">
+      <div className="relative w-full max-w-4xl h-[85vh] bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500/20 to-sky-500/20 border border-emerald-700/50 flex items-center justify-center text-emerald-300 font-bold">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500/20 to-sky-500/20 border border-emerald-300 dark:border-emerald-700/50 flex items-center justify-center text-emerald-700 dark:text-emerald-300 font-bold">
               {conversation?.title?.[0]?.toUpperCase() || '?'}
             </div>
             <div>
-              <h3 className="font-semibold text-slate-100">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
                 {conversation?.title || 'Cargando...'}
               </h3>
-              <p className="text-xs text-slate-400">{conversation?.wa_user}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">{conversation?.wa_user}</p>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
             <button
               onClick={onOpenFull}
-              className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600/20 border border-emerald-700 text-emerald-300 hover:bg-emerald-600/30 transition"
+              className="px-3 py-1.5 text-sm rounded-lg bg-emerald-100 dark:bg-emerald-600/20 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-600/30 transition"
             >
-              🔗 Abrir completo
+              ðŸ”— Abrir completo
             </button>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-slate-800 transition flex items-center justify-center text-slate-400 hover:text-slate-200"
+              className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             >
-              ✕
+              âœ•
             </button>
           </div>
         </div>
@@ -130,17 +130,17 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2 relative">
           {loading && (
-            <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center z-10">
+            <div className="absolute inset-0 bg-white/95 dark:bg-slate-950/95 flex items-center justify-center z-10">
               <div className="text-center">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-t-2 border-emerald-400 mb-3"></div>
-                <div className="text-base text-slate-200 font-medium">Cargando conversación...</div>
-                <div className="text-xs text-slate-400 mt-1">Máximo 10 segundos</div>
+                <div className="text-base text-slate-700 dark:text-slate-200 font-medium">Cargando conversaciÃ³n...</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">MÃ¡ximo 10 segundos</div>
               </div>
             </div>
           )}
 
           {!loading && messages.length === 0 && (
-            <div className="flex items-center justify-center h-full text-slate-400">
+            <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
               No hay mensajes
             </div>
           )}
@@ -150,12 +150,12 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
               key={m.id}
               className={`max-w-[75%] px-3 py-2 rounded-lg ${
                 m.sender === 'me'
-                  ? 'ml-auto bg-emerald-600/20 border border-emerald-700'
-                  : 'bg-slate-800 border border-slate-700'
+                  ? 'ml-auto bg-emerald-100 border border-emerald-300 text-slate-900 dark:bg-emerald-600/20 dark:border-emerald-700 dark:text-slate-100'
+                  : 'bg-slate-100 border border-slate-200 text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100'
               }`}
             >
               <div className="text-sm whitespace-pre-wrap">{m.text}</div>
-              <div className="text-[10px] text-slate-400 mt-1">
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                 {new Date(m.ts * 1000).toLocaleTimeString('es-MX', { 
                   hour: '2-digit', 
                   minute: '2-digit' 
@@ -167,15 +167,15 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
         </div>
 
         {/* Composer */}
-        <form onSubmit={sendMessage} className="p-4 border-t border-slate-800 bg-slate-900/30">
+        <form onSubmit={sendMessage} className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/30">
           <div className="flex gap-2">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Escribe un mensaje rápido..."
+              placeholder="Escribe un mensaje rÃ¡pido..."
               disabled={sending}
-              className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none focus:border-emerald-400 transition disabled:opacity-50"
+              className="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none focus:border-emerald-400 transition disabled:opacity-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
             />
             <button
               type="submit"
@@ -185,8 +185,8 @@ const QuickChatModal = memo(function QuickChatModal({ conversationId, onClose, o
               {sending ? '...' : 'Enviar'}
             </button>
           </div>
-          <div className="text-xs text-slate-500 mt-2">
-            💡 Tip: Presiona ESC para cerrar
+          <div className="text-xs text-slate-600 dark:text-slate-500 mt-2">
+            ðŸ’¡ Tip: Presiona ESC para cerrar
           </div>
         </form>
       </div>
