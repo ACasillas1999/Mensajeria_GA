@@ -42,23 +42,30 @@ export default function UsersAdmin() {
   }
 
   async function gestionSucursales() {
+    if (!window.Swal) {
+      alert("Error: La librería SweetAlert2 no se ha cargado correctamente. Recarga la página.");
+      return;
+    }
+
+    const { Swal } = window;
+
     // Generamos HTML para la lista de sucursales
     const sucursalesList = sucursales
       .map(
         (s) => `
       <div class="flex items-center justify-between p-2 border-b border-slate-200 dark:border-slate-700 last:border-0">
-        <span class="text-sm text-slate-700 dark:text-slate-300">${s.nombre}</span>
+        <span class="text-sm text-slate-700 dark:text-slate-300 font-medium">${s.nombre}</span>
         <div class="flex gap-2">
-          <button class="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300" 
-            onclick="editarSucursal(${s.id}, '${s.nombre}')">✏️</button>
-          <button class="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300" 
-            onclick="eliminarSucursal(${s.id}, '${s.nombre}')">🗑️</button>
+          <button class="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
+            onclick="window.editarSucursal(${s.id}, '${s.nombre.replace(/'/g, "\\'")}')">✏️</button>
+          <button class="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 border border-red-200 dark:border-red-800" 
+            onclick="window.eliminarSucursal(${s.id}, '${s.nombre.replace(/'/g, "\\'")}')">🗑️</button>
         </div>
       </div>`
       )
       .join("");
 
-    // Exponer funciones al window para que SweetAlert pueda llamarlas
+    // Exponer funciones al window para que SweetAlert pueda llamarlas globalmente
     window.editarSucursal = async (id, nombreActual) => {
       const { value: nuevoNombre } = await Swal.fire({
         title: "Editar sucursal",
@@ -67,8 +74,9 @@ export default function UsersAdmin() {
         showCancelButton: true,
         confirmButtonText: "Guardar",
         cancelButtonText: "Cancelar",
+        confirmButtonColor: "#10b981",
         inputValidator: (value) => {
-          if (!value) return "El nombre es requerido";
+          if (!value || !value.trim()) return "El nombre es requerido";
         },
       });
 
@@ -79,14 +87,21 @@ export default function UsersAdmin() {
             {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id, nombre: nuevoNombre }),
+              body: JSON.stringify({ id, nombre: nuevoNombre.trim() }),
             }
           );
           const j = await r.json();
           if (j.ok) {
-            Swal.fire("Actualizado", "La sucursal ha sido actualizada", "success");
+            await Swal.fire({
+              icon: "success",
+              title: "Actualizado", 
+              text: "La sucursal ha sido actualizada",
+              timer: 1500,
+              showConfirmButton: false
+            });
             load(); // Recargar datos
-            Swal.close(); // Cerrar modal lista para refrescar si se desea, o podríamos reabrirlo
+            // Recargar modal
+            gestionSucursales();
           } else {
             Swal.fire("Error", j.error || "No se pudo actualizar", "error");
           }
@@ -102,8 +117,8 @@ export default function UsersAdmin() {
         text: `Se eliminará "${nombre}". Esta acción no se puede deshacer.`,
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#64748b",
         confirmButtonText: "Sí, eliminar",
         cancelButtonText: "Cancelar",
       });
@@ -120,9 +135,15 @@ export default function UsersAdmin() {
           );
           const j = await r.json();
           if (j.ok) {
-            Swal.fire("Eliminado", "La sucursal ha sido eliminada", "success");
+            await Swal.fire({
+              icon: "success",
+              title: "Eliminado", 
+              text: "La sucursal ha sido eliminada",
+              timer: 1500,
+              showConfirmButton: false
+            });
             load();
-            Swal.close();
+            gestionSucursales(); // Reabrir modal actualizado
           } else {
             Swal.fire(
               "No se puede eliminar",
@@ -140,57 +161,72 @@ export default function UsersAdmin() {
       title: "Gestión de Sucursales",
       html: `
         <div class="mb-4 text-left">
-          <div class="max-h-60 overflow-y-auto mb-4 border rounded border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+          <div class="max-h-60 overflow-y-auto mb-4 border rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-inner p-2">
             ${
               sucursalesList ||
-              '<p class="p-4 text-sm text-slate-500 text-center">No hay sucursales</p>'
+              '<p class="p-4 text-sm text-slate-500 text-center italic">No hay sucursales registradas</p>'
             }
           </div>
-          <button id="btn-nueva-sucursal" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium text-sm">
-            + Nueva Sucursal
+          <button id="btn-nueva-sucursal" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2">
+            <span class="text-lg">+</span> Nueva Sucursal
           </button>
         </div>
       `,
       showConfirmButton: false,
       showCloseButton: true,
+      customClass: {
+        popup: 'dark:bg-slate-800 dark:text-slate-100',
+        title: 'dark:text-white',
+        closeButton: 'dark:text-slate-400 hover:dark:text-slate-200'
+      },
       didOpen: () => {
         const btn = Swal.getHtmlContainer().querySelector("#btn-nueva-sucursal");
-        btn.addEventListener("click", async () => {
-          const { value: nombre } = await Swal.fire({
-            title: "Nueva sucursal",
-            input: "text",
-            inputPlaceholder: "Nombre de la sucursal",
-            showCancelButton: true,
-            confirmButtonText: "Crear",
-            cancelButtonText: "Cancelar",
-            inputValidator: (value) => {
-              if (!value) return "El nombre es requerido";
-            },
-          });
+        if(btn) {
+          btn.addEventListener("click", async () => {
+            const { value: nombre } = await Swal.fire({
+              title: "Nueva sucursal",
+              input: "text",
+              inputPlaceholder: "Nombre de la sucursal",
+              showCancelButton: true,
+              confirmButtonText: "Crear",
+              cancelButtonText: "Cancelar",
+              confirmButtonColor: "#10b981",
+              inputValidator: (value) => {
+                if (!value || !value.trim()) return "El nombre es requerido";
+              },
+            });
 
-          if (nombre) {
-            try {
-              const r = await fetch(
-                `${BASE}/api/admin/sucursales`.replace(/\/\//g, "/"),
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ nombre }),
+            if (nombre) {
+              try {
+                const r = await fetch(
+                  `${BASE}/api/admin/sucursales`.replace(/\/\//g, "/"),
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ nombre: nombre.trim() }),
+                  }
+                );
+                const j = await r.json();
+                if (j.ok) {
+                  await Swal.fire({
+                     icon: "success",
+                     title: "Creada",
+                     text: "Sucursal creada correctamente",
+                     timer: 1500,
+                     showConfirmButton: false
+                  });
+                  await load();
+                  setFiltroSuc(String(j.id));
+                  gestionSucursales(); // Reabrir modal
+                } else {
+                  Swal.fire("Error", j.error || "No se pudo crear", "error");
                 }
-              );
-              const j = await r.json();
-              if (j.ok) {
-                Swal.fire("Creada", "Sucursal creada correctamente", "success");
-                load();
-                setFiltroSuc(String(j.id));
-              } else {
-                Swal.fire("Error", j.error || "No se pudo crear", "error");
+              } catch {
+                Swal.fire("Error", "Error de red", "error");
               }
-            } catch {
-              Swal.fire("Error", "Error de red", "error");
             }
-          }
-        });
+          });
+        }
       },
       willClose: () => {
         // Limpiar funciones globales al cerrar
