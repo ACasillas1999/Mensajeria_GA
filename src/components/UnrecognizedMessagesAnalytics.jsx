@@ -89,8 +89,8 @@ export default function UnrecognizedMessagesAnalytics() {
   };
 
   const StatCard = ({ label, value, accent }) => (
-    <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/70">
-      <div className="text-xs text-slate-400">{label}</div>
+    <div className="p-3 rounded-lg border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/70">
+      <div className="text-xs text-slate-600 dark:text-slate-400">{label}</div>
       <div className={`mt-1 text-xl font-semibold ${accent}`}>{value}</div>
     </div>
   );
@@ -99,12 +99,12 @@ export default function UnrecognizedMessagesAnalytics() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex-1 min-w-[180px]">
-          <label className="block text-xs text-slate-400 mb-1">
+          <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
             Buscar texto del mensaje
           </label>
           <input
             type="text"
-            className="w-full px-2 py-1.5 rounded-md bg-slate-900 border border-slate-700 text-sm text-slate-100"
+            className="w-full px-2 py-1.5 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100"
             placeholder="Ej: quiero jugar, promociones..."
             value={search}
             onChange={(e) => {
@@ -114,9 +114,9 @@ export default function UnrecognizedMessagesAnalytics() {
           />
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">Estado</label>
+          <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Estado</label>
           <select
-            className="px-2 py-1.5 rounded-md bg-slate-900 border border-slate-700 text-sm text-slate-100"
+            className="px-2 py-1.5 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100"
             value={resolvedFilter}
             onChange={(e) => {
               setPage(1);
@@ -129,10 +129,10 @@ export default function UnrecognizedMessagesAnalytics() {
           </select>
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">Desde</label>
+          <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Desde</label>
           <input
             type="date"
-            className="px-2 py-1.5 rounded-md bg-slate-900 border border-slate-700 text-sm text-slate-100"
+            className="px-2 py-1.5 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100"
             value={from}
             onChange={(e) => {
               setPage(1);
@@ -141,10 +141,10 @@ export default function UnrecognizedMessagesAnalytics() {
           />
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">Hasta</label>
+          <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Hasta</label>
           <input
             type="date"
-            className="px-2 py-1.5 rounded-md bg-slate-900 border border-slate-700 text-sm text-slate-100"
+            className="px-2 py-1.5 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100"
             value={to}
             onChange={(e) => {
               setPage(1);
@@ -162,7 +162,7 @@ export default function UnrecognizedMessagesAnalytics() {
               setTo('');
               setPage(1);
             }}
-            className="px-3 py-1.5 rounded-md border border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+            className="px-3 py-1.5 rounded-md border border-slate-400 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             Limpiar filtros
           </button>
@@ -190,15 +190,15 @@ export default function UnrecognizedMessagesAnalytics() {
       )}
 
       {top?.length > 0 && (
-        <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/70">
-          <div className="text-xs text-slate-400 mb-2">
+        <div className="p-3 rounded-lg border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/70">
+          <div className="text-xs text-slate-600 dark:text-slate-400 mb-2">
             Top frases que el bot no entiende (para crear nuevas reglas)
           </div>
           <div className="space-y-1 max-h-40 overflow-auto pr-1">
             {top.map((t, idx) => (
               <div
                 key={idx}
-                className="flex items-start justify-between gap-2 text-xs text-slate-300"
+                className="flex items-start justify-between gap-2 text-xs text-slate-700 dark:text-slate-300"
               >
                 <div className="flex-1">
                   <span className="text-slate-500 mr-1">#{idx + 1}</span>
@@ -213,9 +213,9 @@ export default function UnrecognizedMessagesAnalytics() {
         </div>
       )}
 
-      <div className="border border-slate-800 rounded-lg overflow-hidden">
-        <div className="border-b border-slate-800 bg-slate-950/80 px-3 py-2 flex items-center justify-between">
-          <div className="text-xs text-slate-400">
+      <div className="border border-slate-300 dark:border-slate-800 rounded-lg overflow-hidden">
+        <div className="border-b border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950/80 px-3 py-2 flex items-center justify-between">
+          <div className="text-xs text-slate-600 dark:text-slate-400">
             Mensajes no reconocidos ({total || 0}){' '}
             {loading && <span className="text-slate-500 ml-1">Cargando...</span>}
           </div>
@@ -223,21 +223,21 @@ export default function UnrecognizedMessagesAnalytics() {
         </div>
         <div className="max-h-[420px] overflow-auto">
           <table className="min-w-full text-xs">
-            <thead className="bg-slate-950 text-slate-400 sticky top-0 z-10">
+            <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-2 text-left font-medium border-b border-slate-800 w-32">
+                <th className="px-3 py-2 text-left font-medium border-b border-slate-300 dark:border-slate-800 w-32">
                   Fecha
                 </th>
-                <th className="px-3 py-2 text-left font-medium border-b border-slate-800">
+                <th className="px-3 py-2 text-left font-medium border-b border-slate-300 dark:border-slate-800">
                   Mensaje
                 </th>
-                <th className="px-3 py-2 text-left font-medium border-b border-slate-800 w-40">
+                <th className="px-3 py-2 text-left font-medium border-b border-slate-300 dark:border-slate-800 w-40">
                   Sugerencia
                 </th>
-                <th className="px-3 py-2 text-left font-medium border-b border-slate-800 w-28">
+                <th className="px-3 py-2 text-left font-medium border-b border-slate-300 dark:border-slate-800 w-28">
                   Estado
                 </th>
-                <th className="px-3 py-2 text-right font-medium border-b border-slate-800 w-32">
+                <th className="px-3 py-2 text-right font-medium border-b border-slate-300 dark:border-slate-800 w-32">
                   Acciones
                 </th>
               </tr>
@@ -262,11 +262,11 @@ export default function UnrecognizedMessagesAnalytics() {
                   : '';
                 const status =
                   m.resolved ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-900/40 text-emerald-300">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">
                       Resuelto
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-900/40 text-amber-300">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
                       Pendiente
                     </span>
                   );
@@ -275,12 +275,12 @@ export default function UnrecognizedMessagesAnalytics() {
                     ? Number(m.closest_match_score).toFixed(3)
                     : null;
                 return (
-                  <tr key={m.id} className="border-b border-slate-800/60">
-                    <td className="px-3 py-2 align-top text-slate-400 whitespace-nowrap">
+                  <tr key={m.id} className="border-b border-slate-200 dark:border-slate-800/60">
+                    <td className="px-3 py-2 align-top text-slate-600 dark:text-slate-400 whitespace-nowrap">
                       {createdStr}
                     </td>
                     <td className="px-3 py-2 align-top">
-                      <div className="text-slate-100 whitespace-pre-wrap break-words">
+                      <div className="text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-words">
                         {m.message_text}
                       </div>
                       {m.conversacion_numero && (
@@ -291,7 +291,7 @@ export default function UnrecognizedMessagesAnalytics() {
                     </td>
                     <td className="px-3 py-2 align-top">
                       {m.closest_match_name ? (
-                        <div className="text-slate-200">
+                        <div className="text-slate-800 dark:text-slate-200">
                           {m.closest_match_name}
                           {score && (
                             <span className="ml-1 text-[10px] text-slate-500">
@@ -310,7 +310,7 @@ export default function UnrecognizedMessagesAnalytics() {
                       <button
                         type="button"
                         onClick={() => markResolved(m.id, !m.resolved)}
-                        className="px-2 py-0.5 rounded-md border border-slate-700 text-[11px] text-slate-200 hover:bg-slate-800"
+                        className="px-2 py-0.5 rounded-md border border-slate-400 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                       >
                         {m.resolved ? 'Marcar pendiente' : 'Marcar resuelto'}
                       </button>
@@ -329,7 +329,7 @@ export default function UnrecognizedMessagesAnalytics() {
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="px-3 py-2 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-[11px] text-slate-400">
+          <div className="px-3 py-2 border-t border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950/80 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
             <div>
               Página {page} de {totalPages} ({total} registros)
             </div>
@@ -338,7 +338,7 @@ export default function UnrecognizedMessagesAnalytics() {
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-2 py-0.5 rounded-md border border-slate-700 disabled:opacity-40"
+                className="px-2 py-0.5 rounded-md border border-slate-400 dark:border-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-200"
               >
                 Anterior
               </button>
@@ -346,7 +346,7 @@ export default function UnrecognizedMessagesAnalytics() {
                 type="button"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="px-2 py-0.5 rounded-md border border-slate-700 disabled:opacity-40"
+                className="px-2 py-0.5 rounded-md border border-slate-400 dark:border-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-200"
               >
                 Siguiente
               </button>
