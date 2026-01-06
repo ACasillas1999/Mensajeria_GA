@@ -138,7 +138,7 @@ export default function UserSettings() {
   if (loading) {
     return (
       <div className="p-8 text-center">
-        <div className="text-slate-400">Cargando...</div>
+        <div className="text-slate-600 dark:text-slate-400">Cargando...</div>
       </div>
     );
   }
@@ -146,7 +146,7 @@ export default function UserSettings() {
   if (!user) {
     return (
       <div className="p-8 text-center">
-        <div className="text-red-400">Error al cargar datos del usuario</div>
+        <div className="text-red-600 dark:text-red-400">Error al cargar datos del usuario</div>
       </div>
     );
   }
@@ -158,8 +158,8 @@ export default function UserSettings() {
         <div
           className={`p-4 rounded-lg border ${
             message.type === 'success'
-              ? 'bg-emerald-900/30 border-emerald-700 text-emerald-300'
-              : 'bg-red-900/30 border-red-700 text-red-300'
+              ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-400 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300'
+              : 'bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-700 text-red-800 dark:text-red-300'
           }`}
         >
           {message.text}
@@ -167,32 +167,32 @@ export default function UserSettings() {
       )}
 
       {/* Información del usuario */}
-      <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-        <h2 className="text-xl font-semibold mb-4 text-slate-100">Información de la cuenta</h2>
+      <div className="p-6 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/70">
+        <h2 className="text-xl font-semibold mb-4 text-slate-900 dark:text-slate-100">Información de la cuenta</h2>
         <div className="space-y-3 text-sm">
-          <div className="flex items-center justify-between py-2 border-b border-slate-800">
-            <span className="text-slate-400">Rol:</span>
-            <span className="font-medium text-slate-200">
+          <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-800">
+            <span className="text-slate-600 dark:text-slate-400">Rol:</span>
+            <span className="font-medium text-slate-900 dark:text-slate-200">
               {user.rol === 'ADMIN' ? (
-                <span className="px-3 py-1 rounded-full bg-purple-900/40 border border-purple-700 text-purple-300">
+                <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 border border-purple-400 dark:border-purple-700 text-purple-800 dark:text-purple-300">
                   Administrador
                 </span>
               ) : (
-                <span className="px-3 py-1 rounded-full bg-blue-900/40 border border-blue-700 text-blue-300">
+                <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-400 dark:border-blue-700 text-blue-800 dark:text-blue-300">
                   Agente
                 </span>
               )}
             </span>
           </div>
           {user.sucursal && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-800">
-              <span className="text-slate-400">Sucursal:</span>
-              <span className="font-medium text-slate-200">{user.sucursal}</span>
+            <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-800">
+              <span className="text-slate-600 dark:text-slate-400">Sucursal:</span>
+              <span className="font-medium text-slate-900 dark:text-slate-200">{user.sucursal}</span>
             </div>
           )}
-          <div className="flex items-center justify-between py-2 border-b border-slate-800">
-            <span className="text-slate-400">Estado:</span>
-            <span className="font-medium text-slate-200">
+          <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-800">
+            <span className="text-slate-600 dark:text-slate-400">Estado:</span>
+            <span className="font-medium text-slate-900 dark:text-slate-200">
               {user.activo ? (
                 <span className="text-emerald-400">✓ Activo</span>
               ) : (
@@ -204,11 +204,11 @@ export default function UserSettings() {
       </div>
 
       {/* Formulario de perfil */}
-      <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-        <h2 className="text-xl font-semibold mb-4 text-slate-100">Datos personales</h2>
+      <div className="p-6 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/70">
+        <h2 className="text-xl font-semibold mb-4 text-slate-900 dark:text-slate-100">Datos personales</h2>
         <form onSubmit={handleProfileSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Nombre completo</label>
+            <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Nombre completo</label>
             <input
               type="text"
               value={profileForm.nombre}
@@ -216,13 +216,13 @@ export default function UserSettings() {
                 setProfileForm({ ...profileForm, nombre: e.target.value })
               }
               required
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
               placeholder="Tu nombre completo"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Email</label>
+            <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Email</label>
             <input
               type="email"
               value={profileForm.email}
@@ -230,7 +230,7 @@ export default function UserSettings() {
                 setProfileForm({ ...profileForm, email: e.target.value })
               }
               required
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
               placeholder="tu@email.com"
             />
           </div>
@@ -248,11 +248,11 @@ export default function UserSettings() {
       </div>
 
       {/* Formulario de cambio de contraseña */}
-      <div className="p-6 rounded-xl border border-slate-800 bg-slate-950/70">
-        <h2 className="text-xl font-semibold mb-4 text-slate-100">Cambiar contraseña</h2>
+      <div className="p-6 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/70">
+        <h2 className="text-xl font-semibold mb-4 text-slate-900 dark:text-slate-100">Cambiar contraseña</h2>
         <form onSubmit={handlePasswordSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">
               Contraseña actual
             </label>
             <input
@@ -262,13 +262,13 @@ export default function UserSettings() {
                 setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
               }
               required
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
               placeholder="Tu contraseña actual"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">
               Nueva contraseña
             </label>
             <input
@@ -279,16 +279,16 @@ export default function UserSettings() {
               }
               required
               minLength={8}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
               placeholder="Mínimo 8 caracteres"
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
               Debe tener al menos 8 caracteres
             </p>
           </div>
 
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">
               Confirmar nueva contraseña
             </label>
             <input
@@ -299,7 +299,7 @@ export default function UserSettings() {
               }
               required
               minLength={8}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
               placeholder="Repite la nueva contraseña"
             />
           </div>
@@ -317,7 +317,7 @@ export default function UserSettings() {
       </div>
 
       {/* Información adicional */}
-      <div className="p-4 rounded-lg border border-slate-800 bg-slate-950/70 text-sm text-slate-400">
+      <div className="p-4 rounded-lg border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950/70 text-sm text-slate-600 dark:text-slate-400">
         <p>
           💡 <strong>Nota:</strong> Si cambias tu email, asegúrate de usar uno válido ya que
           será tu nuevo nombre de usuario para iniciar sesión.
