@@ -281,16 +281,16 @@ export default function AutoRepliesAdmin() {
 
   return (
     <div className="space-y-6">
-      <section className="p-4 rounded-xl border border-slate-800 bg-slate-950/70 space-y-3">
+      <section className="p-4 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/70 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h2 className="text-lg font-semibold">Configuración del bot</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Configuración del bot</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               Activa o desactiva las auto-respuestas y ajusta los límites.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Bot</span>
+            <span className="text-xs text-slate-600 dark:text-slate-400">Bot</span>
             <button
               type="button"
               onClick={() =>
@@ -313,7 +313,7 @@ export default function AutoRepliesAdmin() {
 
         <form onSubmit={saveSettings} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
           <div className="space-y-2">
-            <label className="block text-xs text-slate-400">
+            <label className="block text-xs text-slate-600 dark:text-slate-400">
               Respuesta fuera de horario
             </label>
             <select
@@ -324,13 +324,13 @@ export default function AutoRepliesAdmin() {
                   out_of_hours_enabled: e.target.value,
                 }))
               }
-              className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm"
+              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
             >
               <option value="true">Activada</option>
               <option value="false">Desactivada</option>
             </select>
 
-            <label className="block text-xs text-slate-400 mt-2">
+            <label className="block text-xs text-slate-600 dark:text-slate-400 mt-2">
               Mensaje fuera de horario
             </label>
             <textarea
@@ -342,13 +342,13 @@ export default function AutoRepliesAdmin() {
                 }))
               }
               rows={3}
-              className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm resize-none"
+              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm resize-none text-slate-900 dark:text-slate-100"
               placeholder="Mensaje que se envía cuando el cliente escribe fuera de horario."
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-xs text-slate-400">
+            <label className="block text-xs text-slate-600 dark:text-slate-400">
               Delay antes de responder (segundos)
             </label>
             <input
@@ -362,10 +362,10 @@ export default function AutoRepliesAdmin() {
                   auto_reply_delay_seconds: e.target.value,
                 }))
               }
-              className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm"
+              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
             />
 
-            <label className="block text-xs text-slate-400 mt-2">
+            <label className="block text-xs text-slate-600 dark:text-slate-400 mt-2">
               Máx. respuestas automáticas por conversación (24h)
             </label>
             <input
@@ -379,7 +379,7 @@ export default function AutoRepliesAdmin() {
                   max_auto_replies_per_conversation: e.target.value,
                 }))
               }
-              className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm"
+              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
             />
 
             <div className="pt-4">
@@ -395,11 +395,11 @@ export default function AutoRepliesAdmin() {
         </form>
 
         {/* Sección de Embeddings (IA) */}
-        <div className="mt-4 p-4 rounded-lg border border-sky-700/50 bg-sky-950/20">
+        <div className="mt-4 p-4 rounded-lg border border-sky-400 dark:border-sky-700/50 bg-sky-50 dark:bg-sky-950/20">
           <div className="flex items-start gap-3 mb-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-semibold text-sky-300">🧠 Sistema Inteligente (IA)</span>
+                <span className="text-sm font-semibold text-sky-700 dark:text-sky-300">🧠 Sistema Inteligente (IA)</span>
                 {embeddingStatus?.healthy && (
                   <span className="text-xs px-2 py-0.5 bg-emerald-900/40 text-emerald-300 rounded">
                     Operacional
@@ -411,7 +411,7 @@ export default function AutoRepliesAdmin() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600 dark:text-slate-400">
                 El bot usa embeddings para entender el significado de los mensajes, no solo palabras exactas.
               </p>
             </div>
@@ -438,7 +438,7 @@ export default function AutoRepliesAdmin() {
           {settings.embedding_service_enabled === "true" && (
             <div className="pt-3 border-t border-sky-700/30 space-y-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
+                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
                   Umbral de similitud (0.0 - 1.0)
                 </label>
                 <input
@@ -453,7 +453,7 @@ export default function AutoRepliesAdmin() {
                       embedding_similarity_threshold: e.target.value,
                     }))
                   }
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-sm text-slate-900 dark:text-slate-100"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   0.6 = flexible, 0.7 = balance, 0.8 = estricto
@@ -482,13 +482,13 @@ export default function AutoRepliesAdmin() {
         </div>
 
         {/* Sección de Mensajes de Fallback */}
-        <div className="mt-4 p-4 rounded-lg border border-amber-700/50 bg-amber-950/20">
+        <div className="mt-4 p-4 rounded-lg border border-amber-400 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-950/20">
           <div className="flex items-start gap-3 mb-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-semibold text-amber-300">💬 Mensajes de Fallback</span>
+                <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">💬 Mensajes de Fallback</span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600 dark:text-slate-400">
                 Envía un mensaje cuando el bot no reconoce la pregunta del cliente
               </p>
             </div>
@@ -514,7 +514,7 @@ export default function AutoRepliesAdmin() {
           {settings.fallback_message_enabled === "true" && (
             <div className="pt-3 border-t border-amber-700/30 space-y-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">
+                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
                   Mensaje de fallback (cuando no se reconoce la pregunta)
                 </label>
                 <textarea
@@ -526,7 +526,7 @@ export default function AutoRepliesAdmin() {
                     }))
                   }
                   rows={3}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm resize-none"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm resize-none text-slate-900 dark:text-slate-100"
                   placeholder="Lo siento, no entendí tu pregunta. ¿Podrías reformularla?"
                 />
               </div>
@@ -544,13 +544,13 @@ export default function AutoRepliesAdmin() {
                     }
                     className="rounded bg-slate-900 border-slate-700"
                   />
-                  <span className="text-slate-300">Sugerir regla más cercana</span>
+                  <span className="text-slate-700 dark:text-slate-300">Sugerir regla más cercana</span>
                 </label>
               </div>
 
               {settings.fallback_suggest_enabled === "true" && (
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">
+                  <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
                     Umbral de sugerencias (0.0 - 1.0)
                   </label>
                   <input
@@ -565,7 +565,7 @@ export default function AutoRepliesAdmin() {
                         fallback_suggest_threshold: e.target.value,
                       }))
                     }
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-sm text-slate-900 dark:text-slate-100"
                   />
                   <p className="text-xs text-slate-500 mt-1">
                     Si el score está entre este umbral y el umbral principal, se sugiere la regla más cercana
@@ -588,11 +588,11 @@ export default function AutoRepliesAdmin() {
         </div>
       </section>
 
-      <section className="p-4 rounded-xl border border-slate-800 bg-slate-950/70 space-y-3">
+      <section className="p-4 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/70 space-y-3">
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <div>
-            <h2 className="text-lg font-semibold">Reglas de auto-respuesta</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Reglas de auto-respuesta</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               Cada regla tiene un nombre, disparadores (palabras clave) y texto de respuesta.
             </p>
           </div>
@@ -602,9 +602,9 @@ export default function AutoRepliesAdmin() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nombre o trigger..."
-              className="px-3 py-1.5 rounded bg-slate-950 border border-slate-700 text-sm"
+              className="px-3 py-1.5 rounded bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100"
             />
-            <label className="flex items-center gap-1 text-xs text-slate-400">
+            <label className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
               <input
                 type="checkbox"
                 checked={onlyActive}
@@ -623,9 +623,9 @@ export default function AutoRepliesAdmin() {
           </div>
         </div>
 
-        <div className="overflow-x-auto border border-slate-800 rounded">
+        <div className="overflow-x-auto border border-slate-300 dark:border-slate-800 rounded">
           <table className="min-w-full text-xs">
-            <thead className="bg-slate-900/60 border-b border-slate-800 text-slate-300">
+            <thead className="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300">
               <tr>
                 <th className="p-2 text-left">Estado</th>
                 <th className="p-2 text-left">Nombre</th>
@@ -639,7 +639,7 @@ export default function AutoRepliesAdmin() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td className="p-4 text-center text-slate-400" colSpan={7}>
+                  <td className="p-4 text-center text-slate-600 dark:text-slate-400" colSpan={7}>
                     Cargando reglas...
                   </td>
                 </tr>
@@ -651,7 +651,7 @@ export default function AutoRepliesAdmin() {
                 </tr>
               ) : (
                 sortedRules.map((r) => (
-                  <tr key={r.id} className="border-t border-slate-800">
+                  <tr key={r.id} className="border-t border-slate-200 dark:border-slate-800">
                     <td className="p-2">
                       <button
                         type="button"
@@ -665,11 +665,11 @@ export default function AutoRepliesAdmin() {
                         {r.is_active ? "Activa" : "Inactiva"}
                       </button>
                     </td>
-                    <td className="p-2 font-medium text-slate-100">
+                    <td className="p-2 font-medium text-slate-900 dark:text-slate-100">
                       {r.name}
                     </td>
                     <td className="p-2 max-w-xs">
-                      <div className="text-slate-200 whitespace-pre-wrap break-words">
+                      <div className="text-slate-900 dark:text-slate-200 whitespace-pre-wrap break-words">
                         {r.trigger_keywords}
                       </div>
                       <div className="text-[10px] text-slate-500 mt-1">
@@ -678,7 +678,7 @@ export default function AutoRepliesAdmin() {
                       </div>
                     </td>
                     <td className="p-2 max-w-sm">
-                      <div className="text-slate-200 whitespace-pre-wrap break-words">
+                      <div className="text-slate-900 dark:text-slate-200 whitespace-pre-wrap break-words">
                         {r.response_text}
                       </div>
                     </td>
@@ -705,7 +705,7 @@ export default function AutoRepliesAdmin() {
                       <button
                         type="button"
                         onClick={() => openEditRule(r)}
-                        className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700"
+                        className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"
                       >
                         Editar
                       </button>
@@ -734,13 +734,13 @@ export default function AutoRepliesAdmin() {
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <form
               onSubmit={saveRule}
-              className="w-full max-w-2xl bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3"
+              className="w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-2xl p-4 space-y-3"
             >
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   {modalRule.id ? "Editar regla" : "Nueva regla"}
                 </h3>
-                <label className="ml-auto flex items-center gap-1 text-xs text-slate-400">
+                <label className="ml-auto flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
                   <input
                     type="checkbox"
                     checked={
@@ -760,7 +760,7 @@ export default function AutoRepliesAdmin() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label className="block text-xs text-slate-400">
+                  <label className="block text-xs text-slate-600 dark:text-slate-400">
                     Nombre de la regla
                   </label>
                   <input
@@ -770,10 +770,10 @@ export default function AutoRepliesAdmin() {
                       setModalRule((r) => ({ ...r, name: e.target.value }))
                     }
                     required
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
                   />
 
-                  <label className="block text-xs text-slate-400 mt-2">
+                  <label className="block text-xs text-slate-600 dark:text-slate-400 mt-2">
                     Prioridad (número más alto = se evalúa primero)
                   </label>
                   <input
@@ -787,10 +787,10 @@ export default function AutoRepliesAdmin() {
                         priority: Number(e.target.value) || 0,
                       }))
                     }
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
                   />
 
-                  <label className="block text-xs text-slate-400 mt-2">
+                  <label className="block text-xs text-slate-600 dark:text-slate-400 mt-2">
                     Tipo de coincidencia
                   </label>
                   <select
@@ -801,14 +801,14 @@ export default function AutoRepliesAdmin() {
                         match_type: e.target.value,
                       }))
                     }
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
                   >
                     <option value="contains">Contiene</option>
                     <option value="starts_with">Empieza con</option>
                     <option value="exact">Igual exacto</option>
                   </select>
 
-                  <label className="mt-2 flex items-center gap-1 text-xs text-slate-400">
+                  <label className="mt-2 flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
                     <input
                       type="checkbox"
                       checked={
@@ -828,7 +828,7 @@ export default function AutoRepliesAdmin() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-xs text-slate-400">
+                  <label className="block text-xs text-slate-600 dark:text-slate-400">
                     Disparadores (palabras/frases separadas por coma)
                   </label>
                   <textarea
@@ -841,11 +841,11 @@ export default function AutoRepliesAdmin() {
                     }
                     required
                     rows={3}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm resize-none"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm resize-none text-slate-900 dark:text-slate-100"
                     placeholder="Ej: hola,buenos dias,buenas tardes"
                   />
 
-                  <label className="block text-xs text-slate-400 mt-2">
+                  <label className="block text-xs text-slate-600 dark:text-slate-400 mt-2">
                     Texto de respuesta
                   </label>
                   <textarea
@@ -858,7 +858,7 @@ export default function AutoRepliesAdmin() {
                     }
                     required
                     rows={4}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm resize-none"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm resize-none text-slate-900 dark:text-slate-100"
                     placeholder="Texto que el bot enviará al cliente cuando se cumpla esta regla."
                   />
                 </div>
@@ -868,7 +868,7 @@ export default function AutoRepliesAdmin() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700 text-sm"
+                  className="px-3 py-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-sm text-slate-900 dark:text-slate-100"
                 >
                   Cancelar
                 </button>
