@@ -293,16 +293,29 @@ export default function ConversationStatusesAdmin() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Icono</label>
-                  <input
-                    type="text"
-                    value={modalStatus.icon}
-                    onChange={(e) => setModalStatus({ ...modalStatus, icon: e.target.value })}
-                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-100"
-                    placeholder="📋"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Usa emojis: 💰 📞 ✅ ❌ ⏳ 🎯
-                  </p>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={modalStatus.icon}
+                      onChange={(e) => setModalStatus({ ...modalStatus, icon: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-100 text-center text-2xl"
+                      placeholder="📋"
+                      maxLength={2}
+                    />
+                    <div className="grid grid-cols-8 gap-1 p-2 bg-slate-100 dark:bg-slate-800 rounded border border-slate-300 dark:border-slate-700">
+                      {['📋', '💰', '📞', '✅', '❌', '⏳', '🎯', '📊', '🔔', '💬', '📝', '🚀', '⭐', '🔥', '💡', '📦'].map(emoji => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setModalStatus({ ...modalStatus, icon: emoji })}
+                          className="text-2xl p-2 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                          title={`Usar ${emoji}`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -368,7 +381,7 @@ export default function ConversationStatusesAdmin() {
                 </div>
 
                 {/* Configuración de ciclos */}
-                <div className="p-3 rounded-lg bg-purple-900/20 border border-purple-700/50">
+                <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/20 border border-purple-400 dark:border-purple-700/50">
                   <label className="flex items-center gap-2 cursor-pointer mb-3">
                     <input
                       type="checkbox"
@@ -378,17 +391,17 @@ export default function ConversationStatusesAdmin() {
                       }
                       className="w-4 h-4"
                     />
-                    <span className="text-sm text-purple-300 font-medium">
+                    <span className="text-sm text-purple-800 dark:text-purple-300 font-medium">
                       🔄 Estado final (completa ciclo)
                     </span>
                   </label>
-                  <p className="text-xs text-slate-400 mb-3 ml-6">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 ml-6">
                     Cuando el cliente esté en este estado y envíe un mensaje, se guardará el ciclo y se reseteará automáticamente
                   </p>
 
                   {modalStatus.is_final && (
                     <div className="ml-6">
-                      <label className="block text-xs text-slate-400 mb-1">
+                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
                         Estado al que resetear:
                       </label>
                       <select
