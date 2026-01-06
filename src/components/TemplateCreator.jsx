@@ -9,11 +9,12 @@ const categoryOptions = [
 ];
 
 const languageOptions = [
-  { value: "es_MX", label: "Español (MX)" },
-  { value: "es_ES", label: "Español (ES)" },
+  { value: "es_MX", label: "Espanol (MX)" },
+  { value: "es_ES", label: "Espanol (ES)" },
   { value: "en_US", label: "English (US)" },
-  { value: "pt_BR", label: "Portugués (BR)" },
+  { value: "pt_BR", label: "Portugues (BR)" },
 ];
+
 
 const buttonTypeLabels = {
   QUICK_REPLY: "Quick reply",
@@ -198,8 +199,8 @@ export default function TemplateCreator() {
             <div
               className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
                 feedback.type === "success"
-                  ? "bg-emerald-900/30 border-emerald-700 text-emerald-200"
-                  : "bg-red-900/30 border-red-700 text-red-200"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-200"
+                  : "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-200"
               }`}
             >
               {feedback.text}
@@ -341,7 +342,7 @@ export default function TemplateCreator() {
                   {form.buttons.map((btn, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded border border-slate-800 bg-slate-950/70 space-y-2"
+                      className="p-3 rounded border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/70 space-y-2 shadow-sm"
                     >
                       <div className="flex items-center gap-2">
                         <select
@@ -538,10 +539,10 @@ export default function TemplateCreator() {
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded border ${
                       tpl.estado === "APPROVED"
-                        ? "bg-emerald-900/30 border-emerald-700 text-emerald-300"
+                        ? "bg-emerald-100 border-emerald-300 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300"
                         : tpl.estado === "PENDING"
-                        ? "bg-amber-900/30 border-amber-700 text-amber-300"
-                        : "bg-red-900/30 border-red-700 text-red-300"
+                        ? "bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300"
+                        : "bg-red-100 border-red-300 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300"
                     }`}
                   >
                     {tpl.estado}
