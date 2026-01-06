@@ -9,6 +9,7 @@ const LocationPicker = lazy(() => import("./LocationPicker.jsx"));
 const LocationMessage = lazy(() => import("./LocationMessage.jsx"));
 import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 import { useAppData } from "../contexts/AppDataContext.jsx";
+import Swal from 'sweetalert2';
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -967,12 +968,30 @@ function pickMime() {
   async function handleCompleteCycle() {
     if (!conversation) return;
 
-    const confirmed = confirm(
-      `¿Completar el ciclo actual de la conversación?\n\n` +
-      `Esto guardará el ciclo #${(conversation.cycle_count || 0) + 1} y reiniciará la conversación al estado inicial.`
-    );
+    const result = await Swal.fire({
+      title: '¿Completar el ciclo actual?',
+      html: `
+        <div style="text-align: left; padding: 10px;">
+          <p style="margin-bottom: 10px;">Esto guardará el ciclo <strong>#${(conversation.cycle_count || 0) + 1}</strong> y reiniciará la conversación al estado inicial.</p>
+          <p style="color: #64748b; font-size: 0.9em;">Esta acción no se puede deshacer.</p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, completar ciclo',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#64748b',
+      background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+      color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
+      customClass: {
+        popup: 'rounded-xl border border-slate-700',
+        confirmButton: 'px-4 py-2 rounded-lg font-semibold',
+        cancelButton: 'px-4 py-2 rounded-lg font-semibold'
+      }
+    });
 
-    if (!confirmed) return;
+    if (!result.isConfirmed) return;
 
     try {
       const r = await fetch(`${BASE}/api/complete-cycle`.replace(/\/\//g, '/'), {
@@ -987,9 +1006,36 @@ function pickMime() {
       const j = await r.json();
 
       if (!j.ok) {
-        alert(j.error || 'No se pudo completar el ciclo');
+        await Swal.fire({
+          title: 'Error',
+          text: j.error || 'No se pudo completar el ciclo',
+          icon: 'error',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#ef4444',
+          background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+          color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
+          customClass: {
+            popup: 'rounded-xl border border-slate-700'
+          }
+        });
       } else {
-        alert(`✅ ${j.message}\n\nLa conversación ha sido reseteada a "${j.new_status.name}"`);
+        await Swal.fire({
+          title: '¡Ciclo completado!',
+          html: `
+            <div style="text-align: left; padding: 10px;">
+              <p style="margin-bottom: 10px;">${j.message}</p>
+              <p style="color: #10b981;">La conversación ha sido reseteada a <strong>"${j.new_status.name}"</strong></p>
+            </div>
+          `,
+          icon: 'success',
+          confirmButtonText: 'Continuar',
+          confirmButtonColor: '#10b981',
+          background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+          color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
+          customClass: {
+            popup: 'rounded-xl border border-slate-700'
+          }
+        });
 
         // Actualizar el estado de la conversación en memoria
         if (j.new_status) {
@@ -1004,7 +1050,18 @@ function pickMime() {
       }
     } catch (err) {
       console.error('Error completing cycle:', err);
-      alert('Error de red al completar el ciclo');
+      await Swal.fire({
+        title: 'Error de red',
+        text: 'No se pudo conectar con el servidor. Por favor, intenta de nuevo.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#ef4444',
+        background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+        color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
+        customClass: {
+          popup: 'rounded-xl border border-slate-700'
+        }
+      });
     }
   }
 
