@@ -161,7 +161,7 @@ function SystemEvent({ evento }) {
 function InlineComment({ comentario }) {
   return (
     <div className="flex justify-start my-3 px-2">
-      <div className="max-w-[70%] px-4 py-3 rounded-lg bg-amber-100 dark:bg-amber-900/60 border border-amber-400 dark:border-amber-700">
+      <div className="max-w-[70%] px-4 py-3 rounded-lg bg-amber-100 dark:bg-amber-900 border border-amber-400 dark:border-amber-700">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-sm">💬</span>
           <span className="text-xs font-semibold text-amber-900 dark:text-amber-300">
@@ -1839,7 +1839,7 @@ function pickMime() {
                id={`msg-${m.id}`}
                className={`max-w-[75%] px-3 py-2 rounded-lg border transition-all
                  ${m.sender === 'me'
-                   ? 'ml-auto bg-emerald-100 dark:bg-emerald-900/80 border-emerald-400 dark:border-emerald-700 text-emerald-900 dark:text-emerald-50'
+                   ? 'ml-auto bg-emerald-100 dark:bg-emerald-900 border-emerald-400 dark:border-emerald-700 text-emerald-900 dark:text-emerald-50'
                    : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100'}
                  ${isHighlighted ? 'ring-2 ring-yellow-400 bg-yellow-900/20' : ''}`}>
             {/* Renderizar ubicaciones */}
