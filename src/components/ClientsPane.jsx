@@ -206,14 +206,14 @@ export default function ClientsPane() {
                     <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {c.title || `Cliente ${c.id}`}
                     </div>
-                    <div className="text-xs text-slate-600 dark:text-slate-600 dark:text-slate-400 truncate">{c.wa_user}</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{c.wa_user}</div>
                   </div>
                 </div>
 
                 {/* Ultimo mensaje */}
                 {c.last_text && (
-                  <div className="mb-3 p-2 rounded bg-slate-100 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800">
-                    <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
+                  <div className="mb-3 p-2 rounded bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800">
+                    <div className="text-xs text-slate-700 dark:text-slate-400 line-clamp-2">
                       {c.last_text}
                     </div>
                   </div>
@@ -240,14 +240,14 @@ export default function ClientsPane() {
                 <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={() => setQuickViewId(c.id)}
-                    className="flex-1 min-w-[140px] px-3 py-2 text-center rounded-lg bg-sky-600/10 border border-sky-600/30 text-sky-300 hover:bg-sky-600/20 transition-all font-medium text-sm"
+                    className="flex-1 min-w-[140px] px-3 py-2 text-center rounded-lg bg-sky-100 border border-sky-200 text-sky-700 hover:bg-sky-200 transition-all font-medium text-sm dark:bg-sky-600/20 dark:border-sky-600/40 dark:text-sky-200 dark:hover:bg-sky-600/30"
                   >
                     Vista rapida
                   </button>
                   <a
                     href={`${BASE}/mensajes?conversation_id=${c.id}`.replace(/\/\//g, '/')}
                     data-astro-prefetch="tap"
-                    className="flex-1 min-w-[140px] px-3 py-2 text-center rounded-lg bg-emerald-600/10 border border-emerald-600/30 text-emerald-400 hover:bg-emerald-600/20 transition-all font-medium text-sm"
+                    className="flex-1 min-w-[140px] px-3 py-2 text-center rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-700 hover:bg-emerald-200 transition-all font-medium text-sm dark:bg-emerald-600/20 dark:border-emerald-600/40 dark:text-emerald-200 dark:hover:bg-emerald-600/30"
                   >
                     Abrir
                   </a>
