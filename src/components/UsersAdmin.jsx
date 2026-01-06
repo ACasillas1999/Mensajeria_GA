@@ -41,27 +41,163 @@ export default function UsersAdmin() {
     else alert(j.error || "No se pudo crear");
   }
 
-  async function createSucursalQuick() {
-    const nombre = window.prompt("Nombre de la nueva sucursal:");
-    if (!nombre) return;
-    const trimmed = nombre.trim();
-    if (!trimmed) return;
-    try {
-      const r = await fetch(`${BASE}/api/admin/sucursales`.replace(/\/\//g, '/'), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre: trimmed }),
+  async function gestionSucursales() {
+    // Generamos HTML para la lista de sucursales
+    const sucursalesList = sucursales
+      .map(
+        (s) => `
+      <div class="flex items-center justify-between p-2 border-b border-slate-200 dark:border-slate-700 last:border-0">
+        <span class="text-sm text-slate-700 dark:text-slate-300">${s.nombre}</span>
+        <div class="flex gap-2">
+          <button class="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300" 
+            onclick="editarSucursal(${s.id}, '${s.nombre}')">✏️</button>
+          <button class="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300" 
+            onclick="eliminarSucursal(${s.id}, '${s.nombre}')">🗑️</button>
+        </div>
+      </div>`
+      )
+      .join("");
+
+    // Exponer funciones al window para que SweetAlert pueda llamarlas
+    window.editarSucursal = async (id, nombreActual) => {
+      const { value: nuevoNombre } = await Swal.fire({
+        title: "Editar sucursal",
+        input: "text",
+        inputValue: nombreActual,
+        showCancelButton: true,
+        confirmButtonText: "Guardar",
+        cancelButtonText: "Cancelar",
+        inputValidator: (value) => {
+          if (!value) return "El nombre es requerido";
+        },
       });
-      const j = await r.json();
-      if (j.ok) {
-        await load();
-        setFiltroSuc(String(j.id));
-      } else {
-        alert(j.error || "No se pudo crear la sucursal");
+
+      if (nuevoNombre && nuevoNombre !== nombreActual) {
+        try {
+          const r = await fetch(
+            `${BASE}/api/admin/sucursales`.replace(/\/\//g, "/"),
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id, nombre: nuevoNombre }),
+            }
+          );
+          const j = await r.json();
+          if (j.ok) {
+            Swal.fire("Actualizado", "La sucursal ha sido actualizada", "success");
+            load(); // Recargar datos
+            Swal.close(); // Cerrar modal lista para refrescar si se desea, o podríamos reabrirlo
+          } else {
+            Swal.fire("Error", j.error || "No se pudo actualizar", "error");
+          }
+        } catch {
+          Swal.fire("Error", "Error de red", "error");
+        }
       }
-    } catch {
-      alert("Error de red creando sucursal");
-    }
+    };
+
+    window.eliminarSucursal = async (id, nombre) => {
+      const result = await Swal.fire({
+        title: "¿Eliminar sucursal?",
+        text: `Se eliminará "${nombre}". Esta acción no se puede deshacer.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+      });
+
+      if (result.isConfirmed) {
+        try {
+          const r = await fetch(
+            `${BASE}/api/admin/sucursales`.replace(/\/\//g, "/"),
+            {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id }),
+            }
+          );
+          const j = await r.json();
+          if (j.ok) {
+            Swal.fire("Eliminado", "La sucursal ha sido eliminada", "success");
+            load();
+            Swal.close();
+          } else {
+            Swal.fire(
+              "No se puede eliminar",
+              j.error || "Error al eliminar (posiblemente tiene usuarios asignados)",
+              "error"
+            );
+          }
+        } catch {
+          Swal.fire("Error", "Error de red", "error");
+        }
+      }
+    };
+
+    await Swal.fire({
+      title: "Gestión de Sucursales",
+      html: `
+        <div class="mb-4 text-left">
+          <div class="max-h-60 overflow-y-auto mb-4 border rounded border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+            ${
+              sucursalesList ||
+              '<p class="p-4 text-sm text-slate-500 text-center">No hay sucursales</p>'
+            }
+          </div>
+          <button id="btn-nueva-sucursal" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium text-sm">
+            + Nueva Sucursal
+          </button>
+        </div>
+      `,
+      showConfirmButton: false,
+      showCloseButton: true,
+      didOpen: () => {
+        const btn = Swal.getHtmlContainer().querySelector("#btn-nueva-sucursal");
+        btn.addEventListener("click", async () => {
+          const { value: nombre } = await Swal.fire({
+            title: "Nueva sucursal",
+            input: "text",
+            inputPlaceholder: "Nombre de la sucursal",
+            showCancelButton: true,
+            confirmButtonText: "Crear",
+            cancelButtonText: "Cancelar",
+            inputValidator: (value) => {
+              if (!value) return "El nombre es requerido";
+            },
+          });
+
+          if (nombre) {
+            try {
+              const r = await fetch(
+                `${BASE}/api/admin/sucursales`.replace(/\/\//g, "/"),
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ nombre }),
+                }
+              );
+              const j = await r.json();
+              if (j.ok) {
+                Swal.fire("Creada", "Sucursal creada correctamente", "success");
+                load();
+                setFiltroSuc(String(j.id));
+              } else {
+                Swal.fire("Error", j.error || "No se pudo crear", "error");
+              }
+            } catch {
+              Swal.fire("Error", "Error de red", "error");
+            }
+          }
+        });
+      },
+      willClose: () => {
+        // Limpiar funciones globales al cerrar
+        delete window.editarSucursal;
+        delete window.eliminarSucursal;
+      }
+    });
   }
 
   async function toggleActivo(u){
@@ -113,10 +249,10 @@ export default function UsersAdmin() {
         </select>
         <button
           type="button"
-          onClick={createSucursalQuick}
+          onClick={gestionSucursales}
           className="px-3 py-2 rounded bg-slate-100 border border-slate-300 text-sm text-slate-800 shadow-sm hover:bg-slate-200 w-full sm:w-auto dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-700"
         >
-          + Sucursal
+          ⚙️ Sucursales
         </button>
         <button
           onClick={() => setModal(true)}
