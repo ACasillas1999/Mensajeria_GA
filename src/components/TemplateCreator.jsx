@@ -178,18 +178,18 @@ export default function TemplateCreator() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-4">
-        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 shadow-lg">
+        <div className="bg-white dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 rounded-xl p-5 shadow-lg">
           <div className="flex items-start justify-between gap-3 mb-4">
             <div>
-              <h2 className="text-xl font-semibold text-emerald-300">
+              <h2 className="text-xl font-semibold text-emerald-600 dark:text-emerald-300">
                 Crear plantilla de WhatsApp
               </h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Envía la solicitud directamente a Meta Developers sin salir del
                 panel.
               </p>
             </div>
-            <div className="text-xs text-slate-400 bg-slate-900 border border-slate-700 rounded px-3 py-1.5">
+            <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5">
               Requiere rol ADMIN y WABA_TOKEN
             </div>
           </div>
@@ -209,7 +209,7 @@ export default function TemplateCreator() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-3 gap-3">
               <div className="md:col-span-2">
-                <label className="block text-sm text-slate-300 mb-1">
+                <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">
                   Nombre (snake_case)
                 </label>
                 <input
@@ -217,20 +217,20 @@ export default function TemplateCreator() {
                   onChange={(e) => updateField("name", e.target.value)}
                   placeholder="promo_reengage_es"
                   required
-                  className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                  className="w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   Solo letras, números y guion bajo. Meta lo exige en minúsculas.
                 </p>
               </div>
               <div>
-                <label className="block text-sm text-slate-300 mb-1">
+                <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">
                   Categoría
                 </label>
                 <select
                   value={form.category}
                   onChange={(e) => updateField("category", e.target.value)}
-                  className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                  className="w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                 >
                   {categoryOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -243,13 +243,13 @@ export default function TemplateCreator() {
 
             <div className="grid md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm text-slate-300 mb-1">
+                <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">
                   Idioma
                 </label>
                 <select
                   value={form.language}
                   onChange={(e) => updateField("language", e.target.value)}
-                  className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                  className="w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                 >
                   {languageOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -259,20 +259,20 @@ export default function TemplateCreator() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm text-slate-300 mb-1">
+                <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">
                   Asunto (HEADER opcional)
                 </label>
                 <input
                   value={form.headerText}
                   onChange={(e) => updateField("headerText", e.target.value)}
                   placeholder="Ejemplo: Confirmación de pedido"
-                  className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                  className="w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-slate-300 mb-1">
+              <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">
                 Cuerpo (BODY) *
               </label>
               <textarea
@@ -281,7 +281,7 @@ export default function TemplateCreator() {
                 value={form.bodyText}
                 onChange={(e) => updateField("bodyText", e.target.value)}
                 placeholder="Hola {{1}}, gracias por tu interés..."
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400 resize-none"
+                className="w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400 resize-none text-slate-900 dark:text-slate-100"
               />
               <p className="text-xs text-slate-500 mt-1">
                 Puedes usar placeholders {"{{1}}"}, {"{{2}}"}, etc. Evita links
@@ -290,21 +290,21 @@ export default function TemplateCreator() {
             </div>
 
             <div>
-              <label className="block text-sm text-slate-300 mb-1">
+              <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">
                 Footer (opcional)
               </label>
               <input
                 value={form.footerText}
                 onChange={(e) => updateField("footerText", e.target.value)}
                 placeholder="Ej: Powered by GA Whats"
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                className="w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
               />
             </div>
 
-            <div className="border border-slate-800 rounded-lg p-3 bg-slate-900/40">
+            <div className="border border-slate-300 dark:border-slate-800 rounded-lg p-3 bg-slate-100 dark:bg-slate-900/40">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <div className="font-medium text-slate-200">
+                  <div className="font-medium text-slate-900 dark:text-slate-200">
                     Botones (opcional)
                   </div>
                   <p className="text-xs text-slate-500">
@@ -315,21 +315,21 @@ export default function TemplateCreator() {
                   <button
                     type="button"
                     onClick={() => addButton("QUICK_REPLY")}
-                    className="px-3 py-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 border border-slate-700"
+                    className="px-3 py-1.5 text-xs rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                   >
                     + Quick reply
                   </button>
                   <button
                     type="button"
                     onClick={() => addButton("URL")}
-                    className="px-3 py-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 border border-slate-700"
+                    className="px-3 py-1.5 text-xs rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                   >
                     + Enlace
                   </button>
                   <button
                     type="button"
                     onClick={() => addButton("PHONE_NUMBER")}
-                    className="px-3 py-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 border border-slate-700"
+                    className="px-3 py-1.5 text-xs rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                   >
                     + Llamada
                   </button>
@@ -349,7 +349,7 @@ export default function TemplateCreator() {
                           onChange={(e) =>
                             updateButton(idx, { type: e.target.value })
                           }
-                          className="rounded bg-slate-900 border border-slate-700 px-2 py-1 text-xs"
+                          className="rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-1 text-xs text-slate-900 dark:text-slate-100"
                         >
                           <option value="QUICK_REPLY">Quick reply</option>
                           <option value="URL">Enlace</option>
@@ -361,19 +361,19 @@ export default function TemplateCreator() {
                             updateButton(idx, { text: e.target.value })
                           }
                           placeholder="Texto del botón"
-                          className="flex-1 rounded bg-slate-900 border border-slate-700 px-2 py-1 text-sm outline-none focus:border-emerald-400"
+                          className="flex-1 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-1 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                         />
                         <button
                           type="button"
                           onClick={() => removeButton(idx)}
-                          className="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300"
+                          className="text-xs px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-slate-300"
                         >
                           Quitar
                         </button>
                       </div>
                       {btn.type === "URL" && (
                         <div className="flex items-center gap-2">
-                          <label className="text-xs text-slate-400 w-20">
+                          <label className="text-xs text-slate-600 dark:text-slate-400 w-20">
                             URL
                           </label>
                           <input
@@ -382,13 +382,13 @@ export default function TemplateCreator() {
                               updateButton(idx, { url: e.target.value })
                             }
                             placeholder="https://..."
-                            className="flex-1 rounded bg-slate-900 border border-slate-700 px-2 py-1 text-sm outline-none focus:border-emerald-400"
+                            className="flex-1 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-1 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                           />
                         </div>
                       )}
                       {btn.type === "PHONE_NUMBER" && (
                         <div className="flex items-center gap-2">
-                          <label className="text-xs text-slate-400 w-20">
+                          <label className="text-xs text-slate-600 dark:text-slate-400 w-20">
                             Teléfono
                           </label>
                           <input
@@ -397,7 +397,7 @@ export default function TemplateCreator() {
                               updateButton(idx, { phone_number: e.target.value })
                             }
                             placeholder="521XXXXXXXXXX"
-                            className="flex-1 rounded bg-slate-900 border border-slate-700 px-2 py-1 text-sm outline-none focus:border-emerald-400"
+                            className="flex-1 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-1 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                           />
                         </div>
                       )}
@@ -429,26 +429,26 @@ export default function TemplateCreator() {
       </div>
 
       <div className="space-y-3">
-        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 shadow-lg">
+        <div className="bg-white dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 rounded-xl p-4 shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <div className="text-sm text-slate-400">Previsualización</div>
-              <div className="text-base font-semibold text-slate-200">
+              <div className="text-sm text-slate-600 dark:text-slate-400">Previsualización</div>
+              <div className="text-base font-semibold text-slate-900 dark:text-slate-200">
                 {form.name || "nombre_de_plantilla"}
               </div>
             </div>
-            <span className="text-[11px] px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-400">
+            <span className="text-[11px] px-2 py-1 rounded bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400">
               {form.category} · {form.language}
             </span>
           </div>
 
           {form.headerText && (
-            <div className="text-sm font-semibold text-slate-100 mb-2">
+            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">
               {form.headerText}
             </div>
           )}
 
-          <div className="text-sm text-slate-200 whitespace-pre-wrap bg-slate-900/40 border border-slate-800 rounded-lg p-3">
+          <div className="text-sm text-slate-900 dark:text-slate-200 whitespace-pre-wrap bg-slate-100 dark:bg-slate-900/40 border border-slate-300 dark:border-slate-800 rounded-lg p-3">
             {form.bodyText || "Escribe el cuerpo de la plantilla..."}
           </div>
 
@@ -461,7 +461,7 @@ export default function TemplateCreator() {
               {form.buttons.map((b, i) => (
                 <span
                   key={i}
-                  className="text-xs px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200"
+                  className="text-xs px-3 py-1 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-slate-200"
                   title={buttonTypeLabels[b.type]}
                 >
                   {b.text || buttonTypeLabels[b.type]}
@@ -471,9 +471,9 @@ export default function TemplateCreator() {
           )}
         </div>
 
-        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 space-y-2">
-          <div className="font-semibold text-emerald-300">Requisitos Meta</div>
-          <ul className="list-disc list-inside space-y-1 text-slate-400">
+        <div className="bg-white dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-300 space-y-2">
+          <div className="font-semibold text-emerald-600 dark:text-emerald-300">Requisitos Meta</div>
+          <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
             <li>Nombre en snake_case en minúsculas.</li>
             <li>Sin enlaces acortados genéricos (bit.ly, tinyurl...).</li>
             <li>
@@ -483,15 +483,15 @@ export default function TemplateCreator() {
           </ul>
         </div>
 
-        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 space-y-3">
+        <div className="bg-white dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-300 space-y-3">
             <div className="flex items-center gap-2">
-              <div className="font-semibold text-emerald-300 flex-1">
+              <div className="font-semibold text-emerald-600 dark:text-emerald-300 flex-1">
                 Plantillas existentes
               </div>
               <button
                 type="button"
                 onClick={loadExisting}
-                className="px-3 py-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
+                className="px-3 py-1.5 text-xs rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-slate-200"
                 disabled={loadingList}
               >
                 {loadingList ? "Cargando..." : "Recargar"}
@@ -514,7 +514,7 @@ export default function TemplateCreator() {
 
           <div className="max-h-80 overflow-y-auto thin-scroll space-y-2">
             {loadingList && !listError && (
-              <div className="text-xs text-slate-400">Cargando...</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400">Cargando...</div>
             )}
             {!loadingList && existing.length === 0 && !listError && (
               <div className="text-xs text-slate-500">
@@ -528,7 +528,7 @@ export default function TemplateCreator() {
               >
                 <div className="flex items-start gap-2">
                   <div className="flex-1">
-                    <div className="font-semibold text-slate-100">
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">
                       {tpl.nombre}
                     </div>
                     <div className="text-xs text-slate-500">
@@ -548,7 +548,7 @@ export default function TemplateCreator() {
                   </span>
                 </div>
                 {tpl.body_text && (
-                  <div className="text-xs text-slate-300 mt-1 line-clamp-3">
+                  <div className="text-xs text-slate-700 dark:text-slate-300 mt-1 line-clamp-3">
                     {tpl.body_text}
                   </div>
                 )}
