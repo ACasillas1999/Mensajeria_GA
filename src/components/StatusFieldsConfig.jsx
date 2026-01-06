@@ -90,15 +90,15 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-slate-900 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">
-            Configurar campos para: <span className="text-emerald-400">{status?.name}</span>
+        <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-300 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            Configurar campos para: <span className="text-emerald-600 dark:text-emerald-400">{status?.name}</span>
           </h2>
           <button
             onClick={onClose}
-            className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700"
+            className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700"
           >
             ✕
           </button>
@@ -106,7 +106,7 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
 
         {/* Content */}
         <div className="p-6">
-          <p className="text-sm text-slate-400 mb-6">
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
             Define qué información se debe capturar cuando una conversación cambia a este estado.
             Por ejemplo, si el estado es "Venta", puedes pedir monto, producto, método de pago, etc.
           </p>
@@ -114,7 +114,7 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
           {/* Lista de campos configurados */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Campos configurados ({fields.length})</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Campos configurados ({fields.length})</h3>
               <button
                 onClick={addField}
                 className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-sm font-medium"
@@ -124,7 +124,7 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
             </div>
 
             {fields.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg">
+              <div className="text-center py-8 text-slate-600 dark:text-slate-500 text-sm border border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
                 No hay campos configurados. Haz clic en "Agregar campo" para empezar.
               </div>
             ) : (
@@ -132,11 +132,11 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
                 {fields.map((field, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-slate-800 border border-slate-700"
+                    className="flex items-center gap-3 p-3 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
                   >
                     <div className="flex-1">
-                      <div className="font-medium">{field.label}</div>
-                      <div className="text-xs text-slate-400">
+                      <div className="font-medium text-slate-900 dark:text-slate-100">{field.label}</div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400">
                         Tipo: {fieldTypes.find(t => t.value === field.type)?.label} •
                         {field.required ? ' Obligatorio' : ' Opcional'}
                         {field.type === 'select' && ` • ${field.options?.length || 0} opciones`}
@@ -144,7 +144,7 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
                     </div>
                     <button
                       onClick={() => setEditingField({ ...field })}
-                      className="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-sm"
+                      className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-sm text-slate-800 dark:text-slate-100"
                     >
                       Editar
                     </button>
@@ -162,14 +162,14 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
 
           {/* Editor de campo */}
           {editingField && (
-            <div className="border border-emerald-700/50 bg-emerald-950/20 rounded-lg p-4 mb-4">
-              <h4 className="font-semibold mb-4 text-emerald-300">
+            <div className="border border-emerald-400 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-4 mb-4">
+              <h4 className="font-semibold mb-4 text-emerald-700 dark:text-emerald-300">
                 {fields.find(f => f.name === editingField.name) ? 'Editar' : 'Nuevo'} campo
               </h4>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-200">
                     Nombre técnico (sin espacios) *
                   </label>
                   <input
@@ -177,29 +177,29 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
                     value={editingField.name}
                     onChange={e => setEditingField({ ...editingField, name: e.target.value })}
                     placeholder="ej: monto_venta"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded outline-none focus:border-emerald-400"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Etiqueta visible *</label>
+                  <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-200">Etiqueta visible *</label>
                   <input
                     type="text"
                     value={editingField.label}
                     onChange={e => setEditingField({ ...editingField, label: e.target.value })}
                     placeholder="ej: Monto de la venta"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded outline-none focus:border-emerald-400"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Tipo de campo</label>
+                  <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-200">Tipo de campo</label>
                   <select
                     value={editingField.type}
                     onChange={e => setEditingField({ ...editingField, type: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded outline-none focus:border-emerald-400"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                   >
                     {fieldTypes.map(t => (
                       <option key={t.value} value={t.value}>
@@ -210,7 +210,7 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Placeholder</label>
+                  <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-200">Placeholder</label>
                   <input
                     type="text"
                     value={editingField.placeholder || ''}
@@ -218,7 +218,7 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
                       setEditingField({ ...editingField, placeholder: e.target.value })
                     }
                     placeholder="ej: Ingresa el monto"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded outline-none focus:border-emerald-400"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -231,13 +231,13 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
                     onChange={e => setEditingField({ ...editingField, required: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Campo obligatorio</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-200">Campo obligatorio</span>
                 </label>
               </div>
 
               {editingField.type === 'select' && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-200">
                     Opciones (una por línea)
                   </label>
                   <textarea
@@ -250,7 +250,7 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
                     }
                     placeholder={'Efectivo\nTarjeta\nTransferencia'}
                     rows={5}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded outline-none focus:border-emerald-400 font-mono text-sm"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded outline-none focus:border-emerald-400 font-mono text-sm text-slate-900 dark:text-slate-100"
                   />
                 </div>
               )}
@@ -264,7 +264,7 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
                 </button>
                 <button
                   onClick={() => setEditingField(null)}
-                  className="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600"
+                  className="px-4 py-2 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100"
                 >
                   Cancelar
                 </button>
@@ -274,10 +274,10 @@ export default function StatusFieldsConfig({ status, onClose, onSave }) {
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-slate-900 border-t border-slate-700 px-6 py-4 flex gap-3 justify-end">
+        <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-300 dark:border-slate-700 px-6 py-4 flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600"
+            className="px-4 py-2 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100"
           >
             Cancelar
           </button>

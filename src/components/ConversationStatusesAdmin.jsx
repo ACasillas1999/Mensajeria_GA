@@ -153,8 +153,8 @@ export default function ConversationStatusesAdmin() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-100">Estados de Conversación</h2>
-          <p className="text-sm text-slate-400">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Estados de Conversación</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Personaliza los estados del flujo de trabajo (Pipeline/CRM)
           </p>
         </div>
@@ -168,9 +168,9 @@ export default function ConversationStatusesAdmin() {
 
       {/* Lista de estados */}
       {loading ? (
-        <div className="p-8 text-center text-slate-400">Cargando estados...</div>
+        <div className="p-8 text-center text-slate-600 dark:text-slate-400">Cargando estados...</div>
       ) : statuses.length === 0 ? (
-        <div className="p-8 text-center text-slate-400">
+        <div className="p-8 text-center text-slate-600 dark:text-slate-400">
           No hay estados configurados. Crea uno para empezar.
         </div>
       ) : (
@@ -180,8 +180,8 @@ export default function ConversationStatusesAdmin() {
               key={s.id}
               className={`p-4 rounded-lg border transition ${
                 s.is_active
-                  ? 'bg-slate-900/60 border-slate-700 hover:bg-slate-900/80'
-                  : 'bg-slate-900/30 border-slate-800 opacity-60'
+                  ? 'bg-white dark:bg-slate-900/60 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/80'
+                  : 'bg-slate-100 dark:bg-slate-900/30 border-slate-300 dark:border-slate-800 opacity-60'
               }`}
             >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
@@ -189,7 +189,7 @@ export default function ConversationStatusesAdmin() {
                   <span className="text-2xl">{s.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-slate-100">{s.name}</span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">{s.name}</span>
                       {s.is_default && (
                         <span className="px-2 py-0.5 rounded-full text-xs bg-sky-900/60 border border-sky-600 text-sky-200">
                           Por defecto
@@ -202,7 +202,7 @@ export default function ConversationStatusesAdmin() {
                       )}
                     </div>
                     {s.description && (
-                      <p className="text-xs text-slate-400 mt-0.5">{s.description}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{s.description}</p>
                     )}
                   </div>
                 </div>
@@ -218,8 +218,8 @@ export default function ConversationStatusesAdmin() {
                     onClick={() => toggleActive(s)}
                     className={`px-3 py-1 rounded text-xs border transition ${
                       s.is_active
-                        ? 'bg-emerald-600/30 border-emerald-500 text-emerald-100 hover:bg-emerald-600/50'
-                        : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-emerald-100 dark:bg-emerald-600/30 border-emerald-400 dark:border-emerald-500 text-emerald-800 dark:text-emerald-100 hover:bg-emerald-200 dark:hover:bg-emerald-600/50'
+                        : 'bg-slate-200 dark:bg-slate-800 border-slate-400 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'
                     }`}
                     title={s.is_active ? 'Desactivar' : 'Activar'}
                   >
@@ -228,7 +228,7 @@ export default function ConversationStatusesAdmin() {
 
                   <button
                     onClick={() => setConfiguringFieldsFor(s)}
-                    className="px-3 py-1 rounded text-xs bg-amber-900/30 hover:bg-amber-900/50 text-amber-200 border border-amber-700"
+                    className="px-3 py-1 rounded text-xs bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-200 border border-amber-400 dark:border-amber-700"
                     title="Configurar campos personalizados que se solicitan al cambiar a este estado"
                   >
                     ⚙️ Campos
@@ -249,7 +249,7 @@ export default function ConversationStatusesAdmin() {
 
                   <button
                     onClick={() => openEditStatus(s)}
-                    className="px-3 py-1 rounded text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                    className="px-3 py-1 rounded text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-400 dark:border-slate-700"
                   >
                     Editar
                   </button>
@@ -272,19 +272,19 @@ export default function ConversationStatusesAdmin() {
       {/* Modal Crear/Editar */}
       {modalStatus && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 rounded-xl border border-slate-700 max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-slate-100 mb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-700 max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
               {modalStatus.id ? 'Editar Estado' : 'Nuevo Estado'}
             </h3>
 
             <form onSubmit={saveStatus} className="space-y-4">
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Nombre *</label>
+                <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Nombre *</label>
                 <input
                   type="text"
                   value={modalStatus.name}
                   onChange={(e) => setModalStatus({ ...modalStatus, name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-100"
                   placeholder="Ej: Cotizado, En proceso, Cerrado"
                   required
                 />
@@ -292,12 +292,12 @@ export default function ConversationStatusesAdmin() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-300 mb-1">Icono</label>
+                  <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Icono</label>
                   <input
                     type="text"
                     value={modalStatus.icon}
                     onChange={(e) => setModalStatus({ ...modalStatus, icon: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-100"
                     placeholder="📋"
                   />
                   <p className="text-xs text-slate-500 mt-1">
@@ -306,36 +306,36 @@ export default function ConversationStatusesAdmin() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-slate-300 mb-1">Color</label>
+                  <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Color</label>
                   <input
                     type="color"
                     value={modalStatus.color}
                     onChange={(e) => setModalStatus({ ...modalStatus, color: e.target.value })}
-                    className="w-full h-10 bg-slate-950 border border-slate-700 rounded cursor-pointer"
+                    className="w-full h-10 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded cursor-pointer"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Descripción</label>
+                <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Descripción</label>
                 <textarea
                   value={modalStatus.description}
                   onChange={(e) => setModalStatus({ ...modalStatus, description: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100 resize-none"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-100 resize-none"
                   rows={2}
                   placeholder="Descripción opcional del estado"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Orden de visualización</label>
+                <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Orden de visualización</label>
                 <input
                   type="number"
                   value={modalStatus.display_order}
                   onChange={(e) =>
                     setModalStatus({ ...modalStatus, display_order: parseInt(e.target.value) || 0 })
                   }
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-100"
                   min="0"
                 />
               </div>
@@ -351,7 +351,7 @@ export default function ConversationStatusesAdmin() {
                       }
                       className="w-4 h-4"
                     />
-                    <span className="text-sm text-slate-300">Estado activo</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">Estado activo</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -363,7 +363,7 @@ export default function ConversationStatusesAdmin() {
                       }
                       className="w-4 h-4"
                     />
-                    <span className="text-sm text-slate-300">Estado por defecto</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">Estado por defecto</span>
                   </label>
                 </div>
 
@@ -399,7 +399,7 @@ export default function ConversationStatusesAdmin() {
                             auto_reset_to_status_id: e.target.value ? Number(e.target.value) : null
                           })
                         }
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-sm text-slate-900 dark:text-slate-100"
                       >
                         <option value="">-- Auto (primer estado activo) --</option>
                         {statuses
@@ -419,7 +419,7 @@ export default function ConversationStatusesAdmin() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition"
+                  className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg transition"
                 >
                   Cancelar
                 </button>
