@@ -135,14 +135,14 @@ function SystemEvent({ evento }) {
         {/* Mostrar datos de campos personalizados si existen */}
         {fieldData && Object.keys(fieldData).length > 0 && (
           <div className="mt-2 pt-2 border-t border-slate-700/50 text-left">
-            <div className="text-[10px] text-slate-500 mb-2 font-semibold text-center">Información adicional:</div>
-            <div className="space-y-1.5 bg-slate-800/30 rounded px-3 py-2">
+            <div className="text-[10px] text-slate-600 dark:text-slate-500 mb-2 font-semibold text-center">Información adicional:</div>
+            <div className="space-y-1.5 bg-slate-200 dark:bg-slate-800/30 rounded px-3 py-2">
               {Object.entries(fieldData).map(([key, value]) => (
                 <div key={key} className="flex items-start gap-2">
-                  <span className="text-[11px] text-slate-400 min-w-fit">
+                  <span className="text-[11px] text-slate-600 dark:text-slate-400 min-w-fit">
                     {key.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}:
                   </span>
-                  <span className="text-[11px] text-emerald-300 font-medium">{value}</span>
+                  <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">{value}</span>
                 </div>
               ))}
             </div>
@@ -1970,10 +1970,10 @@ function pickMime() {
 
       {/* Banner de advertencia cuando quedan menos de 2 horas */}
       {insideWindow && timeRemaining && timeRemaining <= 2 * 60 * 60 * 1000 && timeRemaining > 0 && (
-        <div className="px-3 py-2 border-t border-amber-600/30 bg-amber-900/20">
+        <div className="px-3 py-2 border-t border-amber-400 dark:border-amber-600/30 bg-amber-100 dark:bg-amber-900/20">
           <div className="flex items-center gap-2 text-xs">
             <span className="text-amber-600 dark:text-amber-400">⏰</span>
-            <span className="text-amber-300">
+            <span className="text-amber-900 dark:text-amber-300">
               Ventana de 24h cerrando pronto: quedan <strong>{formatTimeRemaining(timeRemaining)}</strong>
             </span>
           </div>
