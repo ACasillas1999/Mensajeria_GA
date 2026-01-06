@@ -113,11 +113,11 @@ export default function RuleSuggestionsWidget() {
   }, [minOccurrences]);
 
   return (
-    <div className="p-4 rounded-xl border border-emerald-800/50 bg-emerald-950/20 space-y-3">
+    <div className="p-4 rounded-xl border border-emerald-400 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/20 space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-emerald-300">
+            <span className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
               🤖 Sugerencias de Reglas (Auto-aprendizaje)
             </span>
             {suggestions.length > 0 && (
@@ -126,18 +126,18 @@ export default function RuleSuggestionsWidget() {
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
             El bot detectó frases que se repiten y sugiere crear reglas automáticamente
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-400">Mín. repeticiones:</label>
+            <label className="text-xs text-slate-600 dark:text-slate-400">Mín. repeticiones:</label>
             <select
               value={minOccurrences}
               onChange={(e) => setMinOccurrences(parseInt(e.target.value))}
-              className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs text-slate-100"
+              className="px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
             >
               <option value="3">3+</option>
               <option value="5">5+</option>
@@ -163,9 +163,9 @@ export default function RuleSuggestionsWidget() {
       )}
 
       {loading && !suggestions.length ? (
-        <div className="p-4 text-center text-sm text-slate-400">Cargando sugerencias...</div>
+        <div className="p-4 text-center text-sm text-slate-600 dark:text-slate-400">Cargando sugerencias...</div>
       ) : suggestions.length === 0 ? (
-        <div className="p-4 text-center text-sm text-slate-400">
+        <div className="p-4 text-center text-sm text-slate-600 dark:text-slate-400">
           No hay sugerencias pendientes. El bot analizará mensajes no reconocidos automáticamente.
         </div>
       ) : (
@@ -173,12 +173,12 @@ export default function RuleSuggestionsWidget() {
           {suggestions.map((s) => (
             <div
               key={s.id}
-              className="p-3 rounded-lg border border-slate-700 bg-slate-900/60 hover:bg-slate-900/80 transition"
+              className="p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/60 hover:bg-slate-200 dark:hover:bg-slate-900/80 transition"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold text-slate-100">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       "{s.suggested_phrase}"
                     </span>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-900/40 border border-amber-600 text-amber-300">
@@ -189,7 +189,7 @@ export default function RuleSuggestionsWidget() {
                     </span>
                   </div>
 
-                  <div className="text-xs text-slate-400 space-y-1">
+                  <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
                     <div>
                       Primera vez: {new Date(s.first_seen).toLocaleDateString()} | Última vez:{' '}
                       {new Date(s.last_seen).toLocaleDateString()}
@@ -198,7 +198,7 @@ export default function RuleSuggestionsWidget() {
                     {s.closest_rule_name && (
                       <div className="flex items-center gap-1">
                         <span className="text-slate-500">Regla similar:</span>
-                        <span className="text-slate-300">{s.closest_rule_name}</span>
+                        <span className="text-slate-700 dark:text-slate-300">{s.closest_rule_name}</span>
                         {s.closest_existing_score && (
                           <span className="text-slate-500">
                             ({(s.closest_existing_score * 100).toFixed(0)}% similar)
@@ -209,8 +209,8 @@ export default function RuleSuggestionsWidget() {
                   </div>
 
                   {expandedId === s.id && (
-                    <div className="mt-2 p-2 rounded bg-slate-950/60 border border-slate-800 text-xs">
-                      <div className="text-slate-400 mb-1">
+                    <div className="mt-2 p-2 rounded bg-slate-200 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 text-xs">
+                      <div className="text-slate-600 dark:text-slate-400 mb-1">
                         Mensaje original detectado {s.message_count || s.occurrence_count}{' '}
                         {s.message_count === 1 ? 'vez' : 'veces'}
                       </div>
@@ -222,7 +222,7 @@ export default function RuleSuggestionsWidget() {
                   <button
                     type="button"
                     onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                    className="px-2 py-1 rounded text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+                    className="px-2 py-1 rounded text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-400 dark:border-slate-700"
                   >
                     {expandedId === s.id ? 'Ocultar' : 'Ver más'}
                   </button>
