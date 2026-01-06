@@ -524,7 +524,7 @@ export default function TemplateCreator() {
             {existing.map((tpl) => (
               <div
                 key={`${tpl.id}-${tpl.nombre}`}
-                className="border border-slate-800 rounded-lg p-3 bg-slate-900/50"
+                className="border border-slate-300 dark:border-slate-800 rounded-lg p-3 bg-slate-100 dark:bg-slate-900/50"
               >
                 <div className="flex items-start gap-2">
                   <div className="flex-1">
