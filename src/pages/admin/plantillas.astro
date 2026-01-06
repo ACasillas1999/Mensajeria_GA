@@ -1,16 +1,18 @@
 ---
-import AppLayout from '../../layouts/AppLayout.astro';
+import AppLayout from "../../layouts/AppLayout.astro";
 
 const user = (Astro.locals as any).user;
-if (!user || user.rol?.toLowerCase() !== 'admin') {
-  return Astro.redirect('/');
+if (!user || user.rol?.toLowerCase() !== "admin") {
+  return Astro.redirect("/");
 }
 ---
 
 <AppLayout title="Gestión de Plantillas">
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h2 class="text-2xl font-bold text-emerald-400">Plantillas de WhatsApp</h2>
+      <h2 class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+        Plantillas de WhatsApp
+      </h2>
       <button
         id="syncBtn"
         class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition"
@@ -25,38 +27,39 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
   </div>
 
   <script>
-    const BASE = import.meta.env.BASE_URL || '';
+    const BASE = import.meta.env.BASE_URL || "";
 
     async function syncTemplates() {
-      const btn = document.getElementById('syncBtn');
-      const status = document.getElementById('syncStatus');
+      const btn = document.getElementById("syncBtn");
+      const status = document.getElementById("syncStatus");
       if (!btn || !status) return;
 
       btn.disabled = true;
-      btn.textContent = 'Sincronizando...';
-      status.className = 'p-4 rounded-lg bg-slate-800 border border-slate-700 text-slate-300';
-      status.textContent = 'Sincronizando plantillas desde Meta...';
-      status.classList.remove('hidden');
+      btn.textContent = "Sincronizando...";
+      status.className =
+        "p-4 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300";
+      status.textContent = "Sincronizando plantillas desde Meta...";
+      status.classList.remove("hidden");
 
       try {
-        const url = `${BASE}/api/sync-templates`.replace(/\/\//g, '/');
+        const url = `${BASE}/api/sync-templates`.replace(/\/\//g, "/");
         // GET para evitar ciertas restricciones a POST
         const res = await fetch(url);
 
-        const contentType = res.headers.get('content-type') || '';
+        const contentType = res.headers.get("content-type") || "";
         let data = null;
 
-        if (contentType.includes('application/json')) {
+        if (contentType.includes("application/json")) {
           data = await res.json();
         }
 
         if (!res.ok) {
-          let extra = '';
+          let extra = "";
 
           if (!data) {
             try {
               const text = await res.text();
-              extra = text ? ` Detalle: ${text.slice(0, 120)}...` : '';
+              extra = text ? ` Detalle: ${text.slice(0, 120)}...` : "";
             } catch {
               // ignorar errores al leer texto
             }
@@ -64,40 +67,44 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
             extra = ` Detalle: ${data.error}`;
           }
 
-          status.className = 'p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
+          status.className =
+            "p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300";
           status.textContent =
             `Error ${res.status} al sincronizar plantillas.` +
             (res.status === 403
-              ? ' Verifica que tu sesión tenga rol ADMIN y que el servidor permita esta petición.'
-              : '') +
+              ? " Verifica que tu sesión tenga rol ADMIN y que el servidor permita esta petición."
+              : "") +
             extra;
           return;
         }
 
         if (data && data.ok) {
-          status.className = 'p-4 rounded-lg bg-emerald-900/30 border border-emerald-700 text-emerald-300';
-          status.textContent = data.message || 'Sincronización completada.';
+          status.className =
+            "p-4 rounded-lg bg-emerald-900/30 border border-emerald-700 text-emerald-300";
+          status.textContent = data.message || "Sincronización completada.";
           loadTemplates();
         } else {
-          status.className = 'p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
-          status.textContent = `Error: ${data?.error || 'Respuesta inesperada del servidor'}`;
+          status.className =
+            "p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300";
+          status.textContent = `Error: ${data?.error || "Respuesta inesperada del servidor"}`;
         }
       } catch (err) {
-        status.className = 'p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
+        status.className =
+          "p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300";
         status.textContent = `Error de red: ${err?.message || err}`;
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Sincronizar desde Meta';
+        btn.textContent = "Sincronizar desde Meta";
       }
     }
 
     async function loadTemplates() {
-      const container = document.getElementById('templatesList');
+      const container = document.getElementById("templatesList");
       if (!container) return;
 
       try {
         const res = await fetch(
-          `${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, '/')
+          `${BASE}/api/templates?estado=APPROVED`.replace(/\/\//g, "/"),
         );
         const data = await res.json();
 
@@ -105,40 +112,40 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
           container.innerHTML = data.items
             .map(
               (tpl) => `
-            <div class="p-4 rounded-lg border border-slate-800 bg-slate-900/50">
+            <div class="p-4 rounded-lg border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/50">
               <div class="flex items-center gap-3 mb-2">
                 <div class="flex-1">
-                  <div class="font-medium text-slate-200">${tpl.nombre}</div>
+                  <div class="font-medium text-slate-900 dark:text-slate-200">${tpl.nombre}</div>
                   <div class="text-xs text-slate-500">${tpl.idioma} · ${tpl.categoria}</div>
                 </div>
                 <span class="px-2 py-1 rounded text-xs font-semibold ${
-                  tpl.estado === 'APPROVED'
-                    ? 'bg-emerald-900/30 border border-emerald-700 text-emerald-300'
-                    : tpl.estado === 'PENDING'
-                    ? 'bg-amber-900/30 border border-amber-700 text-amber-300'
-                    : 'bg-red-900/30 border border-red-700 text-red-300'
+                  tpl.estado === "APPROVED"
+                    ? "bg-emerald-900/30 border border-emerald-700 text-emerald-300"
+                    : tpl.estado === "PENDING"
+                      ? "bg-amber-900/30 border border-amber-700 text-amber-300"
+                      : "bg-red-900/30 border border-red-700 text-red-300"
                 }">
                   ${tpl.estado}
                 </span>
               </div>
               ${
                 tpl.header_text
-                  ? `<div class="text-xs text-slate-400 mb-1">Asunto: ${tpl.header_text}</div>`
-                  : ''
+                  ? `<div class="text-xs text-slate-600 dark:text-slate-400 mb-1">Asunto: ${tpl.header_text}</div>`
+                  : ""
               }
-              <div class="text-sm text-slate-300 whitespace-pre-wrap">${tpl.body_text || '-'}</div>
+              <div class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">${tpl.body_text || "-"}</div>
               ${
                 tpl.footer_text
                   ? `<div class="text-xs text-slate-500 mt-1">${tpl.footer_text}</div>`
-                  : ''
+                  : ""
               }
             </div>
-          `
+          `,
             )
-            .join('');
+            .join("");
         } else {
           container.innerHTML = `
-            <div class="p-8 rounded-lg border border-slate-800 bg-slate-900/50 text-center text-slate-400">
+            <div class="p-8 rounded-lg border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/50 text-center text-slate-600 dark:text-slate-400">
               No hay plantillas sincronizadas. Haz clic en "Sincronizar desde Meta" para importarlas.
             </div>
           `;
@@ -152,8 +159,9 @@ if (!user || user.rol?.toLowerCase() !== 'admin') {
       }
     }
 
-    document.getElementById('syncBtn')?.addEventListener('click', syncTemplates);
+    document
+      .getElementById("syncBtn")
+      ?.addEventListener("click", syncTemplates);
     loadTemplates();
   </script>
 </AppLayout>
-
