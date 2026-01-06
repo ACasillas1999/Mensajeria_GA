@@ -315,7 +315,7 @@ export default function ConversationStatusesAdmin() {
                       </button>
                     </div>
                     {showEmojiPicker && (
-                      <div className="absolute z-10 mt-2 p-3 w-64 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                      <div className="absolute z-10 mt-2 left-0 p-3 w-64 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
                         <div className="grid grid-cols-6 gap-2">
                           {['📋', '💰', '📞', '✅', '❌', '⏳', '🎯', '📊', '🔔', '💬', '📝', '🚀', '⭐', '🔥', '💡', '📦', '👍', '❤️', '👏', '🎉', '🚨', '⚠️', '🔒', '🔓'].map(emoji => (
                             <button
