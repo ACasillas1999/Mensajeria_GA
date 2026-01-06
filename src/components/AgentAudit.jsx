@@ -43,7 +43,7 @@ export default function AgentAudit() {
     return date.toLocaleDateString();
   }
 
-  const activeAgents = data.agents.filter(a => a.ultima_actividad_ts && (Date.now() / 1000 - a.ultima_actividad_ts) < 300); // activos en últimos 5min
+  const activeAgents = data.agents.filter(a => a.ultima_actividad_ts && (Date.now() / 1000 - a.ultima_actividad_ts) < 300); // activos en ultimos 5min
 
   if (loading) {
     return <div className="p-4 text-slate-400">Cargando...</div>;
@@ -61,7 +61,7 @@ export default function AgentAudit() {
             onClick={() => { setViewMode('overview'); setSelectedAgent(null); }}
             className="px-3 py-2 rounded border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-700"
           >
-            <- Volver
+            Volver
           </button>
           <div>
             <h2 className="text-xl font-semibold">{agent?.nombre}</h2>
@@ -84,7 +84,7 @@ export default function AgentAudit() {
             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{agent?.mensajes_semana || 0}</div>
           </div>
           <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-3 shadow-sm">
-            <div className="text-xs text-slate-500 dark:text-slate-400">Última actividad</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">Ultima actividad</div>
             <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatTimestamp(agent?.ultima_actividad_ts)}</div>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function AgentAudit() {
                     }}
                     className="flex-1 text-xs px-2 py-1 rounded border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 transition dark:border-sky-700 dark:bg-sky-600/20 dark:text-sky-300 dark:hover:bg-sky-600/30"
                   >
-                    Vista rápida
+                    Vista rapida
                   </button>
                   <a
                     href={`${BASE}/mensajes?conversation_id=${chat.conversacion_id}`.replace(/\/\//g, '/')}
@@ -180,7 +180,7 @@ export default function AgentAudit() {
                 <th className="text-center px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Conversaciones</th>
                 <th className="text-center px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Msgs Hoy</th>
                 <th className="text-center px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Msgs Semana</th>
-                <th className="text-left px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Última actividad</th>
+                <th className="text-left px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Ultima actividad</th>
                 <th className="text-center px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Acciones</th>
               </tr>
             </thead>
@@ -207,7 +207,7 @@ export default function AgentAudit() {
                       {isActive ? (
                         <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-700">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-300 animate-pulse"></span>
-                          En línea
+                          En linea
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
@@ -268,7 +268,7 @@ export default function AgentAudit() {
                 <div className="text-sm text-slate-500 dark:text-slate-400 truncate">{chat.ultimo_msg || '-'}</div>
               </div>
               <div className="text-right shrink-0">
-                <div className="text-xs text-sky-600 dark:text-sky-400 mb-1">👤 {chat.agente_nombre || 'Sin asignar'}</div>
+                <div className="text-xs text-sky-600 dark:text-sky-400 mb-1">{chat.agente_nombre || 'Sin asignar'}</div>
                 <div className="flex gap-1">
                   <button
                     onClick={(e) => {
@@ -284,7 +284,7 @@ export default function AgentAudit() {
                     data-astro-prefetch="tap"
                     className="text-xs px-2 py-1 rounded border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 inline-block dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                   >
-                    Espiar →
+                    Abrir chat
                   </a>
                 </div>
               </div>
