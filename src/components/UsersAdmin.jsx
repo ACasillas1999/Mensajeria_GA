@@ -54,7 +54,6 @@ export default function UsersAdmin() {
       });
       const j = await r.json();
       if (j.ok) {
-        // recargar lista y seleccionar la nueva sucursal en el filtro
         await load();
         setFiltroSuc(String(j.id));
       } else {
@@ -102,35 +101,35 @@ export default function UsersAdmin() {
       {/* filtros */}
       <div className="flex flex-wrap gap-2 items-center">
         <select value={filtroRol} onChange={e=>setFiltroRol(e.target.value)}
-          className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto">
+          className="px-3 py-2 rounded bg-white border border-slate-300 text-slate-800 shadow-sm w-full sm:w-auto dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
           <option value="">Todos los roles</option>
           <option value="AGENTE">AGENTE</option>
           <option value="ADMIN">ADMIN</option>
         </select>
         <select value={filtroSuc} onChange={e=>setFiltroSuc(e.target.value)}
-          className="px-3 py-2 rounded bg-slate-900 border border-slate-700 w-full sm:w-auto">
+          className="px-3 py-2 rounded bg-white border border-slate-300 text-slate-800 shadow-sm w-full sm:w-auto dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
           <option value="">Todas las sucursales</option>
           {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
         </select>
         <button
           type="button"
           onClick={createSucursalQuick}
-          className="px-3 py-2 rounded bg-slate-800 border border-slate-700 text-sm w-full sm:w-auto"
+          className="px-3 py-2 rounded bg-slate-100 border border-slate-300 text-sm text-slate-800 shadow-sm hover:bg-slate-200 w-full sm:w-auto dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-700"
         >
           + Sucursal
         </button>
         <button
           onClick={() => setModal(true)}
-          className="w-full sm:w-auto sm:ml-auto px-3 py-2 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400"
+          className="w-full sm:w-auto sm:ml-auto px-3 py-2 rounded bg-emerald-600 text-white font-semibold hover:bg-emerald-500 shadow-sm"
         >
           + Nuevo usuario
         </button>
       </div>
 
       {/* tabla */}
-      <div className="overflow-x-auto border border-slate-800 rounded bg-slate-950/60">
+      <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-900">
+          <thead className="bg-slate-100 text-slate-700 border-b border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800">
             <tr>
               <th className="text-left p-2">ID</th>
               <th className="text-left p-2">Nombre</th>
@@ -143,39 +142,39 @@ export default function UsersAdmin() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="p-4 text-center text-slate-400">Cargando…</td></tr>
+              <tr><td colSpan={7} className="p-4 text-center text-slate-600 dark:text-slate-400">Cargando usuarios...</td></tr>
             ) : filtrados.length === 0 ? (
-              <tr><td colSpan={7} className="p-4 text-center text-slate-400">Sin resultados</td></tr>
+              <tr><td colSpan={7} className="p-4 text-center text-slate-600 dark:text-slate-400">Sin resultados</td></tr>
             ) : (
               filtrados.map(u => (
-                <tr key={u.id} className="border-t border-slate-800">
-                  <td className="p-2">{u.id}</td>
-                  <td className="p-2">{u.nombre}</td>
-                  <td className="p-2">{u.email}</td>
+                <tr key={u.id} className="border-t border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60">
+                  <td className="p-2 text-slate-800 dark:text-slate-100">{u.id}</td>
+                  <td className="p-2 text-slate-800 dark:text-slate-100">{u.nombre}</td>
+                  <td className="p-2 text-slate-800 dark:text-slate-100">{u.email}</td>
                   <td className="p-2">
                     <select value={u.rol} onChange={e=>setRol(u, e.target.value)}
-                      className="bg-slate-900 border border-slate-700 rounded px-2 py-1">
+                      className="bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
                       <option value="AGENTE">AGENTE</option>
                       <option value="ADMIN">ADMIN</option>
                     </select>
                   </td>
                   <td className="p-2">
                     <select value={u.sucursal_id ?? ""} onChange={e=>setSucursal(u, e.target.value)}
-                      className="bg-slate-900 border border-slate-700 rounded px-2 py-1">
+                      className="bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
                       <option value="">(Sin sucursal)</option>
                       {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                     </select>
                   </td>
                   <td className="p-2">
                     <button onClick={()=>toggleActivo(u)}
-                      className={`px-2 py-1 rounded ${u.activo ? "bg-emerald-600/20 border border-emerald-700" : "bg-slate-800 border border-slate-700"}`}>
+                      className={`px-2 py-1 rounded text-sm ${u.activo ? "bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700" : "bg-slate-200 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"}`}>
                       {u.activo ? "Activo" : "Inactivo"}
                     </button>
                   </td>
                   <td className="p-2 text-right">
                     {/* reset pass rápido */}
                     <details>
-                      <summary className="cursor-pointer text-slate-300">Reset pass</summary>
+                      <summary className="cursor-pointer text-slate-700 dark:text-slate-300">Reset pass</summary>
                       <form className="mt-1 flex gap-2 items-center"
                         onSubmit={async (e)=>{
                           e.preventDefault();
@@ -192,8 +191,8 @@ export default function UsersAdmin() {
                           e.target.reset();
                         }}>
                         <input name="pw" type="password" placeholder="Nueva contraseña"
-                          className="bg-slate-900 border border-slate-700 rounded px-2 py-1" />
-                        <button className="px-2 py-1 rounded bg-emerald-500 text-black">Guardar</button>
+                          className="bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
+                        <button className="px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-500">Guardar</button>
                       </form>
                     </details>
                   </td>
@@ -209,24 +208,24 @@ export default function UsersAdmin() {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={()=>setModal(false)} />
           <div className="absolute inset-0 p-4 flex items-center justify-center">
-            <form onSubmit={createUser} className="bg-slate-900 border border-slate-700 rounded-xl p-4 w-full max-w-lg space-y-3 max-h-[90vh] overflow-y-auto">
-              <h2 className="text-lg font-semibold">Nuevo usuario</h2>
-              <input className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2"
+            <form onSubmit={createUser} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 w-full max-w-lg space-y-3 max-h-[90vh] overflow-y-auto">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Nuevo usuario</h2>
+              <input className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                 placeholder="Nombre" required
                 value={form.nombre} onChange={e=>setForm(f=>({...f, nombre:e.target.value}))} />
-              <input className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2"
+              <input className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                 placeholder="Email" required type="email"
                 value={form.email} onChange={e=>setForm(f=>({...f, email:e.target.value}))} />
-              <input className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2"
+              <input className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                 placeholder="Contraseña" required minLength={8} type="password"
                 value={form.password} onChange={e=>setForm(f=>({...f, password:e.target.value}))} />
               <div className="flex gap-2">
-                <select className="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2"
+                <select className="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                   value={form.rol} onChange={e=>setForm(f=>({...f, rol:e.target.value}))}>
                   <option value="AGENTE">AGENTE</option>
                   <option value="ADMIN">ADMIN</option>
                 </select>
-                <select className="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2"
+                <select className="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                   value={form.sucursal_id}
                   onChange={e=>setForm(f=>({...f, sucursal_id:e.target.value}))}>
                   <option value="">(Sin sucursal)</option>
@@ -234,8 +233,8 @@ export default function UsersAdmin() {
                 </select>
               </div>
               <div className="flex gap-2 justify-end pt-2">
-                <button type="button" onClick={()=>setModal(false)} className="px-3 py-2 rounded bg-slate-800">Cancelar</button>
-                <button className="px-3 py-2 rounded bg-emerald-500 text-black font-semibold">Crear</button>
+                <button type="button" onClick={()=>setModal(false)} className="px-3 py-2 rounded bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">Cancelar</button>
+                <button className="px-3 py-2 rounded bg-emerald-600 text-white font-semibold hover:bg-emerald-500">Crear</button>
               </div>
             </form>
           </div>
