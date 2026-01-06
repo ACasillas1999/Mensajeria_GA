@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+// Importar SweetAlert2 directamente
+import Swal from 'sweetalert2';
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -42,13 +44,6 @@ export default function UsersAdmin() {
   }
 
   async function gestionSucursales() {
-    if (!window.Swal) {
-      alert("Error: La librería SweetAlert2 no se ha cargado correctamente. Recarga la página.");
-      return;
-    }
-
-    const { Swal } = window;
-
     // Generamos HTML para la lista de sucursales
     const sucursalesList = sucursales
       .map(
