@@ -343,7 +343,7 @@ export default function ConversationStatusesAdmin() {
                     type="color"
                     value={modalStatus.color}
                     onChange={(e) => setModalStatus({ ...modalStatus, color: e.target.value })}
-                    className="w-full h-10 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded cursor-pointer"
+                    className="w-full h-12 border border-slate-300 dark:border-slate-700 rounded cursor-pointer"
                   />
                 </div>
               </div>
