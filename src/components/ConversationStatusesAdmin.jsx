@@ -292,60 +292,58 @@ export default function ConversationStatusesAdmin() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Icono</label>
-                  <div className="relative">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={modalStatus.icon}
-                        onChange={(e) => setModalStatus({ ...modalStatus, icon: e.target.value })}
-                        className="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-100 text-center text-2xl"
-                        placeholder="📋"
-                        maxLength={2}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600 rounded text-sm transition"
-                        title="Seleccionar emoji"
-                      >
-                        😊
-                      </button>
-                    </div>
-                    {showEmojiPicker && (
-                      <div className="absolute z-10 mt-2 left-0 p-3 w-64 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
-                        <div className="grid grid-cols-6 gap-2">
-                          {['📋', '💰', '📞', '✅', '❌', '⏳', '🎯', '📊', '🔔', '💬', '📝', '🚀', '⭐', '🔥', '💡', '📦', '👍', '❤️', '👏', '🎉', '🚨', '⚠️', '🔒', '🔓'].map(emoji => (
-                            <button
-                              key={emoji}
-                              type="button"
-                              onClick={() => {
-                                setModalStatus({ ...modalStatus, icon: emoji });
-                                setShowEmojiPicker(false);
-                              }}
-                              className="text-2xl p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                              title={`Usar ${emoji}`}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+              <div>
+                <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Icono</label>
+                <div className="relative">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={modalStatus.icon}
+                      onChange={(e) => setModalStatus({ ...modalStatus, icon: e.target.value })}
+                      className="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-100 text-center text-2xl"
+                      placeholder="📋"
+                      maxLength={2}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600 rounded text-sm transition"
+                      title="Seleccionar emoji"
+                    >
+                      😊
+                    </button>
                   </div>
+                  {showEmojiPicker && (
+                    <div className="absolute z-10 mt-2 left-0 p-3 w-64 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                      <div className="grid grid-cols-6 gap-2">
+                        {['📋', '💰', '📞', '✅', '❌', '⏳', '🎯', '📊', '🔔', '💬', '📝', '🚀', '⭐', '🔥', '💡', '📦', '👍', '❤️', '👏', '🎉', '🚨', '⚠️', '🔒', '🔓'].map(emoji => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => {
+                              setModalStatus({ ...modalStatus, icon: emoji });
+                              setShowEmojiPicker(false);
+                            }}
+                            className="text-2xl p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                            title={`Usar ${emoji}`}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Color</label>
-                  <input
-                    type="color"
-                    value={modalStatus.color}
-                    onChange={(e) => setModalStatus({ ...modalStatus, color: e.target.value })}
-                    className="w-full h-12 border border-slate-300 dark:border-slate-700 rounded cursor-pointer"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Color</label>
+                <input
+                  type="color"
+                  value={modalStatus.color}
+                  onChange={(e) => setModalStatus({ ...modalStatus, color: e.target.value })}
+                  className="w-full h-12 border border-slate-300 dark:border-slate-700 rounded cursor-pointer"
+                />
               </div>
 
               <div>
