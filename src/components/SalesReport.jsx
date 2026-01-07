@@ -153,6 +153,7 @@ export default function SalesReport() {
                 <thead className="sticky top-0 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 shadow-sm">
                   <tr>
                     <th className="px-4 py-3 text-left">Fecha</th>
+                    <th className="px-4 py-3 text-left">Cliente</th>
                     <th className="px-4 py-3 text-left">Agente</th>
                     <th className="px-4 py-3 text-left">Estado Final</th>
                     <th className="px-4 py-3 text-right">Monto</th>
@@ -161,8 +162,17 @@ export default function SalesReport() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {data.items.filter(i => i.has_sale).map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap text-xs">
                         {new Date(item.completed_at).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-slate-900 dark:text-slate-100 text-sm">{item.client_name}</span>
+                          <span className="text-xs text-slate-500">{item.client_phone}</span>
+                          {item.cycle_number > 0 && (
+                            <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">Ciclo #{item.cycle_number}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-slate-900 dark:text-slate-100">
                         {item.agent_name}

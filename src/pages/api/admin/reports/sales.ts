@@ -29,8 +29,11 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
         cc.assigned_to,
         u.nombre as agent_name,
         cs.name as status_name,
-        cc.cycle_data
+        cc.cycle_data,
+        c.wa_user,
+        c.wa_profile_name
       FROM conversation_cycles cc
+      LEFT JOIN conversaciones c ON cc.conversation_id = c.id
       LEFT JOIN usuarios u ON cc.assigned_to = u.id
       LEFT JOIN conversation_statuses cs ON cc.final_status_id = cs.id
       WHERE 1=1
@@ -71,6 +74,9 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
                 agent_name: r.agent_name || 'Sin asignar',
                 completed_at: r.completed_at,
                 status_name: r.status_name,
+                cycle_number: r.cycle_number,
+                client_name: r.wa_profile_name || 'Desconocido',
+                client_phone: r.wa_user,
                 amount,
                 has_sale: amount > 0
             };
