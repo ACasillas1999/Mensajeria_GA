@@ -279,7 +279,7 @@ function PipelineViewInner() {
       ) : (
         <div className="overflow-x-auto pb-4 pt-4 pipeline-hscroll" style={{ colorScheme: 'light' }}>
           <div className="flex gap-3 min-w-min flex-nowrap touch-pan-x">
-            {pipeline.map((column) => (
+            {pipeline.filter(column => !column.status.is_final).map((column) => (
               <div
                 key={column.status.id}
                 className="flex flex-col w-[280px] sm:w-80 flex-shrink-0"

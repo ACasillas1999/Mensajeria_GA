@@ -85,6 +85,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
           icon: status.icon,
           display_order: status.display_order,
           required_fields: status.required_fields,
+          is_final: status.is_final,
         },
         conversations: statusConversations.map((c) => ({
           id: c.id,

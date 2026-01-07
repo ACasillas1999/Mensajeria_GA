@@ -1865,7 +1865,7 @@ function pickMime() {
             }}
             className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs rounded px-2 py-1"
           >
-            {statuses.map(s => (
+            {statuses.filter(s => !s.is_final).map(s => (
               <option key={s.id} value={s.id}>
                 {s.icon} {s.name}
               </option>
