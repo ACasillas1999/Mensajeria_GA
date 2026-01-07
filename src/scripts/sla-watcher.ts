@@ -4,20 +4,18 @@ import axios from 'axios';
 
 // Configuración DB (usar las mismas vars de entorno que la app)
 const pool = createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'mensajeria_ga',
+    host: process.env.SLA_DB_HOST || process.env.DB_HOST || 'localhost',
+    user: process.env.SLA_DB_USER || process.env.DB_USER || 'root',
+    password: process.env.SLA_DB_PASSWORD || process.env.DB_PASSWORD || process.env.DB_PASS || '',
+    database: process.env.SLA_DB_NAME || process.env.DB_NAME || 'mensajeria_ga',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 });
 
 console.log('--- SLA Watcher DB Debug ---');
-console.log('DB_HOST:', process.env.DB_HOST);
-console.log('DB_USER:', process.env.DB_USER);
-console.log('DB_NAME:', process.env.DB_NAME);
-console.log('DB_PASSWORD length:', process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : 'undefined/empty');
+console.log('DB_HOST:', process.env.SLA_DB_HOST || process.env.DB_HOST);
+console.log('DB_USER:', process.env.SLA_DB_USER || process.env.DB_USER);
 console.log('----------------------------');
 
 const WABA_TOKEN = process.env.WABA_TOKEN;
