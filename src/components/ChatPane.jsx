@@ -968,20 +968,59 @@ function pickMime() {
   async function handleCompleteCycle() {
     if (!conversation) return;
 
-    const result = await Swal.fire({
-      title: '¿Completar el ciclo actual?',
-      html: `
-        <div style="text-align: left; padding: 10px;">
-          <p style="margin-bottom: 10px;">Esto guardará el ciclo <strong>#${(conversation.cycle_count || 0) + 1}</strong> y reiniciará la conversación al estado inicial.</p>
-          <p style="color: #64748b; font-size: 0.9em;">Esta acción no se puede deshacer.</p>
-        </div>
-      `,
-      icon: 'question',
+    // 1. Filtrar estados finales
+    const finalStatuses = statuses.filter(s => s.is_final && s.is_active);
+    
+    // Si no hay estados finales configurados, usar el flujo simple anterior (o advertir)
+    if (finalStatuses.length === 0) {
+      const result = await Swal.fire({
+        title: '¿Completar el ciclo actual?',
+        html: `
+          <div style="text-align: left; padding: 10px;">
+            <p style="margin-bottom: 10px;">Esto guardará el ciclo <strong>#${(conversation.cycle_count || 0) + 1}</strong> y reiniciará la conversación.</p>
+            <p class="text-xs text-amber-600 dark:text-amber-400">⚠️ No hay estados finales configurados. Se usará el estado actual como final.</p>
+          </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, completar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#10b981',
+        background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+        color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
+        customClass: {
+          popup: 'rounded-xl border border-slate-700',
+          confirmButton: 'px-4 py-2 rounded-lg font-semibold',
+          cancelButton: 'px-4 py-2 rounded-lg font-semibold'
+        }
+      });
+
+      if (result.isConfirmed) {
+        await executeCompleteCycle({});
+      }
+      return;
+    }
+
+    // 2. Preparar opciones para el input select
+    const statusOptions = {};
+    finalStatuses.forEach(s => {
+      statusOptions[s.id] = (s.icon || '') + ' ' + s.name;
+    });
+
+    // 3. Primer paso: Seleccionar Estado Final
+    const step1 = await Swal.fire({
+      title: 'Completar Ciclo',
+      text: 'Selecciona cómo concluyó esta atención:',
+      input: 'select',
+      inputOptions: statusOptions,
+      inputPlaceholder: 'Selecciona una conclusión...',
       showCancelButton: true,
-      confirmButtonText: 'Sí, completar ciclo',
+      confirmButtonText: 'Siguiente',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#10b981',
-      cancelButtonColor: '#64748b',
+      confirmButtonColor: '#0f172a',
+      inputValidator: (value) => {
+        if (!value) return 'Debes seleccionar una opción';
+      },
       background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
       color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
       customClass: {
@@ -991,7 +1030,60 @@ function pickMime() {
       }
     });
 
-    if (!result.isConfirmed) return;
+    if (!step1.isConfirmed) return;
+
+    const selectedStatusId = Number(step1.value);
+    const selectedStatus = finalStatuses.find(s => s.id === selectedStatusId);
+    
+    // 4. Segundo paso: Si es venta (OJO: Detectamos por nombre "venta" case-insensitive o si tiene icono de dinero, 
+    // idealmente agregaríamos un flag "requires_amount" en la DB, pero por ahora lo inferimos)
+    // Vamos a pedir monto si el nombre incluye "venta", "pedido", "cotiz" o "pagado".
+    const normalizedName = (selectedStatus?.name || '').toLowerCase();
+    const isSale = normalizedName.includes('venta') || normalizedName.includes('pedido') || normalizedName.includes('factura') || normalizedName.includes('pago') || normalizedName.includes('cotiz');
+
+    let amount = null;
+    let notes = null; // Placeholder for future notes input
+
+    if (isSale) {
+      const step2 = await Swal.fire({
+        title: 'Registrar Venta',
+        html: `Ingresa el monto para <strong>"${selectedStatus.name}"</strong>`,
+        input: 'number',
+        inputAttributes: {
+          min: '0',
+          step: '0.01'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Finalizar',
+        cancelButtonText: 'Atrás',
+        confirmButtonColor: '#10b981',
+        inputValidator: (value) => {
+          if (!value) return 'El monto es obligatorio para ventas';
+          if (Number(value) < 0) return 'El monto no puede ser negativo';
+        },
+        background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+        color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
+        customClass: {
+          popup: 'rounded-xl border border-slate-700',
+          confirmButton: 'px-4 py-2 rounded-lg font-semibold',
+          cancelButton: 'px-4 py-2 rounded-lg font-semibold'
+        }
+      });
+
+      if (!step2.isConfirmed) return; // Podríamos implementar lógica de "Atrás" re-llamando a la función
+      amount = step2.value;
+    }
+
+    // 5. Ejecutar la acción
+    await executeCompleteCycle({ 
+      final_status_id: selectedStatusId, 
+      amount: amount, 
+      cycle_notes: notes 
+    });
+  }
+
+  async function executeCompleteCycle({ final_status_id, amount, cycle_notes }) {
+    if (!conversation) return;
 
     try {
       const r = await fetch(`${BASE}/api/complete-cycle`.replace(/\/\//g, '/'), {
@@ -999,7 +1091,10 @@ function pickMime() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversacion_id: conversation.id,
-          reason: 'Completado manualmente por el agente'
+          final_status_id: final_status_id,
+          amount: amount,
+          cycle_notes: cycle_notes,
+          reason: 'Completado manualmente por el agente' // Keep original reason for now
         })
       });
 

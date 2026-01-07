@@ -17,7 +17,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const body = await request.json();
-    const { conversacion_id, reason } = body;
+    const { conversacion_id, reason, final_status_id, amount, cycle_notes } = body;
 
     if (!conversacion_id) {
       return new Response(
@@ -55,22 +55,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     console.log(`[Complete Cycle] Agente ${user.nombre} completando ciclo de conversación ${convId}...`);
 
-    // Obtener el último field_data del estado actual
-    const [lastHistoryRows] = await pool.query<RowDataPacket[]>(
-      `SELECT field_data
-       FROM conversation_status_history
-       WHERE conversation_id = ? AND new_status_id = ?
-       ORDER BY id DESC
-       LIMIT 1`,
-      [convId, conv.status_id]
-    );
+    // Prepare cycle data (merging amount/notes if provided with potential history data)
+    let cycleDataObj: any = {};
 
-    // Convertir cycleData a string JSON si no es null
-    let cycleData = null;
-    if (lastHistoryRows.length > 0 && lastHistoryRows[0].field_data) {
-      const rawData = lastHistoryRows[0].field_data;
-      cycleData = typeof rawData === 'string' ? rawData : JSON.stringify(rawData);
-    }
+    // Si viene información de venta/monto
+    if (amount) cycleDataObj.sale_amount = amount;
+    if (cycle_notes) cycleDataObj.notes = cycle_notes;
+    // Si se especificó un estado final explícito, usarlo. Si no, usar el actual.
+    const finalStatusToRecord = final_status_id ? Number(final_status_id) : conv.status_id;
 
     // Contar mensajes del ciclo actual
     const [msgCountRows] = await pool.query<RowDataPacket[]>(
@@ -85,9 +77,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // 1. Guardar el ciclo completado en conversation_cycles
     const newCycleNumber = (conv.cycle_count || 0) + 1;
-
-    // MySQL está en UTC, pero queremos guardar la hora local
-    // Node.js ya está en CST (UTC-6), solo necesitamos usar la fecha directamente
     const completedAt = new Date();
 
     await pool.query(
@@ -98,21 +87,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
         convId,
         newCycleNumber,
         conv.current_cycle_started_at || new Date(),
-        completedAt,  // completed_at con la fecha actual
-        null,  // initial_status_id
-        conv.status_id,  // final_status_id
+        completedAt,
+        null,  // initial_status_id (podríamos trackearlo si lo tuviéramos)
+        finalStatusToRecord,
         totalMessages,
         conv.asignado_a || null,
-        cycleData
+        JSON.stringify(cycleDataObj)
       ]
     );
 
-    console.log(`[Complete Cycle] Ciclo #${newCycleNumber} guardado con ${totalMessages} mensajes`);
+    console.log(`[Complete Cycle] Ciclo #${newCycleNumber} guardado. Monto: ${amount || 'N/A'}`);
 
     // 2. Determinar estado de reset
     let resetStatusId = conv.auto_reset_to_status_id;
 
-    // Si no hay auto_reset_to_status_id, usar el estado por defecto
+    // Si no hay auto_reset_to_status_id, usar el estado por defecto o el primero
     if (!resetStatusId) {
       const [defaultStatusRows] = await pool.query<RowDataPacket[]>(
         `SELECT id FROM conversation_statuses
@@ -121,7 +110,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
 
       if (defaultStatusRows.length === 0) {
-        // Si no hay estado default, usar el primero activo
         const [firstStatusRows] = await pool.query<RowDataPacket[]>(
           `SELECT id FROM conversation_statuses
            WHERE is_active = TRUE
@@ -134,22 +122,23 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    // 3. Resetear la conversación al nuevo ciclo
+    // 3. Resetear la conversación: cambiar estado, incrementar ciclo, reiniciar fecha Y DESASIGNAR AGENTE
     await pool.query(
       `UPDATE conversaciones
        SET status_id = ?,
            cycle_count = ?,
-           current_cycle_started_at = NOW()
+           current_cycle_started_at = NOW(),
+           asignado_a = NULL
        WHERE id = ?`,
       [resetStatusId, newCycleNumber, convId]
     );
 
-    // 4. Registrar el cambio de estado en el historial
+    // 4. Registrar historial de cambio de estado
     await pool.query(
       `INSERT INTO conversation_status_history
        (conversation_id, old_status_id, new_status_id, changed_by, change_reason)
        VALUES (?, ?, ?, ?, ?)`,
-      [convId, conv.status_id, resetStatusId, user.id, reason || 'Ciclo completado manualmente por el agente']
+      [convId, conv.status_id, resetStatusId, user.id, reason || `Ciclo completado. Monto: ${amount || 0}`]
     );
 
     // 5. Registrar evento del sistema
@@ -161,27 +150,41 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const newStatusName = newStatusRows[0]?.name || 'Nuevo';
     const newStatusIcon = newStatusRows[0]?.icon || '🔄';
 
+    // Construir texto del evento con info extra si hay venta
+    let eventText = `✅ Ciclo #${newCycleNumber} completado por ${user.nombre}`;
+    if (amount) eventText += ` (Venta: $${amount})`;
+    eventText += ` - Conversación liberada y reseteada a ${newStatusIcon} ${newStatusName}`;
+
     await pool.query(
       `INSERT INTO conversation_events
        (conversacion_id, tipo, texto, evento_data)
        VALUES (?, 'cambio_estado', ?, ?)`,
       [
         convId,
-        `✅ Ciclo #${newCycleNumber} completado por ${user.nombre} - Estado reseteado a ${newStatusIcon} ${newStatusName}`,
+        eventText,
         JSON.stringify({
           cycle_number: newCycleNumber,
           old_status_id: conv.status_id,
+          final_status_id: finalStatusToRecord,
           new_status_id: resetStatusId,
           completed_by: user.id,
-          completed_by_name: user.nombre,
-          reason: reason || 'Completado manualmente',
-          total_messages: totalMessages,
-          event_type: 'cycle_completed'  // Para distinguirlo de otros cambios de estado
+          amount: amount,
+          notes: cycle_notes,
+          unassigned: true
         })
       ]
     );
 
-    console.log(`[Complete Cycle] Conversación ${convId} reseteada a estado "${newStatusName}" (ciclo #${newCycleNumber})`);
+    // 6. Registrar evento específico de desasignación
+    await pool.query(
+      `INSERT INTO conversation_events
+       (conversacion_id, tipo, texto)
+       VALUES (?, 'reasignacion', ?)`,
+      [
+        convId,
+        `🔓 Conversación liberada automáticamente al completar ciclo`
+      ]
+    );
 
     return new Response(
       JSON.stringify({
