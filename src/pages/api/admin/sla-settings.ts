@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { pool } from '../../../../lib/db';
+import { pool } from '../../../lib/db';
 import type { RowDataPacket } from 'mysql2/promise';
 
 /**

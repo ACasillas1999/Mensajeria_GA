@@ -17,13 +17,13 @@ const WABA_TOKEN = process.env.WABA_TOKEN;
 const WABA_PHONE_ID = process.env.WABA_PHONE_ID || process.env.WABA_PHONE_NUMBER_ID;
 
 // Función para enviar WhatsApp
-async function sendWhatsAppAlert(to: string, message: string) {
+// Función para enviar WhatsApp (Plantilla)
+async function sendWhatsAppAlert(to: string, templateName: string, _message: string) {
     if (!WABA_TOKEN || !WABA_PHONE_ID) {
         console.error('Faltan credenciales WABA');
         return;
     }
 
-    // Limpiar número (remover + o espacios)
     const cleanTo = to.replace(/\D/g, '');
 
     try {
@@ -32,14 +32,17 @@ async function sendWhatsAppAlert(to: string, message: string) {
             {
                 messaging_product: "whatsapp",
                 to: cleanTo,
-                type: "text",
-                text: { body: message }
+                type: "template",
+                template: {
+                    name: templateName,
+                    language: { code: "es_MX" }
+                }
             },
             { headers: { Authorization: `Bearer ${WABA_TOKEN}` } }
         );
-        console.log(`✅ Alerta enviada a ${cleanTo}`);
+        console.log(`✅ Alerta (plantilla: ${templateName}) enviada a ${cleanTo}`);
     } catch (error: any) {
-        console.error(`❌ Error enviando a ${cleanTo}:`, error.response?.data || error.message);
+        console.error(`❌ Error enviando plantilla a ${cleanTo}:`, error.response?.data || error.message);
     }
 }
 
