@@ -15,44 +15,86 @@ if (user) {
     <meta charset="utf-8" />
     <title>Login Mensajer&iacute;a Web GA</title>
     <link rel="icon" type="image/png" href="/logo-gawhats.png" sizes="32x32" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
-  <body class="min-h-screen flex items-center justify-center bg-login-pattern text-white px-4 py-8 md:py-0">
-    <div id="login-wrap" class="w-full max-w-4xl opacity-0 translate-y-2 transition-all duration-500">
-      <div class="grid md:grid-cols-2 gap-6 md:gap-0 rounded-[28px] md:rounded-[32px] overflow-hidden backdrop-blur-2xl bg-white/5 shadow-[0_25px_80px_rgba(0,0,0,0.45)]">
-        <div class="relative p-6 sm:p-8 md:p-10 flex flex-col justify-center gap-4 sm:gap-5 text-left bg-slate-950/70">
+  <body
+    class="min-h-screen flex items-center justify-center bg-login-pattern text-white px-4 py-8 md:py-0"
+  >
+    <div
+      id="login-wrap"
+      class="w-full max-w-4xl opacity-0 translate-y-2 transition-all duration-500"
+    >
+      <div
+        class="grid md:grid-cols-2 gap-6 md:gap-0 rounded-[28px] md:rounded-[32px] overflow-hidden backdrop-blur-2xl bg-white/5 shadow-[0_25px_80px_rgba(0,0,0,0.45)]"
+      >
+        <div
+          class="relative p-6 sm:p-8 md:p-10 flex flex-col justify-center gap-4 sm:gap-5 text-left bg-slate-950/70"
+        >
           <div>
-            <p class="text-[12px] font-semibold tracking-[0.16em] text-emerald-100/80 uppercase">Acceso seguro</p>
-            <h1 class="text-3xl md:text-[36px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-emerald-200 to-cyan-200" style="font-family: 'Space Grotesk', 'Inter', 'Segoe UI', system-ui, sans-serif;">
+            <p
+              class="text-[12px] font-semibold tracking-[0.16em] text-emerald-100/80 uppercase"
+            >
+              Acceso seguro
+            </p>
+            <h1
+              class="text-3xl md:text-[36px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-emerald-200 to-cyan-200"
+              style="font-family: 'Space Grotesk', 'Inter', 'Segoe UI', system-ui, sans-serif;"
+            >
               Mensajer&iacute;a Web GA
             </h1>
           </div>
-          <p class="text-slate-200/85 text-sm md:text-base max-w-md">Centraliza tus conversaciones y plantillas en un panel moderno y simple.</p>
-          <div class="rounded-2xl bg-white/5 backdrop-blur-xl shadow-[0_12px_50px_rgba(0,0,0,0.35)] p-3 md:p-4">
+          <p class="text-slate-200/85 text-sm md:text-base max-w-md"></p>
+          <div
+            class="rounded-2xl bg-white/5 backdrop-blur-xl shadow-[0_12px_50px_rgba(0,0,0,0.35)] p-3 md:p-4"
+          >
             <LoginForm client:load />
           </div>
         </div>
 
-        <div class="relative min-h-[260px] sm:min-h-[320px] md:min-h-full bg-gradient-to-br from-slate-950/90 via-slate-900/82 to-slate-900/72 hidden md:block">
+        <div
+          class="relative min-h-[260px] sm:min-h-[320px] md:min-h-full bg-gradient-to-br from-slate-950/90 via-slate-900/82 to-slate-900/72 hidden md:block"
+        >
           <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute -top-12 -left-20 w-96 h-96 bg-emerald-400/24 blur-[140px]"></div>
-            <div class="absolute top-0 right-[-30%] w-[120%] h-[120%] bg-gradient-radial from-emerald-400/14 via-cyan-400/10 to-transparent blur-[80px] opacity-90"></div>
-            <div class="absolute bottom-0 left-1/4 w-80 h-80 bg-cyan-400/18 blur-[120px]"></div>
+            <div
+              class="absolute -top-12 -left-20 w-96 h-96 bg-emerald-400/24 blur-[140px]"
+            >
+            </div>
+            <div
+              class="absolute top-0 right-[-30%] w-[120%] h-[120%] bg-gradient-radial from-emerald-400/14 via-cyan-400/10 to-transparent blur-[80px] opacity-90"
+            >
+            </div>
+            <div
+              class="absolute bottom-0 left-1/4 w-80 h-80 bg-cyan-400/18 blur-[120px]"
+            >
+            </div>
           </div>
-          <div class="relative h-full flex items-center justify-center p-6 md:p-10">
-            <img src={logoSrc} alt="Logo Mensajer&iacute;a Web GA" class="w-48 h-48 sm:w-52 sm:h-52 md:w-60 md:h-60 object-contain drop-shadow-[0_20px_70px_rgba(0,0,0,0.5)]" loading="lazy" />
+          <div
+            class="relative h-full flex items-center justify-center p-6 md:p-10"
+          >
+            <img
+              src={logoSrc}
+              alt="Logo Mensajería Web GA"
+              class="w-48 h-48 sm:w-52 sm:h-52 md:w-60 md:h-60 object-contain drop-shadow-[0_20px_70px_rgba(0,0,0,0.5)]"
+              loading="lazy"
+            />
           </div>
         </div>
       </div>
     </div>
     <script is:inline>
-      window.addEventListener('DOMContentLoaded', () => {
-        const el = document.getElementById('login-wrap');
-        if (el) requestAnimationFrame(() => { el.classList.remove('opacity-0','translate-y-2'); });
+      window.addEventListener("DOMContentLoaded", () => {
+        const el = document.getElementById("login-wrap");
+        if (el)
+          requestAnimationFrame(() => {
+            el.classList.remove("opacity-0", "translate-y-2");
+          });
       });
     </script>
   </body>

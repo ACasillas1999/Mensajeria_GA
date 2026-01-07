@@ -48,9 +48,9 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className={formClass}>
       <div className="mb-6 text-left">
-        <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-200/80 font-semibold">Panel privado</p>
+        <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-200/80 font-semibold"></p>
         <h2 className="text-2xl font-semibold text-white mt-1">Iniciar sesión</h2>
-        <p className="text-sm text-slate-300/80 mt-2">Usa tus credenciales corporativas para continuar.</p>
+        <p className="text-sm text-slate-300/80 mt-2">Usa tu correo corporativo para iniciar sesión.</p>
       </div>
 
       <input
@@ -84,7 +84,7 @@ export default function LoginForm() {
         {loading ? "Entrando..." : "Entrar"}
       </button>
 
-      <p className="mt-3 text-xs text-slate-400 text-center">\u00bfProblemas para acceder? Contacta a soporte interno.</p>
+      <p className="mt-3 text-xs text-slate-400 text-center">Problemas para acceder? Contacta a sistemas.</p>
 
       {mensaje && (
         <p className={`mt-4 text-sm text-center px-3 py-2 rounded-lg ${hasError ? "text-red-300 bg-red-500/10 border border-red-500/30" : "text-emerald-200 bg-emerald-500/10 border border-emerald-500/30"}`}>
