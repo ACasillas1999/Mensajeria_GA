@@ -13,6 +13,13 @@ const pool = createPool({
     queueLimit: 0
 });
 
+console.log('--- SLA Watcher DB Debug ---');
+console.log('DB_HOST:', process.env.DB_HOST);
+console.log('DB_USER:', process.env.DB_USER);
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('DB_PASSWORD length:', process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : 'undefined/empty');
+console.log('----------------------------');
+
 const WABA_TOKEN = process.env.WABA_TOKEN;
 const WABA_PHONE_ID = process.env.WABA_PHONE_ID || process.env.WABA_PHONE_NUMBER_ID;
 
