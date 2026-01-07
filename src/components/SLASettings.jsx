@@ -92,6 +92,37 @@ export default function SLASettings() {
            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configura cuándo y a quién notificar si un cliente espera demasiado.</p>
         </div>
         <div className="flex items-center gap-3">
+            <button
+                onClick={async () => {
+                    const r = await Swal.fire({
+                        title: 'Probando configuración...',
+                        text: 'Ejecutando chequeo de SLA manual. Por favor espera.',
+                        didOpen: async () => {
+                            Swal.showLoading();
+                            try {
+                                const res = await fetch(`${BASE}/api/admin/sla-check`.replace(/\/\//g, '/'), { method: 'POST' });
+                                const json = await res.json();
+                                let htmlLogs = `<div class="text-left text-xs font-mono bg-slate-900 text-green-400 p-2 rounded max-h-60 overflow-y-auto">`;
+                                htmlLogs += (json.logs || []).map(l => `<div>${l}</div>`).join('');
+                                htmlLogs += `</div>`;
+                                
+                                Swal.fire({
+                                    title: json.ok ? 'Chequeo completado' : 'Error en chequeo',
+                                    html: htmlLogs,
+                                    icon: json.ok ? 'success' : 'error',
+                                    width: '600px'
+                                });
+                            } catch (e) {
+                                Swal.fire('Error', 'Falló la petición al servidor', 'error');
+                            }
+                        }
+                    });
+                }}
+                className="px-3 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 font-medium text-sm transition-colors"
+            >
+                ▶️ Probar ahora
+            </button>
+
             <button 
                 onClick={() => setConfig({...config, active: !config.active})}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${config.active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}
