@@ -1,0 +1,26 @@
+---
+import AppLayout from "../../../../layouts/AppLayout.astro";
+import SLASettings from "../../../../components/SLASettings";
+
+// TODO: Validar rol admin en servidor si es necesario, aunque AppLayout suele manejarlo o el componente carga data protegida.
+---
+
+<AppLayout title="Configuración de Notificaciones (SLA)">
+    <div class="max-w-6xl mx-auto py-8 px-4">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">
+                Configuración
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400">
+                Ajusta los parámetros globales del sistema.
+            </p>
+        </div>
+
+        <!-- Pestañas simples o directo al componente -->
+        <div
+            class="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8"
+        >
+            <SLASettings client:only="react" />
+        </div>
+    </div>
+</AppLayout>

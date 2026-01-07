@@ -13,7 +13,7 @@ export default function UsersAdmin() {
   const [filtroSuc, setFiltroSuc] = useState("");
 
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ nombre:"", email:"", password:"", rol:"ADMIN", sucursal_id:"" });
+  const [form, setForm] = useState({ nombre:"", email:"", password:"", rol:"ADMIN", sucursal_id:"", telefono: "" });
 
   async function load() {
     setLoading(true);
@@ -39,7 +39,7 @@ export default function UsersAdmin() {
       body: JSON.stringify(payload)
     });
     const j = await r.json();
-    if (j.ok) { setModal(false); setForm({ nombre:"", email:"", password:"", rol:"AGENTE", sucursal_id:"" }); load(); }
+    if (j.ok) { setModal(false); setForm({ nombre:"", email:"", password:"", rol:"AGENTE", sucursal_id:"", telefono:"" }); load(); }
     else alert(j.error || "No se pudo crear");
   }
 
@@ -303,6 +303,7 @@ export default function UsersAdmin() {
               <th className="text-left p-2">Email</th>
               <th className="text-left p-2">Rol</th>
               <th className="text-left p-2">Sucursal</th>
+              <th className="text-left p-2">Teléfono</th>
               <th className="text-left p-2">Activo</th>
               <th className="text-left p-2"></th>
             </tr>
@@ -331,6 +332,38 @@ export default function UsersAdmin() {
                       <option value="">(Sin sucursal)</option>
                       {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                     </select>
+                  </td>
+                  <td className="p-2">
+                    <div className="flex items-center gap-1 group">
+                        {u.telefono ? (
+                            <span className="text-sm text-slate-700 dark:text-slate-300">{u.telefono}</span>
+                        ) : (
+                            <span className="text-xs text-slate-400 italic">Sin teléfono</span>
+                        )}
+                        <button 
+                            onClick={async () => {
+                                const { value: tel } = await Swal.fire({
+                                    title: 'Editar teléfono',
+                                    input: 'text',
+                                    inputValue: u.telefono || '',
+                                    text: 'Formato internacional (ej: 521...)',
+                                    showCancelButton: true
+                                });
+                                if (tel !== undefined) {
+                                    const r = await fetch(`${BASE}/api/admin/users`.replace(/\/\//g, '/'), {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ id: u.id, telefono: tel })
+                                    });
+                                    if(r.ok) load(); else Swal.fire('Error', 'No se pudo actualizar', 'error');
+                                }
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-blue-500"
+                            title="Editar teléfono"
+                        >
+                            ✏️
+                        </button>
+                    </div>
                   </td>
                   <td className="p-2">
                     <button onClick={()=>toggleActivo(u)}
@@ -386,6 +419,9 @@ export default function UsersAdmin() {
               <input className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                 placeholder="Contraseña" required minLength={8} type="password"
                 value={form.password} onChange={e=>setForm(f=>({...f, password:e.target.value}))} />
+              <input className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
+                placeholder="Teléfono (ej: 521...)" 
+                value={form.telefono} onChange={e=>setForm(f=>({...f, telefono:e.target.value}))} />
               <div className="flex gap-2">
                 <select className="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                   value={form.rol} onChange={e=>setForm(f=>({...f, rol:e.target.value}))}>
