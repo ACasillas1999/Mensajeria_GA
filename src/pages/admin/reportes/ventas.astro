@@ -1,0 +1,24 @@
+---
+import AppLayout from "../../../layouts/AppLayout.astro";
+import SalesReport from "../../../components/SalesReport.jsx";
+
+const user = Astro.locals.user;
+if (!user || String(user.rol || "").toLowerCase() !== "admin") {
+    return Astro.redirect("/");
+}
+---
+
+<AppLayout title="Reporte de Ventas">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
+                Reporte de Ventas
+            </h1>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Resumen de cierre de ciclos y ventas generadas por agentes.
+            </p>
+        </div>
+
+        <SalesReport client:load />
+    </div>
+</AppLayout>
