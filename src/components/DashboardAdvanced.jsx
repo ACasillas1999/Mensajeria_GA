@@ -175,7 +175,7 @@ export default function DashboardAdvanced() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-2 md:px-4 space-y-6 bg-slate-100/70 rounded-2xl p-2 sm:p-3">
+    <div className="max-w-7xl mx-auto px-2 md:px-4 space-y-6 bg-slate-100/70 border border-slate-200/70 rounded-2xl p-2 sm:p-3 dark:bg-slate-950/60 dark:border-slate-900/70">
       <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-4 rounded-xl border border-slate-200 bg-slate-100/80 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-lg dark:shadow-black/10">
         <div className="text-sm font-medium text-slate-800 dark:text-slate-300">Periodo:</div>
 
