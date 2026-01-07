@@ -13,7 +13,7 @@
     "start": "node ./dist/server/entry.mjs",
     "build:lambda": "npm run build && node create-lambda-package.mjs",
     "generate-embeddings": "node scripts/generate-embeddings.js",
-    "watcher": "./node_modules/.bin/tsx src/scripts/sla-watcher.ts"
+    "watcher": "npx -y tsx src/scripts/sla-watcher.ts"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.5",
