@@ -122,13 +122,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    // 3. Resetear la conversación: cambiar estado, incrementar ciclo, reiniciar fecha Y DESASIGNAR AGENTE
+    // 3. Resetear la conversación: cambiar estado, incrementar ciclo, reiniciar fecha (MANTENER AGENTE ASIGNADO)
     await pool.query(
       `UPDATE conversaciones
        SET status_id = ?,
            cycle_count = ?,
-           current_cycle_started_at = NOW(),
-           asignado_a = NULL
+           current_cycle_started_at = NOW()
        WHERE id = ?`,
       [resetStatusId, newCycleNumber, convId]
     );
@@ -153,7 +152,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Construir texto del evento con info extra si hay venta
     let eventText = `✅ Ciclo #${newCycleNumber} completado por ${user.nombre}`;
     if (amount) eventText += ` (Venta: $${amount})`;
-    eventText += ` - Conversación liberada y reseteada a ${newStatusIcon} ${newStatusName}`;
+    eventText += ` - Conversación reseteada a ${newStatusIcon} ${newStatusName} (agente asignado: ${conv.asignado_a ? 'mantenido' : 'ninguno'})`;
 
     await pool.query(
       `INSERT INTO conversation_events
@@ -170,21 +169,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
           completed_by: user.id,
           amount: amount,
           notes: cycle_notes,
-          unassigned: true
+          agent_kept_assigned: conv.asignado_a !== null
         })
       ]
     );
 
-    // 6. Registrar evento específico de desasignación
-    await pool.query(
-      `INSERT INTO conversation_events
-       (conversacion_id, tipo, texto)
-       VALUES (?, 'reasignacion', ?)`,
-      [
-        convId,
-        `🔓 Conversación liberada automáticamente al completar ciclo`
-      ]
-    );
+    // 6. Nota: El agente se mantiene asignado después de completar el ciclo
 
     return new Response(
       JSON.stringify({
