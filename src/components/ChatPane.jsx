@@ -1894,10 +1894,10 @@ function pickMime() {
           <div
                key={m.id}
                id={`msg-${m.id}`}
-               className={`max-w-[75%] px-3 py-2 rounded-lg border transition-all
+               className={`w-fit max-w-[85%] px-3 py-2 rounded-lg border shadow-sm transition-all text-sm
                  ${m.sender === 'me'
-                   ? 'ml-auto bg-emerald-100 dark:bg-emerald-900 border-emerald-400 dark:border-emerald-700 text-emerald-900 dark:text-emerald-50'
-                   : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100'}
+                   ? 'ml-auto bg-emerald-100 dark:bg-emerald-900 border-emerald-400 dark:border-emerald-700 text-emerald-900 dark:text-emerald-50 rounded-tr-none'
+                   : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-tl-none'}
                  ${isHighlighted ? 'ring-2 ring-yellow-400 bg-yellow-900/20' : ''}`}>
             {/* Renderizar ubicaciones */}
             {(m.tipo === "location" || 
