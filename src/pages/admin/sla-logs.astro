@@ -1,0 +1,15 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import SLALogsViewer from "../../components/SLALogsViewer.jsx";
+
+const user = Astro.locals.user;
+if (!user || user.rol !== "ADMIN") {
+    return Astro.redirect("/login");
+}
+---
+
+<AppLayout title="Historial de Notificaciones SLA" user={user}>
+    <div class="p-6">
+        <SLALogsViewer client:load />
+    </div>
+</AppLayout>

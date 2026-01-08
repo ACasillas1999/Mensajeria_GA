@@ -135,7 +135,11 @@ export const POST: APIRoute = async ({ locals }) => {
             const varCount = await getTemplateVariableCount(templateName);
 
             // Datos base disponibles
-            const clienteInfo = conv.wa_profile_name || conv.wa_user;
+            let clienteInfo = conv.wa_profile_name || conv.wa_user;
+            // Si el nombre es solo puntuación o muy corto, usar el teléfono
+            if (!clienteInfo || clienteInfo.trim().length <= 1 || /^[.\-_]+$/.test(clienteInfo)) {
+                clienteInfo = conv.wa_user || "Cliente";
+            }
             const tiempoEspera = `${timeDiffMinutes} minutos`;
             const conversacionId = `#${conv.id}`;
             const ultimoMensaje = conv.last_msg_body?.substring(0, 50) || "";
