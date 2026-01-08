@@ -12,6 +12,29 @@ export const POST: APIRoute = async ({ locals }) => {
         console.log(msg);
     }
 
+    // Función helper para obtener número de variables de plantilla
+    async function getTemplateVariableCount(templateName: string): Promise<number> {
+        try {
+            const [rows] = await pool.query<any[]>(
+                'SELECT body_text FROM whatsapp_templates WHERE name = ? LIMIT 1',
+                [templateName]
+            );
+
+            if (rows.length === 0) {
+                log(`⚠️ Plantilla "${templateName}" no encontrada en BD. Asumiendo 0 variables.`);
+                return 0;
+            }
+
+            const bodyText = rows[0].body_text;
+            const matches = bodyText?.match(/\{\{(\d+)\}\}/g) || [];
+            log(`📋 Plantilla "${templateName}" tiene ${matches.length} variable(s)`);
+            return matches.length;
+        } catch (error) {
+            log(`Error consultando plantilla "${templateName}": ${error}`);
+            return 0;
+        }
+    }
+
     try {
         log("Iniciando chequeo manual SLA...");
 
@@ -102,7 +125,30 @@ export const POST: APIRoute = async ({ locals }) => {
             }
 
             const timeDiffMinutes = Math.floor((nowUnix - conv.last_msg_ts) / 60);
-            const alertMsg = `⚠️ ALERTA SLA: Conversación pendiente por ${timeDiffMinutes} min.`;
+
+            // Obtener número de variables que necesita la plantilla
+            const varCount = await getTemplateVariableCount(templateName);
+
+            // Construir variables disponibles
+            const availableVars = {
+                agente_nombre: conv.agente_nombre || "Sin asignar",
+                conversacion_id: `#${conv.id}`,
+                tiempo_espera: `${timeDiffMinutes} minutos`,
+                cliente_nombre: conv.wa_profile_name || conv.wa_user,
+                ultimo_mensaje: conv.last_msg_body?.substring(0, 50) || "",
+                fecha_hora: new Date().toLocaleString('es-MX')
+            };
+
+            // Mapear variables según el número detectado
+            const templateVariables: string[] = [];
+            if (varCount >= 1) templateVariables.push(availableVars.agente_nombre);
+            if (varCount >= 2) templateVariables.push(availableVars.conversacion_id);
+            if (varCount >= 3) templateVariables.push(`no ha contestado en ${availableVars.tiempo_espera}`);
+            if (varCount >= 4) templateVariables.push(availableVars.cliente_nombre);
+            if (varCount >= 5) templateVariables.push(availableVars.ultimo_mensaje);
+            if (varCount >= 6) templateVariables.push(availableVars.fecha_hora);
+
+            log(`Conv #${conv.id}: Usando ${varCount} variable(s): ${JSON.stringify(templateVariables)}`);
 
             const phonesToNotify = new Set<string>();
             if (conv.asignado_a && conv.agente_telefono) {
@@ -129,17 +175,32 @@ export const POST: APIRoute = async ({ locals }) => {
                 log(`Enviando WhatsApp a ${cleanTo} usando plantilla '${templateName}'...`);
 
                 try {
+                    const payload: any = {
+                        messaging_product: "whatsapp",
+                        to: cleanTo,
+                        type: "template",
+                        template: {
+                            name: templateName,
+                            language: { code: "es_MX" }
+                        }
+                    };
+
+                    // Agregar componentes solo si hay variables
+                    if (templateVariables.length > 0) {
+                        payload.template.components = [{
+                            type: "body",
+                            parameters: templateVariables.map(v => ({
+                                type: "text",
+                                text: v
+                            }))
+                        }];
+                    }
+
+                    log(`Payload: ${JSON.stringify(payload.template, null, 2)}`);
+
                     await axios.post(
                         `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`,
-                        {
-                            messaging_product: "whatsapp",
-                            to: cleanTo,
-                            type: "template",
-                            template: {
-                                name: templateName,
-                                language: { code: "es_MX" }
-                            }
-                        },
+                        payload,
                         { headers: { Authorization: `Bearer ${WABA_TOKEN}` } }
                     );
                     log(`✅ Enviado OK a ${cleanTo}`);

@@ -21,9 +21,33 @@ console.log('----------------------------');
 const WABA_TOKEN = process.env.WABA_TOKEN;
 const WABA_PHONE_ID = process.env.WABA_PHONE_ID || process.env.WABA_PHONE_NUMBER_ID;
 
+// Función para obtener el número de variables de una plantilla
+async function getTemplateVariableCount(templateName: string): Promise<number> {
+    try {
+        const [rows] = await pool.query<any[]>(
+            'SELECT body_text FROM whatsapp_templates WHERE name = ? LIMIT 1',
+            [templateName]
+        );
+
+        if (rows.length === 0) {
+            console.log(`⚠️ Plantilla "${templateName}" no encontrada en BD. Asumiendo 0 variables.`);
+            return 0;
+        }
+
+        const bodyText = rows[0].body_text;
+        const matches = bodyText?.match(/\{\{(\d+)\}\}/g) || [];
+        console.log(`📋 Plantilla "${templateName}" tiene ${matches.length} variable(s)`);
+        return matches.length;
+    } catch (error) {
+        console.error(`Error consultando plantilla "${templateName}":`, error);
+        return 0;
+    }
+}
+
+
 // Función para enviar WhatsApp
-// Función para enviar WhatsApp (Plantilla)
-async function sendWhatsAppAlert(to: string, templateName: string, _message: string) {
+// Función para enviar WhatsApp (Plantilla con variables opcionales)
+async function sendWhatsAppAlert(to: string, templateName: string, variables: string[] = []) {
     if (!WABA_TOKEN || !WABA_PHONE_ID) {
         console.error('Faltan credenciales WABA');
         return;
@@ -32,17 +56,32 @@ async function sendWhatsAppAlert(to: string, templateName: string, _message: str
     const cleanTo = to.replace(/\D/g, '');
 
     try {
+        const payload: any = {
+            messaging_product: "whatsapp",
+            to: cleanTo,
+            type: "template",
+            template: {
+                name: templateName,
+                language: { code: "es_MX" }
+            }
+        };
+
+        // Agregar componentes solo si hay variables
+        if (variables.length > 0) {
+            payload.template.components = [{
+                type: "body",
+                parameters: variables.map(v => ({
+                    type: "text",
+                    text: v
+                }))
+            }];
+        }
+
+        console.log(`[SLA] Enviando plantilla "${templateName}" a ${cleanTo}:`, JSON.stringify(payload.template, null, 2));
+
         await axios.post(
             `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`,
-            {
-                messaging_product: "whatsapp",
-                to: cleanTo,
-                type: "template",
-                template: {
-                    name: templateName,
-                    language: { code: "es_MX" }
-                }
-            },
+            payload,
             { headers: { Authorization: `Bearer ${WABA_TOKEN}` } }
         );
         console.log(`✅ Alerta (plantilla: ${templateName}) enviada a ${cleanTo}`);
@@ -148,9 +187,32 @@ async function checkSLA() {
                 }
             }
 
-            // Construir mensaje alerta
+            // Calcular tiempo de espera
             const timeDiffMinutes = Math.floor((nowUnix - conv.last_msg_ts) / 60);
-            const alertMsg = `⚠️ ALERTA SLA: Conversación pendiente por ${timeDiffMinutes} min.\nCliente: ${conv.wa_profile_name || conv.wa_user}\nÚltimo msl: "${conv.last_msg_body?.substring(0, 50)}..."`;
+
+            // Obtener número de variables que necesita la plantilla
+            const varCount = await getTemplateVariableCount(templateName);
+
+            // Construir variables disponibles
+            const availableVars = {
+                agente_nombre: conv.agente_nombre || "Sin asignar",
+                conversacion_id: `#${conv.id}`,
+                tiempo_espera: `${timeDiffMinutes} minutos`,
+                cliente_nombre: conv.wa_profile_name || conv.wa_user,
+                ultimo_mensaje: conv.last_msg_body?.substring(0, 50) || "",
+                fecha_hora: new Date().toLocaleString('es-MX')
+            };
+
+            // Mapear variables según el número detectado
+            const templateVariables: string[] = [];
+            if (varCount >= 1) templateVariables.push(availableVars.agente_nombre);
+            if (varCount >= 2) templateVariables.push(availableVars.conversacion_id);
+            if (varCount >= 3) templateVariables.push(`no ha contestado en ${availableVars.tiempo_espera}`);
+            if (varCount >= 4) templateVariables.push(availableVars.cliente_nombre);
+            if (varCount >= 5) templateVariables.push(availableVars.ultimo_mensaje);
+            if (varCount >= 6) templateVariables.push(availableVars.fecha_hora);
+
+            console.log(`Conv #${conv.id}: Usando ${varCount} variable(s):`, templateVariables);
 
             // A quién notificar?
             const phonesToNotify = new Set<string>();
@@ -169,7 +231,7 @@ async function checkSLA() {
             // Enviar WhatsApps
             if (phonesToNotify.size > 0) {
                 for (const phone of phonesToNotify) {
-                    await sendWhatsAppAlert(phone, templateName, alertMsg);
+                    await sendWhatsAppAlert(phone, templateName, templateVariables);
                 }
             } else {
                 console.log(`Conv ${conv.id}: No hay teléfonos configurados para notificar.`);
