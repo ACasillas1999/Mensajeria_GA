@@ -14,6 +14,12 @@ export const GET: APIRoute = async ({ locals, url }) => {
     return new Response(JSON.stringify({ ok: false, error: 'agent_id requerido' }), { status: 400 });
   }
 
+  const startDate = url.searchParams.get('start_date');
+  const endDate = url.searchParams.get('end_date');
+  const weeksParam = url.searchParams.get('weeks');
+  const weeks = weeksParam ? Number(weeksParam) : NaN;
+  const safeWeeks = Number.isFinite(weeks) && weeks > 0 ? Math.min(weeks, 52) : null;
+
   try {
     const [agentRows] = await pool.query<RowDataPacket[]>(
       'SELECT id, nombre, email FROM usuarios WHERE id = ? LIMIT 1',
@@ -27,15 +33,23 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const [statusRows] = await pool.query<RowDataPacket[]>(
       `SELECT id, name, is_final, is_active, display_order
        FROM conversation_statuses
-       WHERE is_active = TRUE
-          OR id IN (
-            SELECT DISTINCT new_status_id
-            FROM conversation_status_history
-            WHERE changed_by = ?
-          )
-       ORDER BY display_order ASC, id ASC`,
-      [agentId]
+       ORDER BY display_order ASC, id ASC`
     );
+
+    let completedDateClause = '';
+    let activeDateClause = '';
+    const completedParams: any[] = [agentId];
+    const activeParams: any[] = [agentId];
+
+    if (startDate && endDate) {
+      completedDateClause = ' AND cc.completed_at >= ? AND cc.completed_at <= ?';
+      activeDateClause = ' AND c.current_cycle_started_at >= ? AND c.current_cycle_started_at <= ?';
+      completedParams.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
+      activeParams.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
+    } else if (safeWeeks) {
+      completedDateClause = ` AND cc.completed_at >= DATE_SUB(NOW(), INTERVAL ${safeWeeks} WEEK)`;
+      activeDateClause = ` AND c.current_cycle_started_at >= DATE_SUB(NOW(), INTERVAL ${safeWeeks} WEEK)`;
+    }
 
     const [completedCycles] = await pool.query<RowDataPacket[]>(
       `SELECT
@@ -48,9 +62,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
         c.wa_profile_name
        FROM conversation_cycles cc
        LEFT JOIN conversaciones c ON c.id = cc.conversation_id
-       WHERE cc.assigned_to = ?
+       WHERE cc.assigned_to = ?${completedDateClause}
        ORDER BY cc.started_at DESC`,
-      [agentId]
+      completedParams
     );
 
     const [activeConversations] = await pool.query<RowDataPacket[]>(
@@ -62,8 +76,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
         c.wa_profile_name
        FROM conversaciones c
        WHERE c.asignado_a = ?
-         AND c.current_cycle_started_at IS NOT NULL`,
-      [agentId]
+         AND c.current_cycle_started_at IS NOT NULL${activeDateClause}`,
+      activeParams
     );
 
     const [completedCounts] = await pool.query<RowDataPacket[]>(
@@ -76,9 +90,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
          ON csh.conversation_id = cc.conversation_id
         AND csh.created_at >= cc.started_at
         AND csh.created_at <= cc.completed_at
-       WHERE cc.assigned_to = ?
+       WHERE cc.assigned_to = ?${completedDateClause}
        GROUP BY cc.id, csh.new_status_id`,
-      [agentId]
+      completedParams
     );
 
     const [activeCounts] = await pool.query<RowDataPacket[]>(
@@ -91,9 +105,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
          ON csh.conversation_id = c.id
         AND csh.created_at >= c.current_cycle_started_at
        WHERE c.asignado_a = ?
-         AND c.current_cycle_started_at IS NOT NULL
+         AND c.current_cycle_started_at IS NOT NULL${activeDateClause}
        GROUP BY c.id, csh.new_status_id`,
-      [agentId]
+      activeParams
     );
 
     const countsByCycleId = new Map<string, Record<string, number>>();
@@ -178,6 +192,11 @@ export const GET: APIRoute = async ({ locals, url }) => {
           counts: summaryCounts,
         },
         cycles: cyclesWithCounts,
+        filters: {
+          start_date: startDate || null,
+          end_date: endDate || null,
+          weeks: safeWeeks || null,
+        },
       }),
       { headers: { 'Content-Type': 'application/json' } }
     );

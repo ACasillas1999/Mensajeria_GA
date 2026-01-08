@@ -303,14 +303,105 @@ export default function AgentAudit() {
         <div className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
           <div className="px-4 py-3 border-b border-slate-300 dark:border-slate-800 font-medium flex items-center gap-2 text-slate-900 dark:text-slate-100">
             <span>Reporte de estatus</span>
-            {statusAudit.summary && (
-              <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-slate-100 border border-slate-300 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
-                {statusAudit.summary.total_conversations} conversaciones · {statusAudit.summary.total_cycles} ciclos
-              </span>
+            <div className="ml-auto flex flex-wrap items-center gap-2 text-xs">
+              {statusAudit.summary && (
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-300 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
+                  {statusAudit.summary.total_conversations} conversaciones / {statusAudit.summary.total_cycles} ciclos
+                </span>
+              )}
+              <button
+                onClick={exportSummaryCsv}
+                disabled={!canExportSummary}
+                className={`px-2 py-1 rounded border text-xs ${canExportSummary
+                  ? 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
+                  : 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-600'}`}
+              >
+                Exportar resumen
+              </button>
+              <button
+                onClick={exportDetailCsv}
+                disabled={!canExportDetail}
+                className={`px-2 py-1 rounded border text-xs ${canExportDetail
+                  ? 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
+                  : 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-600'}`}
+              >
+                Exportar detalle
+              </button>
+            </div>
+          </div>
+          <div className="px-4 pt-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-500 dark:text-slate-400">Inicio</label>
+                <input
+                  type="date"
+                  value={auditFilterDraft.startDate}
+                  onChange={(e) => setAuditFilterDraft((prev) => ({
+                    ...prev,
+                    startDate: e.target.value,
+                    weeks: '',
+                  }))}
+                  className="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-700 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-500 dark:text-slate-400">Fin</label>
+                <input
+                  type="date"
+                  value={auditFilterDraft.endDate}
+                  onChange={(e) => setAuditFilterDraft((prev) => ({
+                    ...prev,
+                    endDate: e.target.value,
+                    weeks: '',
+                  }))}
+                  className="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-700 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-500 dark:text-slate-400">Semanas</label>
+                <select
+                  value={auditFilterDraft.weeks}
+                  onChange={(e) => setAuditFilterDraft({
+                    startDate: '',
+                    endDate: '',
+                    weeks: e.target.value,
+                  })}
+                  className="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-700 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <option value="">Sin semanas</option>
+                  <option value="1">Ultima semana</option>
+                  <option value="2">Ultimas 2 semanas</option>
+                  <option value="4">Ultimas 4 semanas</option>
+                  <option value="8">Ultimas 8 semanas</option>
+                </select>
+              </div>
+              <button
+                onClick={applyAuditFilters}
+                disabled={hasRangeError}
+                className={`px-3 py-1 text-xs rounded border ${hasRangeError
+                  ? 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-600'
+                  : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'}`}
+              >
+                Aplicar
+              </button>
+              <button
+                onClick={clearAuditFilters}
+                className="px-3 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Limpiar
+              </button>
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                Filtro activo: {filterLabel}
+              </div>
+            </div>
+            {hasRangeError && (
+              <div className="mt-2 text-xs text-rose-600 dark:text-rose-400">
+                Selecciona inicio y fin para el rango de fechas.
+              </div>
             )}
           </div>
           <div className="p-4 text-xs text-slate-500 dark:text-slate-400">
-            Cuenta cambios de estatus hechos por el agente en cada ciclo.
+            Cuenta cambios de estatus registrados en cada ciclo.
           </div>
           {statusAudit.loading && (
             <div className="px-4 pb-4 text-sm text-slate-500 dark:text-slate-400">Cargando reporte...</div>
