@@ -132,13 +132,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
                   clienteInfo = digits.slice(-10);
                 }
 
-                const variables = [
+                // Detectar cuántas variables necesita la plantilla
+                const [tplRows] = await pool.query<RowDataPacket[]>(
+                  'SELECT body_text FROM plantillas WHERE nombre = ?',
+                  [assignmentTemplate]
+                );
+
+                const bodyText = tplRows[0]?.body_text || '';
+                const varMatches = bodyText.match(/\{\{(\d+)\}\}/g) || [];
+                const varCount = varMatches.length;
+
+                // Construir solo las variables necesarias
+                const allVariables = [
                   nombreNuevo || "Agente",
                   clienteInfo,
                   `#${conversacion_id}`,
                   conv.last_msg?.substring(0, 50) || "Sin mensajes",
                   new Date().toLocaleString('es-MX')
                 ];
+
+                const variables = allVariables.slice(0, varCount);
 
                 // Enviar WhatsApp
                 const WABA_TOKEN = process.env.WABA_TOKEN;
