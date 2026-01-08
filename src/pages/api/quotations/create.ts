@@ -62,6 +62,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
             [result.insertId]
         );
 
+        // Registrar evento del sistema
+        const eventoTexto = `Cotización ${numero_cotizacion} enviada por $${Number(monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+
+        await pool.execute(
+            `INSERT INTO conversation_events (conversacion_id, tipo, usuario_id, texto, evento_data)
+             VALUES (?, ?, ?, ?, ?)`,
+            [
+                conversacion_id,
+                'cotizacion',
+                user.id,
+                eventoTexto,
+                JSON.stringify({
+                    cotizacion_id: result.insertId,
+                    numero_cotizacion: numero_cotizacion,
+                    monto: monto,
+                    ciclo_numero: ciclo_actual
+                })
+            ]
+        );
+
         return new Response(JSON.stringify({
             ok: true,
             quotation: newQuotation[0]

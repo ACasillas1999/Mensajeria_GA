@@ -1046,6 +1046,7 @@ function pickMime() {
 
     let amount = null;
     let notes = null; // Placeholder for future notes input
+    let quotation_id = null;
 
     if (isSale) {
       const step2 = await Swal.fire({
@@ -1057,7 +1058,7 @@ function pickMime() {
           step: '0.01'
         },
         showCancelButton: true,
-        confirmButtonText: 'Finalizar',
+        confirmButtonText: 'Siguiente',
         cancelButtonText: 'Atrás',
         confirmButtonColor: '#10b981',
         inputValidator: (value) => {
@@ -1073,19 +1074,59 @@ function pickMime() {
         }
       });
 
-      if (!step2.isConfirmed) return; // Podríamos implementar lógica de "Atrás" re-llamando a la función
+      if (!step2.isConfirmed) return;
       amount = step2.value;
+
+      // Paso 3: Seleccionar cotización (solo del ciclo actual)
+      try {
+        const quotRes = await fetch(`${BASE}/api/quotations/by-cycle?conversacion_id=${conversation.id}`.replace(/\/\//g, '/'));
+        const quotData = await quotRes.json();
+        
+        if (quotData.ok && quotData.quotations && quotData.quotations.length > 0) {
+          const quotationOptions = {
+            '': 'Sin cotización asociada'
+          };
+          
+          quotData.quotations.forEach(q => {
+            quotationOptions[q.id] = `${q.numero_cotizacion} - $${Number(q.monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+          });
+
+          const step3 = await Swal.fire({
+            title: 'Asociar Cotización',
+            text: `Selecciona la cotización asociada a esta venta (Ciclo #${quotData.ciclo_actual}):`,
+            input: 'select',
+            inputOptions: quotationOptions,
+            showCancelButton: true,
+            confirmButtonText: 'Finalizar',
+            cancelButtonText: 'Atrás',
+            confirmButtonColor: '#10b981',
+            background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+            color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
+            customClass: {
+              popup: 'rounded-xl border border-slate-700',
+              confirmButton: 'px-4 py-2 rounded-lg font-semibold',
+              cancelButton: 'px-4 py-2 rounded-lg font-semibold'
+            }
+          });
+
+          if (!step3.isConfirmed) return;
+          quotation_id = step3.value ? Number(step3.value) : null;
+        }
+      } catch (err) {
+        console.error('Error cargando cotizaciones:', err);
+      }
     }
 
     // 5. Ejecutar la acción
     await executeCompleteCycle({ 
       final_status_id: selectedStatusId, 
       amount: amount, 
-      cycle_notes: notes 
+      cycle_notes: notes,
+      quotation_id: quotation_id
     });
   }
 
-  async function executeCompleteCycle({ final_status_id, amount, cycle_notes }) {
+  async function executeCompleteCycle({ final_status_id, amount, cycle_notes, quotation_id }) {
     if (!conversation) return;
 
     try {
@@ -2181,7 +2222,7 @@ function pickMime() {
       ) : (
         <form onSubmit={send} className="p-3 border-t border-slate-800 flex items-center gap-2">
           <label className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer" title="Adjuntar archivo">
-            <input type="file" className="hidden" onChange={e => {
+            <input type="file" className="hidden" onChange={async (e) => {
               const selectedFile = e.target.files?.[0];
               if (!selectedFile) return;
               
@@ -2189,10 +2230,19 @@ function pickMime() {
               const isPDF = selectedFile.type === 'application/pdf';
               
               if (isPDF) {
-                // Preguntar si es cotización
-                const isQuotation = confirm('¿Este PDF es una cotización?');
+                // Preguntar si es cotización con SweetAlert
+                const result = await Swal.fire({
+                  title: '¿Es una cotización?',
+                  text: 'Este archivo es un PDF. ¿Deseas registrarlo como cotización?',
+                  icon: 'question',
+                  showCancelButton: true,
+                  confirmButtonText: 'Sí, es cotización',
+                  cancelButtonText: 'No, enviar normal',
+                  confirmButtonColor: '#10b981',
+                  cancelButtonColor: '#6b7280'
+                });
                 
-                if (isQuotation) {
+                if (result.isConfirmed) {
                   // Guardar archivo y mostrar modal
                   setPendingFileData({ file: selectedFile, inputElement: e.target });
                   setShowQuotationModal(true);
@@ -2510,11 +2560,22 @@ function pickMime() {
           conversacionId={conversation.id}
           mensajeId={null}
           archivoUrl={null}
-          onSave={(quotation) => {
+          onSave={async (quotation) => {
             setShowQuotationModal(false);
-            // Establecer el archivo para que se envíe normalmente
+            
+            // Establecer el archivo y enviar automáticamente
             setFile(pendingFileData.file);
-            // Limpiar input
+            
+            // Esperar un momento para que se establezca el estado
+            setTimeout(() => {
+              // Simular submit del formulario
+              const form = document.querySelector('form');
+              if (form) {
+                form.requestSubmit();
+              }
+            }, 100);
+            
+            // Limpiar
             if (pendingFileData.inputElement) {
               pendingFileData.inputElement.value = '';
             }
