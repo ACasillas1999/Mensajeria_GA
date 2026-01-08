@@ -25,7 +25,7 @@ const WABA_PHONE_ID = process.env.WABA_PHONE_ID || process.env.WABA_PHONE_NUMBER
 async function getTemplateVariableCount(templateName: string): Promise<number> {
     try {
         const [rows] = await pool.query<any[]>(
-            'SELECT body_text FROM whatsapp_templates WHERE name = ? LIMIT 1',
+            'SELECT body_text FROM plantillas WHERE nombre = ? LIMIT 1',
             [templateName]
         );
 
