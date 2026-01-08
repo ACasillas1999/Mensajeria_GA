@@ -31,7 +31,7 @@ export default function SLASettings() {
       const jsonUsers = await resUsers.json();
 
       // Cargar plantillas disponibles
-      const resTemplates = await fetch(`${BASE}/api/templates/list`.replace(/\/\//g, '/'));
+      const resTemplates = await fetch(`${BASE}/api/templates`.replace(/\/\//g, '/'));
       const jsonTemplates = await resTemplates.json();
 
       if (jsonConfig.ok) {
@@ -46,7 +46,7 @@ export default function SLASettings() {
       }
 
       if (jsonTemplates.ok) {
-        setTemplates(jsonTemplates.templates || []);
+        setTemplates(jsonTemplates.items || []);
       }
       
     } catch (e) {
@@ -190,15 +190,15 @@ export default function SLASettings() {
                     {templates.map(tpl => {
                       const varCount = (tpl.body_text?.match(/\{\{(\d+)\}\}/g) || []).length;
                       return (
-                        <option key={tpl.name} value={tpl.name}>
-                          {tpl.name} {varCount > 0 ? `(${varCount} variable${varCount > 1 ? 's' : ''})` : '(sin variables)'} - {tpl.status}
+                        <option key={tpl.nombre} value={tpl.nombre}>
+                          {tpl.nombre} {varCount > 0 ? `(${varCount} variable${varCount > 1 ? 's' : ''})` : '(sin variables)'} - {tpl.estado}
                         </option>
                       );
                     })}
                   </select>
                   
                   {config.template_name && (() => {
-                    const selectedTpl = templates.find(t => t.name === config.template_name);
+                    const selectedTpl = templates.find(t => t.nombre === config.template_name);
                     if (!selectedTpl) return null;
                     
                     const varCount = (selectedTpl.body_text?.match(/\{\{(\d+)\}\}/g) || []).length;
@@ -222,9 +222,9 @@ export default function SLASettings() {
                             </ul>
                           </div>
                         )}
-                        {selectedTpl.status !== 'APPROVED' && (
+                        {selectedTpl.estado !== 'APPROVED' && (
                           <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
-                            ⚠️ Esta plantilla está en estado <b>{selectedTpl.status}</b>. Solo las plantillas APPROVED pueden enviarse.
+                            ⚠️ Esta plantilla está en estado <b>{selectedTpl.estado}</b>. Solo las plantillas APPROVED pueden enviarse.
                           </div>
                         )}
                       </div>
