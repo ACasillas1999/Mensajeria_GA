@@ -172,7 +172,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Add example if body has variables
     if (bodyVarCount > 0) {
       bodyComponent.example = {
-        body_text: [bodyExamples]
+        body_text: [bodyExamples]  // WhatsApp expects [[array of examples]]
       };
     }
 
@@ -195,6 +195,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
         })),
       });
     }
+
+    // Log payload for debugging
+    console.log('[Template Create] Payload to WhatsApp:', JSON.stringify({
+      name,
+      category,
+      language,
+      components,
+    }, null, 2));
 
     const graphRes = await axios.post(
       `https://graph.facebook.com/${WABA_VERSION}/${wabaId}/message_templates`,
