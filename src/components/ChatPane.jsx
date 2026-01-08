@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, memo, lazy, Suspense } from "
 import MediaModal from "./MediaModal.jsx";
 import QuickReplies from "./QuickReplies.jsx";
 import ConversationTraceView from "./ConversationTraceView.jsx";
+import QuotationModal from "./QuotationModal.jsx";
 
 // Lazy load heavy components
 const TemplatePicker = lazy(() => import("./TemplatePicker.jsx"));
@@ -393,6 +394,8 @@ export default function ChatPane({ conversation }) {
   // composer
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+  const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [pendingFileData, setPendingFileData] = useState(null);
   const [insideWindow, setInsideWindow] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState(null); // tiempo restante en ms
   const [lastInboundTime, setLastInboundTime] = useState(null); // timestamp del último mensaje entrante
@@ -2178,7 +2181,28 @@ function pickMime() {
       ) : (
         <form onSubmit={send} className="p-3 border-t border-slate-800 flex items-center gap-2">
           <label className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer" title="Adjuntar archivo">
-            <input type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
+            <input type="file" className="hidden" onChange={e => {
+              const selectedFile = e.target.files?.[0];
+              if (!selectedFile) return;
+              
+              // Detectar si es PDF
+              const isPDF = selectedFile.type === 'application/pdf';
+              
+              if (isPDF) {
+                // Preguntar si es cotización
+                const isQuotation = confirm('¿Este PDF es una cotización?');
+                
+                if (isQuotation) {
+                  // Guardar archivo y mostrar modal
+                  setPendingFileData({ file: selectedFile, inputElement: e.target });
+                  setShowQuotationModal(true);
+                  return;
+                }
+              }
+              
+              // Flujo normal
+              setFile(selectedFile);
+            }} />
             📎
           </label>
           <button type="button" onClick={() => setShowQuickReplies(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700" title="Respuestas rápidas">
@@ -2477,6 +2501,35 @@ function pickMime() {
         <ConversationTraceView
           conversationId={conversation.id}
           onClose={() => setShowTraceView(false)}
+        />
+      )}
+
+      {/* Modal de cotización */}
+      {showQuotationModal && pendingFileData && (
+        <QuotationModal
+          conversacionId={conversation.id}
+          mensajeId={null}
+          archivoUrl={null}
+          onSave={(quotation) => {
+            setShowQuotationModal(false);
+            // Establecer el archivo para que se envíe normalmente
+            setFile(pendingFileData.file);
+            // Limpiar input
+            if (pendingFileData.inputElement) {
+              pendingFileData.inputElement.value = '';
+            }
+            setPendingFileData(null);
+          }}
+          onCancel={() => {
+            setShowQuotationModal(false);
+            // Enviar archivo sin registrar cotización
+            setFile(pendingFileData.file);
+            // Limpiar input
+            if (pendingFileData.inputElement) {
+              pendingFileData.inputElement.value = '';
+            }
+            setPendingFileData(null);
+          }}
         />
       )}
     </div>

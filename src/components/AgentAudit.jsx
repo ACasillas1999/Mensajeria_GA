@@ -16,6 +16,17 @@ export default function AgentAudit() {
     summary: null,
     cycles: [],
   });
+  const [auditFilterDraft, setAuditFilterDraft] = useState({
+    startDate: '',
+    endDate: '',
+    weeks: '',
+  });
+  const [auditFilterApplied, setAuditFilterApplied] = useState({
+    mode: 'all',
+    startDate: '',
+    endDate: '',
+    weeks: '',
+  });
 
   async function load() {
     try {
@@ -51,8 +62,9 @@ export default function AgentAudit() {
 
     async function loadAudit() {
       try {
+        const query = buildAuditQuery(auditFilterApplied);
         const r = await fetch(
-          `${BASE}/api/admin/agent-status-audit?agent_id=${selectedAgent}`.replace(/\/\//g, '/')
+          `${BASE}/api/admin/agent-status-audit?agent_id=${selectedAgent}${query}`.replace(/\/\//g, '/')
         );
         const j = await r.json();
         if (cancelled) return;
@@ -90,7 +102,7 @@ export default function AgentAudit() {
     return () => {
       cancelled = true;
     };
-  }, [viewMode, selectedAgent]);
+  }, [viewMode, selectedAgent, auditFilterApplied]);
 
   function formatTimestamp(ts) {
     if (!ts) return 'Nunca';
@@ -105,6 +117,52 @@ export default function AgentAudit() {
     return date.toLocaleDateString();
   }
 
+  function buildAuditQuery(filter) {
+    const params = new URLSearchParams();
+    if (filter.mode === 'custom' && filter.startDate && filter.endDate) {
+      params.set('start_date', filter.startDate);
+      params.set('end_date', filter.endDate);
+    }
+    if (filter.mode === 'weeks' && filter.weeks) {
+      params.set('weeks', filter.weeks);
+    }
+    const qs = params.toString();
+    return qs ? `&${qs}` : '';
+  }
+
+  function buildFilterLabel(filter) {
+    if (filter.mode === 'custom' && filter.startDate && filter.endDate) {
+      return `${filter.startDate} a ${filter.endDate}`;
+    }
+    if (filter.mode === 'weeks' && filter.weeks) {
+      return `Ultimas ${filter.weeks} semanas`;
+    }
+    return 'Sin filtro';
+  }
+
+  function buildCsvRow(values) {
+    return values.map((value) => {
+      const text = value === null || value === undefined ? '' : String(value);
+      if (text.includes('"') || text.includes(',') || text.includes('\n')) {
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+      return text;
+    }).join(',');
+  }
+
+  function downloadCsv(filename, rows) {
+    const csv = rows.map(buildCsvRow).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   const activeAgents = data.agents.filter(a => a.ultima_actividad_ts && (Date.now() / 1000 - a.ultima_actividad_ts) < 300); // activos en ultimos 5min
 
   if (loading) {
@@ -117,6 +175,93 @@ export default function AgentAudit() {
     const statusColumns = statusAudit.statuses || [];
     const summaryCounts = statusAudit.summary?.counts || {};
     const cycleRows = statusAudit.cycles || [];
+    const filterLabel = buildFilterLabel(auditFilterApplied);
+    const filterSlug = auditFilterApplied.mode === 'custom'
+      ? `${auditFilterApplied.startDate}_${auditFilterApplied.endDate}`
+      : auditFilterApplied.mode === 'weeks'
+        ? `${auditFilterApplied.weeks}w`
+        : 'all';
+    const canExportSummary = !!statusAudit.summary && statusColumns.length > 0;
+    const canExportDetail = cycleRows.length > 0 && statusColumns.length > 0;
+    const hasRangeError = (auditFilterDraft.startDate && !auditFilterDraft.endDate)
+      || (!auditFilterDraft.startDate && auditFilterDraft.endDate);
+
+    function applyAuditFilters() {
+      if (auditFilterDraft.weeks) {
+        setAuditFilterApplied({
+          mode: 'weeks',
+          startDate: '',
+          endDate: '',
+          weeks: auditFilterDraft.weeks,
+        });
+        return;
+      }
+      if (auditFilterDraft.startDate && auditFilterDraft.endDate) {
+        setAuditFilterApplied({
+          mode: 'custom',
+          startDate: auditFilterDraft.startDate,
+          endDate: auditFilterDraft.endDate,
+          weeks: '',
+        });
+        return;
+      }
+      setAuditFilterApplied({
+        mode: 'all',
+        startDate: '',
+        endDate: '',
+        weeks: '',
+      });
+    }
+
+    function clearAuditFilters() {
+      setAuditFilterDraft({ startDate: '', endDate: '', weeks: '' });
+      setAuditFilterApplied({ mode: 'all', startDate: '', endDate: '', weeks: '' });
+    }
+
+    function exportSummaryCsv() {
+      if (!statusAudit.summary) return;
+      const headers = [
+        'Agente',
+        'Conversaciones',
+        'Ciclos',
+        ...statusColumns.map((st) => st.name),
+      ];
+      const row = [
+        agent?.nombre || '',
+        statusAudit.summary.total_conversations || 0,
+        statusAudit.summary.total_cycles || 0,
+        ...statusColumns.map((st) => summaryCounts[String(st.id)] || 0),
+      ];
+      downloadCsv(
+        `agent-status-summary-${selectedAgent}-${filterSlug}.csv`,
+        [headers, row]
+      );
+    }
+
+    function exportDetailCsv() {
+      const headers = [
+        'Conversacion',
+        'Cliente',
+        'Ciclo',
+        'Activo',
+        'Inicio',
+        'Fin',
+        ...statusColumns.map((st) => st.name),
+      ];
+      const rows = cycleRows.map((cycle) => ([
+        cycle.conversation_id,
+        cycle.wa_profile_name || cycle.wa_user || '',
+        cycle.cycle_number || '',
+        cycle.is_active ? 'si' : 'no',
+        cycle.started_at || '',
+        cycle.completed_at || '',
+        ...statusColumns.map((st) => cycle.counts?.[String(st.id)] || 0),
+      ]));
+      downloadCsv(
+        `agent-status-detail-${selectedAgent}-${filterSlug}.csv`,
+        [headers, ...rows]
+      );
+    }
 
     return (
       <div className="space-y-4">
