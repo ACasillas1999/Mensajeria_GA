@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import TemplatePicker from './TemplatePicker.jsx'
 import CycleHistoryModal from './CycleHistoryModal.jsx'
+import QuotationModal from './QuotationModal.jsx'
 import { useRealtimeChat } from '../hooks/useRealtimeChat.js'
 
 const BASE = import.meta.env.BASE_URL || '';
@@ -25,6 +26,10 @@ export default function ChatView({ conversation }) {
   const fileRef = useRef(null)
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
   const [showCycleHistory, setShowCycleHistory] = useState(false)
+
+  // Estados para cotización
+  const [showQuotationModal, setShowQuotationModal] = useState(false)
+  const [pendingFile, setPendingFile] = useState(null)
 
   // ---- Grabación ----
   const recRef = useRef(null)           // MediaRecorder
@@ -105,6 +110,22 @@ export default function ChatView({ conversation }) {
     const file = e.target.files?.[0]
     if (!file || !conversation) return
 
+    // Detectar si es PDF
+    const isPDF = file.type === 'application/pdf'
+    
+    if (isPDF) {
+      // Preguntar si es cotización
+      const isQuotation = confirm('¿Este PDF es una cotización?')
+      
+      if (isQuotation) {
+        // Guardar archivo temporalmente y mostrar modal
+        setPendingFile({ file, event: e })
+        setShowQuotationModal(true)
+        return // No enviar todavía
+      }
+    }
+
+    // Flujo normal para archivos que no son cotizaciones
     const caption = prompt('Agregar comentario/caption? (opcional)') || ''
 
     const fd = new FormData()
@@ -155,6 +176,75 @@ export default function ChatView({ conversation }) {
   }
 
   function pickFile() { fileRef.current?.click() }
+
+  // ---- Callbacks de cotización ----
+  async function handleQuotationSave(quotation) {
+    setShowQuotationModal(false)
+    
+    if (!pendingFile) return
+    
+    const { file, event } = pendingFile
+    const caption = prompt('Agregar comentario/caption? (opcional)') || ''
+    
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('conversacion_id', conversation.id)
+    fd.append('to', conversation.wa_user)
+    if (caption) fd.append('text', caption)
+    
+    const sm = await fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), {
+      method: 'POST',
+      body: fd
+    })
+    const sj = await sm.json()
+    
+    if (!sm.ok || !sj.ok) {
+      alert(`No se envió: ${sj?.error?.message || 'Error'}`)
+      setPendingFile(null)
+      return
+    }
+    
+    setMsgs(m => [...m, {
+      id: Date.now(), from_me: 1, tipo: 'document', cuerpo: caption || `[PDF - Cotización ${quotation.numero_cotizacion}]`,
+      ts: Math.floor(Date.now()/1000), status: 'sent'
+    }])
+    
+    event.target.value = ''
+    setPendingFile(null)
+  }
+
+  function handleQuotationCancel() {
+    setShowQuotationModal(false)
+    
+    if (!pendingFile) return
+    
+    const { file, event } = pendingFile
+    
+    // Enviar archivo sin registrar cotización (flujo normal)
+    const caption = prompt('Agregar comentario/caption? (opcional)') || ''
+    
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('conversacion_id', conversation.id)
+    fd.append('to', conversation.wa_user)
+    if (caption) fd.append('text', caption)
+    
+    fetch(`${BASE}/api/send`.replace(/\/\//g, '/'), {
+      method: 'POST',
+      body: fd
+    }).then(sm => sm.json()).then(sj => {
+      if (sj.ok) {
+        setMsgs(m => [...m, {
+          id: Date.now(), from_me: 1, tipo: 'document', cuerpo: caption || '[PDF]',
+          ts: Math.floor(Date.now()/1000), status: 'sent'
+        }])
+      }
+    })
+    
+    event.target.value = ''
+    setPendingFile(null)
+  }
+
 
   // ---- Enviar texto ----
   async function send() {
@@ -441,6 +531,17 @@ export default function ChatView({ conversation }) {
           conversationId={conversation.id}
           conversationName={conversation.wa_profile_name || conversation.wa_user}
           onClose={() => setShowCycleHistory(false)}
+        />
+      )}
+
+      {/* Modal de cotización */}
+      {showQuotationModal && pendingFile && (
+        <QuotationModal
+          conversacionId={conversation.id}
+          mensajeId={null}
+          archivoUrl={null}
+          onSave={handleQuotationSave}
+          onCancel={handleQuotationCancel}
         />
       )}
     </div>

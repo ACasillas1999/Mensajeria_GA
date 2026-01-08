@@ -17,7 +17,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const body = await request.json();
-    const { conversacion_id, reason, final_status_id, amount, cycle_notes } = body;
+    const { conversacion_id, reason, final_status_id, amount, cycle_notes, quotation_id } = body;
 
     if (!conversacion_id) {
       return new Response(
@@ -127,6 +127,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       `UPDATE conversaciones
        SET status_id = ?,
            cycle_count = ?,
+           ciclo_actual = ciclo_actual + 1,
            current_cycle_started_at = NOW()
        WHERE id = ?`,
       [resetStatusId, newCycleNumber, convId]
