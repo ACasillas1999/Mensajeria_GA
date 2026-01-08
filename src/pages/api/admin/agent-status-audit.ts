@@ -77,9 +77,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
         AND csh.created_at >= cc.started_at
         AND csh.created_at <= cc.completed_at
        WHERE cc.assigned_to = ?
-         AND csh.changed_by = ?
        GROUP BY cc.id, csh.new_status_id`,
-      [agentId, agentId]
+      [agentId]
     );
 
     const [activeCounts] = await pool.query<RowDataPacket[]>(
@@ -93,9 +92,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
         AND csh.created_at >= c.current_cycle_started_at
        WHERE c.asignado_a = ?
          AND c.current_cycle_started_at IS NOT NULL
-         AND csh.changed_by = ?
        GROUP BY c.id, csh.new_status_id`,
-      [agentId, agentId]
+      [agentId]
     );
 
     const countsByCycleId = new Map<string, Record<string, number>>();
