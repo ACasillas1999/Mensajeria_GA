@@ -47,7 +47,13 @@ async function getTemplateVariableCount(templateName: string): Promise<number> {
 
 // Función para enviar WhatsApp
 // Función para enviar WhatsApp (Plantilla con variables opcionales)
-async function sendWhatsAppAlert(to: string, templateName: string, variables: string[] = []) {
+async function sendWhatsAppAlert(
+    to: string,
+    templateName: string,
+    variables: string[] = [],
+    conversacionId?: number,
+    destinatarioNombre?: string
+) {
     if (!WABA_TOKEN || !WABA_PHONE_ID) {
         console.error('Faltan credenciales WABA');
         return;
@@ -85,8 +91,37 @@ async function sendWhatsAppAlert(to: string, templateName: string, variables: st
             { headers: { Authorization: `Bearer ${WABA_TOKEN}` } }
         );
         console.log(`✅ Alerta (plantilla: ${templateName}) enviada a ${cleanTo}`);
+
+        // Registrar en BD si se proporcionaron los datos
+        if (conversacionId && destinatarioNombre) {
+            try {
+                await pool.query(
+                    `INSERT INTO sla_notification_log 
+                     (conversacion_id, destinatario_nombre, destinatario_telefono, template_name, variables, enviado_exitosamente)
+                     VALUES (?, ?, ?, ?, ?, TRUE)`,
+                    [conversacionId, destinatarioNombre, cleanTo, templateName, JSON.stringify(variables)]
+                );
+            } catch (dbErr) {
+                console.error('Error guardando log en BD:', dbErr);
+            }
+        }
     } catch (error: any) {
         console.error(`❌ Error enviando plantilla a ${cleanTo}:`, error.response?.data || error.message);
+
+        // Registrar error en BD si se proporcionaron los datos
+        if (conversacionId && destinatarioNombre) {
+            try {
+                const errorMsg = error?.response?.data?.error?.message || error?.message || 'Error desconocido';
+                await pool.query(
+                    `INSERT INTO sla_notification_log 
+                     (conversacion_id, destinatario_nombre, destinatario_telefono, template_name, variables, enviado_exitosamente, error_mensaje)
+                     VALUES (?, ?, ?, ?, ?, FALSE, ?)`,
+                    [conversacionId, destinatarioNombre, cleanTo, templateName, JSON.stringify(variables), errorMsg]
+                );
+            } catch (dbErr) {
+                console.error('Error guardando log de error en BD:', dbErr);
+            }
+        }
     }
 }
 
@@ -201,6 +236,11 @@ async function checkSLA() {
             // Si el nombre es solo puntuación o muy corto, usar el teléfono
             if (!clienteInfo || clienteInfo.trim().length <= 1 || /^[.\-_]+$/.test(clienteInfo)) {
                 clienteInfo = conv.wa_user || "Cliente";
+            }
+            // Si clienteInfo es un número largo (con código de país), mostrar solo últimos 10 dígitos
+            if (clienteInfo && /^\d{11,}$/.test(clienteInfo.replace(/\D/g, ''))) {
+                const digits = clienteInfo.replace(/\D/g, '');
+                clienteInfo = digits.slice(-10); // Últimos 10 dígitos
             }
             const tiempoEspera = `${timeDiffMinutes} minutos`;
             const conversacionId = `#${conv.id}`;
