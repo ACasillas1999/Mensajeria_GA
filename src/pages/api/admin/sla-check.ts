@@ -134,33 +134,19 @@ export const POST: APIRoute = async ({ locals }) => {
             // Obtener número de variables que necesita la plantilla
             const varCount = await getTemplateVariableCount(templateName);
 
-            // Construir variables disponibles
+            // Datos base disponibles
             const clienteInfo = conv.wa_profile_name || conv.wa_user;
-            const availableVars = {
-                agente_nombre: conv.agente_nombre || "Sin asignar",
-                cliente_info: clienteInfo,
-                tiempo_espera: `${timeDiffMinutes} minutos`,
-                conversacion_id: `#${conv.id}`,
-                ultimo_mensaje: conv.last_msg_body?.substring(0, 50) || "",
-                fecha_hora: new Date().toLocaleString('es-MX')
-            };
+            const tiempoEspera = `${timeDiffMinutes} minutos`;
+            const conversacionId = `#${conv.id}`;
+            const ultimoMensaje = conv.last_msg_body?.substring(0, 50) || "";
+            const fechaHora = new Date().toLocaleString('es-MX');
 
-            // Mapear variables según el número detectado
-            const templateVariables: string[] = [];
-            if (varCount >= 1) templateVariables.push(availableVars.agente_nombre);
-            if (varCount >= 2) templateVariables.push(availableVars.cliente_info);
-            if (varCount >= 3) templateVariables.push(`no ha contestado en ${availableVars.tiempo_espera}`);
-            if (varCount >= 4) templateVariables.push(availableVars.conversacion_id);
-            if (varCount >= 5) templateVariables.push(availableVars.ultimo_mensaje);
-            if (varCount >= 6) templateVariables.push(availableVars.fecha_hora);
-
-            log(`Conv #${conv.id}: Usando ${varCount} variable(s): ${JSON.stringify(templateVariables)}`);
-
-            const phonesToNotify = new Set<string>();
+            // A quién notificar? Construir mapa de teléfono -> nombre
+            const recipients = new Map<string, string>(); // teléfono -> nombre
 
             // Si está asignado, notificar al agente
             if (conv.asignado_a && conv.agente_telefono) {
-                phonesToNotify.add(conv.agente_telefono);
+                recipients.set(conv.agente_telefono, conv.agente_nombre);
                 log(`Agente asignado: ${conv.agente_nombre} (${conv.agente_telefono})`);
             }
 
@@ -171,17 +157,30 @@ export const POST: APIRoute = async ({ locals }) => {
                     [notifyUnassignedIds]
                 );
                 admins.forEach((a: any) => {
-                    phonesToNotify.add(a.telefono);
+                    recipients.set(a.telefono, a.nombre);
                     log(`Admin a notificar: ${a.nombre} (${a.telefono})`);
                 });
             }
 
-            if (phonesToNotify.size === 0) {
+            if (recipients.size === 0) {
                 log(`❌ Conv #${conv.id}: Sin destinatarios válidos (sin teléfonos).`);
                 continue;
             }
 
-            for (const phone of phonesToNotify) {
+            for (const [phone, nombre] of recipients) {
+                // Construir variables personalizadas para este destinatario
+                const nombreParaVariable = conv.asignado_a ? conv.agente_nombre : nombre;
+
+                const templateVariables: string[] = [];
+                if (varCount >= 1) templateVariables.push(nombreParaVariable);
+                if (varCount >= 2) templateVariables.push(clienteInfo);
+                if (varCount >= 3) templateVariables.push(`no ha contestado en ${tiempoEspera}`);
+                if (varCount >= 4) templateVariables.push(conversacionId);
+                if (varCount >= 5) templateVariables.push(ultimoMensaje);
+                if (varCount >= 6) templateVariables.push(fechaHora);
+
+                log(`Conv #${conv.id} -> ${nombre}: Variables: ${JSON.stringify(templateVariables)}`);
+
                 const cleanTo = phone.replace(/\D/g, '');
                 log(`Enviando WhatsApp a ${cleanTo} usando plantilla '${templateName}'...`);
 

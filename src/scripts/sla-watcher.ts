@@ -196,48 +196,45 @@ async function checkSLA() {
             // Obtener número de variables que necesita la plantilla
             const varCount = await getTemplateVariableCount(templateName);
 
-            // Construir variables disponibles
+            // Datos base disponibles
             const clienteInfo = conv.wa_profile_name || conv.wa_user;
-            const availableVars = {
-                agente_nombre: conv.agente_nombre || "Sin asignar",
-                cliente_info: clienteInfo,
-                tiempo_espera: `${timeDiffMinutes} minutos`,
-                conversacion_id: `#${conv.id}`,
-                ultimo_mensaje: conv.last_msg_body?.substring(0, 50) || "",
-                fecha_hora: new Date().toLocaleString('es-MX')
-            };
+            const tiempoEspera = `${timeDiffMinutes} minutos`;
+            const conversacionId = `#${conv.id}`;
+            const ultimoMensaje = conv.last_msg_body?.substring(0, 50) || "";
+            const fechaHora = new Date().toLocaleString('es-MX');
 
-            // Mapear variables según el número detectado
-            const templateVariables: string[] = [];
-            if (varCount >= 1) templateVariables.push(availableVars.agente_nombre);
-            if (varCount >= 2) templateVariables.push(availableVars.cliente_info);
-            if (varCount >= 3) templateVariables.push(`no ha contestado en ${availableVars.tiempo_espera}`);
-            if (varCount >= 4) templateVariables.push(availableVars.conversacion_id);
-            if (varCount >= 5) templateVariables.push(availableVars.ultimo_mensaje);
-            if (varCount >= 6) templateVariables.push(availableVars.fecha_hora);
-
-            console.log(`Conv #${conv.id}: Usando ${varCount} variable(s):`, templateVariables);
-
-            // A quién notificar?
-            const phonesToNotify = new Set<string>();
+            // A quién notificar? Construir mapa de teléfono -> nombre
+            const recipients = new Map<string, string>(); // teléfono -> nombre
 
             // Si está asignado, notificar al agente
             if (conv.asignado_a && conv.agente_telefono) {
-                phonesToNotify.add(conv.agente_telefono);
+                recipients.set(conv.agente_telefono, conv.agente_nombre);
             }
 
             // SIEMPRE notificar también a los admins configurados
             if (notifyUnassignedIds.length > 0) {
                 const [admins] = await pool.query<any[]>(
-                    `SELECT telefono FROM usuarios WHERE id IN (?) AND telefono IS NOT NULL`,
+                    `SELECT telefono, nombre FROM usuarios WHERE id IN (?) AND telefono IS NOT NULL`,
                     [notifyUnassignedIds]
                 );
-                admins.forEach((a: any) => phonesToNotify.add(a.telefono));
+                admins.forEach((a: any) => recipients.set(a.telefono, a.nombre));
             }
 
-            // Enviar WhatsApps
-            if (phonesToNotify.size > 0) {
-                for (const phone of phonesToNotify) {
+            // Enviar WhatsApps con variables personalizadas
+            if (recipients.size > 0) {
+                for (const [phone, nombre] of recipients) {
+                    // Construir variables personalizadas para este destinatario
+                    const nombreParaVariable = conv.asignado_a ? conv.agente_nombre : nombre;
+
+                    const templateVariables: string[] = [];
+                    if (varCount >= 1) templateVariables.push(nombreParaVariable);
+                    if (varCount >= 2) templateVariables.push(clienteInfo);
+                    if (varCount >= 3) templateVariables.push(`no ha contestado en ${tiempoEspera}`);
+                    if (varCount >= 4) templateVariables.push(conversacionId);
+                    if (varCount >= 5) templateVariables.push(ultimoMensaje);
+                    if (varCount >= 6) templateVariables.push(fechaHora);
+
+                    console.log(`Conv #${conv.id} -> ${nombre} (${phone}): Variables:`, templateVariables);
                     await sendWhatsAppAlert(phone, templateName, templateVariables);
                 }
             } else {
