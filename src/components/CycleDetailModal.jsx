@@ -146,6 +146,47 @@ export default function CycleDetailModal({ cycleId, onClose }) {
                 </div>
               )}
 
+              {/* Quotations Section */}
+              {data?.quotations && data.quotations.length > 0 && (
+                <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-700/50">
+                  <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-3 flex items-center gap-2">
+                    <span>📄</span>
+                    <span>Cotizaciones Asociadas ({data.quotations.length})</span>
+                  </h4>
+                  <div className="space-y-2">
+                    {data.quotations.map((quot) => (
+                      <div 
+                        key={quot.id} 
+                        className="flex items-center justify-between p-3 rounded-lg bg-white border border-amber-200 dark:bg-slate-800/50 dark:border-amber-700/30"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium text-slate-900 dark:text-slate-100">
+                            {quot.numero_cotizacion}
+                          </div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                            👤 {quot.usuario_nombre || 'Usuario'} • {formatDate(quot.created_at)}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                            ${Number(quot.monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">MXN</div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="pt-2 border-t border-amber-200 dark:border-amber-700/30">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">Total:</span>
+                        <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                          ${data.quotations.reduce((sum, q) => sum + Number(q.monto), 0).toLocaleString('es-MX', {minimumFractionDigits: 2})} MXN
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* State Timeline */}
               <div>
                 <h4 className="font-semibold text-slate-800 dark:text-slate-300 mb-4 flex items-center gap-2">

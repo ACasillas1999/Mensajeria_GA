@@ -190,6 +190,23 @@ export const GET: APIRoute = async ({ locals, url }) => {
       }
     }
 
+    // Obtener cotizaciones asociadas al ciclo
+    const [quotations] = await pool.query<RowDataPacket[]>(
+      `SELECT 
+        cq.id,
+        cq.cotizacion_id,
+        c.numero_cotizacion,
+        c.monto,
+        c.created_at,
+        u.nombre as usuario_nombre
+      FROM cycle_quotations cq
+      JOIN cotizaciones c ON cq.cotizacion_id = c.id
+      LEFT JOIN usuarios u ON c.usuario_id = u.id
+      WHERE cq.conversacion_id = ? AND cq.ciclo_numero = ?
+      ORDER BY c.created_at ASC`,
+      [cycle.conversation_id, cycle.cycle_number]
+    );
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -215,6 +232,14 @@ export const GET: APIRoute = async ({ locals, url }) => {
         },
         state_timeline: messagesPerState,
         total_state_changes: stateTimeline.length,
+        quotations: quotations.map(q => ({
+          id: q.id,
+          cotizacion_id: q.cotizacion_id,
+          numero_cotizacion: q.numero_cotizacion,
+          monto: q.monto,
+          created_at: q.created_at,
+          usuario_nombre: q.usuario_nombre
+        }))
       }),
       {
         status: 200,
