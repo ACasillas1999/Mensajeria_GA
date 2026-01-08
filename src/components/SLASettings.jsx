@@ -13,6 +13,7 @@ export default function SLASettings() {
   });
   
   const [users, setUsers] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,6 +30,10 @@ export default function SLASettings() {
       const resUsers = await fetch(`${BASE}/api/admin/users?rol=ADMIN`.replace(/\/\//g, '/'));
       const jsonUsers = await resUsers.json();
 
+      // Cargar plantillas disponibles
+      const resTemplates = await fetch(`${BASE}/api/templates/list`.replace(/\/\//g, '/'));
+      const jsonTemplates = await resTemplates.json();
+
       if (jsonConfig.ok) {
         setConfig({
             ...jsonConfig.settings,
@@ -38,6 +43,10 @@ export default function SLASettings() {
       
       if (jsonUsers.ok) {
         setUsers(jsonUsers.items);
+      }
+
+      if (jsonTemplates.ok) {
+        setTemplates(jsonTemplates.templates || []);
       }
       
     } catch (e) {
@@ -169,18 +178,60 @@ export default function SLASettings() {
                     <span className="text-sm text-slate-500">minutos sin molestar</span>
                 </div>
                  <p className="text-xs text-slate-400 dark:text-slate-500">Si se cerró un ciclo hace poco, ignorar mensajes nuevos por un rato (ej. "Gracias").</p>
+                
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-1">
-                 <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Nombre de Plantilla WhatsApp</label>
-                 <div className="flex items-center gap-3">
-                    <input 
-                        type="text" 
-                        value={config.template_name || ''}
-                        onChange={e => setConfig({...config, template_name: e.target.value})}
-                        placeholder="ej: alerta_sla"
-                        className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-mono text-sm"
-                    />
-                </div>
-                 <p className="text-xs text-slate-400 dark:text-slate-500">Debe ser una plantilla aprobada en Meta (Language: es_MX).</p>
+                  <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Plantilla WhatsApp</label>
+                  <select
+                    value={config.template_name || ''}
+                    onChange={e => setConfig({...config, template_name: e.target.value})}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-mono text-sm"
+                  >
+                    <option value="">Seleccionar plantilla...</option>
+                    {templates.map(tpl => {
+                      const varCount = (tpl.body_text?.match(/\{\{(\d+)\}\}/g) || []).length;
+                      return (
+                        <option key={tpl.name} value={tpl.name}>
+                          {tpl.name} {varCount > 0 ? `(${varCount} variable${varCount > 1 ? 's' : ''})` : '(sin variables)'} - {tpl.status}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  
+                  {config.template_name && (() => {
+                    const selectedTpl = templates.find(t => t.name === config.template_name);
+                    if (!selectedTpl) return null;
+                    
+                    const varCount = (selectedTpl.body_text?.match(/\{\{(\d+)\}\}/g) || []).length;
+                    
+                    return (
+                      <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg space-y-2">
+                        <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">📋 Vista previa de la plantilla</div>
+                        <div className="text-xs text-slate-700 dark:text-slate-300 font-mono whitespace-pre-wrap bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700">
+                          {selectedTpl.body_text}
+                        </div>
+                        {varCount > 0 && (
+                          <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+                            <div className="font-semibold">Variables que se llenarán automáticamente:</div>
+                            <ul className="list-disc list-inside space-y-0.5 ml-2">
+                              {varCount >= 1 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{1}}'}</code> → Nombre del agente</li>}
+                              {varCount >= 2 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{2}}'}</code> → ID de conversación</li>}
+                              {varCount >= 3 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{3}}'}</code> → Tiempo de espera</li>}
+                              {varCount >= 4 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{4}}'}</code> → Nombre del cliente</li>}
+                              {varCount >= 5 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{5}}'}</code> → Último mensaje</li>}
+                              {varCount >= 6 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{6}}'}</code> → Fecha/hora</li>}
+                            </ul>
+                          </div>
+                        )}
+                        {selectedTpl.status !== 'APPROVED' && (
+                          <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                            ⚠️ Esta plantilla está en estado <b>{selectedTpl.status}</b>. Solo las plantillas APPROVED pueden enviarse.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  
+                  <p className="text-xs text-slate-400 dark:text-slate-500">Selecciona una plantilla aprobada (Language: es_MX).</p>
             </div>
         </div>
         </div>
