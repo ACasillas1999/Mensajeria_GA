@@ -15,7 +15,6 @@ const languageOptions = [
   { value: "pt_BR", label: "Portugues (BR)" },
 ];
 
-
 const buttonTypeLabels = {
   QUICK_REPLY: "Quick reply",
   URL: "Enlace",
@@ -38,9 +37,39 @@ export default function TemplateCreator() {
   const [loadingList, setLoadingList] = useState(false);
   const [listError, setListError] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  const [bodyExamples, setBodyExamples] = useState([]);
+  const [headerExamples, setHeaderExamples] = useState([]);
+
+  // Función para extraer variables de un texto
+  const extractVariables = (text) => {
+    if (!text) return [];
+    const matches = text.match(/\{\{(\d+)\}\}/g) || [];
+    return matches;
+  };
 
   const updateField = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }));
+    
+    // Auto-detect variables and update examples arrays
+    if (key === 'bodyText') {
+      const varCount = extractVariables(value).length;
+      setBodyExamples(prev => {
+        const newExamples = [...prev];
+        // Adjust array size
+        while (newExamples.length < varCount) newExamples.push('');
+        while (newExamples.length > varCount) newExamples.pop();
+        return newExamples;
+      });
+    } else if (key === 'headerText') {
+      const varCount = extractVariables(value).length;
+      setHeaderExamples(prev => {
+        const newExamples = [...prev];
+        // Adjust array size
+        while (newExamples.length < varCount) newExamples.push('');
+        while (newExamples.length > varCount) newExamples.pop();
+        return newExamples;
+      });
+    }
   };
 
   const updateButton = (idx, patch) => {
@@ -88,6 +117,8 @@ export default function TemplateCreator() {
           url: b.url?.trim() || undefined,
           phone_number: b.phone_number?.trim() || undefined,
         })),
+        bodyExamples: bodyExamples.length > 0 ? bodyExamples : undefined,
+        headerExamples: headerExamples.length > 0 ? headerExamples : undefined,
       };
 
       const res = await fetch(
@@ -302,6 +333,81 @@ export default function TemplateCreator() {
               />
             </div>
 
+            {/* Variables Examples Section */}
+            {(headerExamples.length > 0 || bodyExamples.length > 0) && (
+              <div className="border border-amber-300 dark:border-amber-700 rounded-lg p-4 bg-amber-50 dark:bg-amber-900/20">
+                <div className="flex items-start gap-2 mb-3">
+                  <span className="text-lg">💡</span>
+                  <div className="flex-1">
+                    <div className="font-medium text-amber-900 dark:text-amber-200 mb-1">
+                      Variables detectadas
+                    </div>
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                      WhatsApp requiere valores de ejemplo para cada variable. Estos ejemplos se usan solo para la revisión de la plantilla.
+                    </p>
+                  </div>
+                </div>
+
+                {headerExamples.length > 0 && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-2">
+                      Ejemplos para variables del Header
+                    </label>
+                    <div className="space-y-2">
+                      {headerExamples.map((val, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-slate-600 dark:text-slate-400 w-12">
+                            {`{{${idx + 1}}}`}
+                          </span>
+                          <input
+                            type="text"
+                            value={val}
+                            onChange={(e) => {
+                              const newExamples = [...headerExamples];
+                              newExamples[idx] = e.target.value;
+                              setHeaderExamples(newExamples);
+                            }}
+                            placeholder={`Valor de ejemplo para {{${idx + 1}}}`}
+                            required
+                            className="flex-1 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {bodyExamples.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-2">
+                      Ejemplos para variables del Body
+                    </label>
+                    <div className="space-y-2">
+                      {bodyExamples.map((val, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-slate-600 dark:text-slate-400 w-12">
+                            {`{{${idx + 1}}}`}
+                          </span>
+                          <input
+                            type="text"
+                            value={val}
+                            onChange={(e) => {
+                              const newExamples = [...bodyExamples];
+                              newExamples[idx] = e.target.value;
+                              setBodyExamples(newExamples);
+                            }}
+                            placeholder={`Valor de ejemplo para {{${idx + 1}}}`}
+                            required
+                            className="flex-1 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-emerald-400 text-slate-900 dark:text-slate-100"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="border border-slate-300 dark:border-slate-800 rounded-lg p-3 bg-slate-100 dark:bg-slate-900/40">
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -445,12 +551,22 @@ export default function TemplateCreator() {
 
           {form.headerText && (
             <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              {form.headerText}
+              {headerExamples.length > 0
+                ? headerExamples.reduce(
+                    (text, example, idx) => text.replace(`{{${idx + 1}}}`, example || `{{${idx + 1}}}`),
+                    form.headerText
+                  )
+                : form.headerText}
             </div>
           )}
 
           <div className="text-sm text-slate-900 dark:text-slate-200 whitespace-pre-wrap bg-slate-100 dark:bg-slate-900/40 border border-slate-300 dark:border-slate-800 rounded-lg p-3">
-            {form.bodyText || "Escribe el cuerpo de la plantilla..."}
+            {bodyExamples.length > 0
+              ? bodyExamples.reduce(
+                  (text, example, idx) => text.replace(`{{${idx + 1}}}`, example || `{{${idx + 1}}}`),
+                  form.bodyText || "Escribe el cuerpo de la plantilla..."
+                )
+              : (form.bodyText || "Escribe el cuerpo de la plantilla...")}
           </div>
 
           {form.footerText && (

@@ -25,7 +25,19 @@ const templateSchema = z.object({
   bodyText: z.string().min(1).max(1024),
   footerText: z.string().max(60).optional().nullable(),
   buttons: z.array(buttonSchema).max(3).optional(),
+  bodyExamples: z.array(z.string()).optional(),
+  headerExamples: z.array(z.string()).optional(),
 });
+
+/**
+ * Extrae variables de un texto (formato {{1}}, {{2}}, etc.)
+ * @returns Número de variables encontradas
+ */
+function extractVariableCount(text: string | null | undefined): number {
+  if (!text) return 0;
+  const matches = text.match(/\{\{(\d+)\}\}/g) || [];
+  return matches.length;
+}
 
 async function resolveWabaId() {
   // Prefer explicit WABA account id
@@ -79,6 +91,34 @@ export const POST: APIRoute = async ({ request, locals }) => {
       phone_number: b.phone_number?.trim(),
     }));
 
+    // Extract variable counts
+    const bodyVarCount = extractVariableCount(bodyText);
+    const headerVarCount = extractVariableCount(headerText);
+
+    // Validate examples are provided when variables exist
+    const bodyExamples = payload.bodyExamples || [];
+    const headerExamples = payload.headerExamples || [];
+
+    if (bodyVarCount > 0 && bodyExamples.length !== bodyVarCount) {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: `El body tiene ${bodyVarCount} variable(s) pero se proporcionaron ${bodyExamples.length} ejemplo(s). Deben coincidir.`
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (headerVarCount > 0 && headerExamples.length !== headerVarCount) {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: `El header tiene ${headerVarCount} variable(s) pero se proporcionaron ${headerExamples.length} ejemplo(s). Deben coincidir.`
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Validate per-button required fields
     for (const b of buttons) {
       if (b.type === 'URL' && !b.url) {
@@ -104,13 +144,46 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const components: any[] = [];
+
+    // HEADER component
     if (headerText) {
-      components.push({ type: 'HEADER', format: 'TEXT', text: headerText });
+      const headerComponent: any = {
+        type: 'HEADER',
+        format: 'TEXT',
+        text: headerText
+      };
+
+      // Add example if header has variables
+      if (headerVarCount > 0) {
+        headerComponent.example = {
+          header_text: headerExamples
+        };
+      }
+
+      components.push(headerComponent);
     }
-    components.push({ type: 'BODY', text: bodyText });
+
+    // BODY component
+    const bodyComponent: any = {
+      type: 'BODY',
+      text: bodyText
+    };
+
+    // Add example if body has variables
+    if (bodyVarCount > 0) {
+      bodyComponent.example = {
+        body_text: [bodyExamples]
+      };
+    }
+
+    components.push(bodyComponent);
+
+    // FOOTER component
     if (footerText) {
       components.push({ type: 'FOOTER', text: footerText });
     }
+
+    // BUTTONS component
     if (buttons.length > 0) {
       components.push({
         type: 'BUTTONS',
