@@ -214,9 +214,9 @@ export default function SLASettings() {
                             <div className="font-semibold">Variables que se llenarán automáticamente:</div>
                             <ul className="list-disc list-inside space-y-0.5 ml-2">
                               {varCount >= 1 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{1}}'}</code> → Nombre del agente</li>}
-                              {varCount >= 2 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{2}}'}</code> → ID de conversación</li>}
+                              {varCount >= 2 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{2}}'}</code> → Nombre/teléfono del cliente</li>}
                               {varCount >= 3 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{3}}'}</code> → Tiempo de espera</li>}
-                              {varCount >= 4 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{4}}'}</code> → Nombre del cliente</li>}
+                              {varCount >= 4 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{4}}'}</code> → ID de conversación</li>}
                               {varCount >= 5 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{5}}'}</code> → Último mensaje</li>}
                               {varCount >= 6 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{6}}'}</code> → Fecha/hora</li>}
                             </ul>
@@ -243,12 +243,16 @@ export default function SLASettings() {
             </h3>
             
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg text-sm mb-2">
-                <p>⚠️ Si la conversación tiene agente asignado, <b>se le notificará primero a él</b> (si tiene teléfono registrado).</p>
+                <p>📢 <b>Notificaciones:</b></p>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>Si hay agente asignado: se notifica al agente <b>Y</b> a los admins seleccionados</li>
+                  <li>Si NO hay agente: solo se notifica a los admins seleccionados</li>
+                </ul>
             </div>
 
             <div>
                 <label className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2 block">
-                    Si NO hay agente asignado, notificar a estos Admins:
+                    Admins a notificar (siempre se notifican, haya o no agente asignado):
                 </label>
                 <div className="max-h-48 overflow-y-auto space-y-2 border border-slate-200 dark:border-slate-700 rounded-lg p-2">
                     {users.map(u => (

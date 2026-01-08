@@ -130,11 +130,12 @@ export const POST: APIRoute = async ({ locals }) => {
             const varCount = await getTemplateVariableCount(templateName);
 
             // Construir variables disponibles
+            const clienteInfo = conv.wa_profile_name || conv.wa_user;
             const availableVars = {
                 agente_nombre: conv.agente_nombre || "Sin asignar",
-                conversacion_id: `#${conv.id}`,
+                cliente_info: clienteInfo,
                 tiempo_espera: `${timeDiffMinutes} minutos`,
-                cliente_nombre: conv.wa_profile_name || conv.wa_user,
+                conversacion_id: `#${conv.id}`,
                 ultimo_mensaje: conv.last_msg_body?.substring(0, 50) || "",
                 fecha_hora: new Date().toLocaleString('es-MX')
             };
@@ -142,19 +143,24 @@ export const POST: APIRoute = async ({ locals }) => {
             // Mapear variables según el número detectado
             const templateVariables: string[] = [];
             if (varCount >= 1) templateVariables.push(availableVars.agente_nombre);
-            if (varCount >= 2) templateVariables.push(availableVars.conversacion_id);
+            if (varCount >= 2) templateVariables.push(availableVars.cliente_info);
             if (varCount >= 3) templateVariables.push(`no ha contestado en ${availableVars.tiempo_espera}`);
-            if (varCount >= 4) templateVariables.push(availableVars.cliente_nombre);
+            if (varCount >= 4) templateVariables.push(availableVars.conversacion_id);
             if (varCount >= 5) templateVariables.push(availableVars.ultimo_mensaje);
             if (varCount >= 6) templateVariables.push(availableVars.fecha_hora);
 
             log(`Conv #${conv.id}: Usando ${varCount} variable(s): ${JSON.stringify(templateVariables)}`);
 
             const phonesToNotify = new Set<string>();
+
+            // Si está asignado, notificar al agente
             if (conv.asignado_a && conv.agente_telefono) {
                 phonesToNotify.add(conv.agente_telefono);
                 log(`Agente asignado: ${conv.agente_nombre} (${conv.agente_telefono})`);
-            } else if (!conv.asignado_a && notifyUnassignedIds.length > 0) {
+            }
+
+            // SIEMPRE notificar también a los admins configurados
+            if (notifyUnassignedIds.length > 0) {
                 const [admins] = await pool.query<any[]>(
                     `SELECT telefono, nombre FROM usuarios WHERE id IN (?) AND telefono IS NOT NULL`,
                     [notifyUnassignedIds]
