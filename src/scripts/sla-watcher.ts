@@ -127,6 +127,10 @@ async function checkSLA() {
         const nowUnix = Math.floor(Date.now() / 1000);
         const cutOffTime = nowUnix - thresholdSeconds;
 
+        // Límite máximo: solo considerar mensajes de las últimas 48 horas
+        const maxAgeSeconds = 48 * 60 * 60; // 48 horas
+        const oldestAllowedTime = nowUnix - maxAgeSeconds;
+
         // Query para encontrar conversaciones desatendidas
         // NOTA: Asumimos que si el último mensaje en la BD (ordenado por ts) tiene from_me=0, es turno del agente.
         const query = `
@@ -148,10 +152,9 @@ async function checkSLA() {
                 cs.is_final = 0 -- Solo activas
                 AND m.id = (SELECT id FROM mensajes WHERE conversacion_id = c.id ORDER BY ts DESC LIMIT 1) -- Último mensaje
                 AND m.from_me = 0 -- Fue del cliente
-                AND m.ts < ? -- Ya pasó el tiempo
+                AND m.ts < ? -- Ya pasó el tiempo (umbral SLA)
+                AND m.ts > ? -- Pero no más antiguo que 48 horas
                 -- Excluir si ya se notificó recientemente para ESTE mensaje (evitar spam)
-                -- Esto requeriría guardar "last_notified_msg_id".
-                -- Por ahora, verificamos si existe notificación en agent_notifications para este mensaje
                 AND NOT EXISTS (
                     SELECT 1 FROM agent_notifications an 
                     WHERE an.conversacion_id = c.id 
@@ -160,7 +163,7 @@ async function checkSLA() {
                 )
         `;
 
-        const [rows] = await pool.query<any[]>(query, [cutOffTime]);
+        const [rows] = await pool.query<any[]>(query, [cutOffTime, oldestAllowedTime]);
 
         if (rows.length === 0) {
             console.log('Ninguna conversación infringe SLA.');

@@ -71,6 +71,10 @@ export const POST: APIRoute = async ({ locals }) => {
         const nowUnix = Math.floor(Date.now() / 1000);
         const cutOffTime = nowUnix - thresholdSeconds;
 
+        // Límite máximo: solo considerar mensajes de las últimas 48 horas
+        const maxAgeSeconds = 48 * 60 * 60; // 48 horas
+        const oldestAllowedTime = nowUnix - maxAgeSeconds;
+
         const query = `
             SELECT 
                 c.id, 
@@ -91,6 +95,7 @@ export const POST: APIRoute = async ({ locals }) => {
                 AND m.id = (SELECT id FROM mensajes WHERE conversacion_id = c.id ORDER BY ts DESC LIMIT 1) 
                 AND m.from_me = 0 
                 AND m.ts < ? 
+                AND m.ts > ? -- Solo últimas 48 horas
                 AND NOT EXISTS (
                     SELECT 1 FROM agent_notifications an 
                     WHERE an.conversacion_id = c.id 
@@ -99,7 +104,7 @@ export const POST: APIRoute = async ({ locals }) => {
                 )
         `;
 
-        const [rows] = await pool.query<any[]>(query, [cutOffTime]);
+        const [rows] = await pool.query<any[]>(query, [cutOffTime, oldestAllowedTime]);
 
         if (rows.length === 0) {
             log('✅ Ninguna conversación infringe SLA (o ya fueron notificadas).');
