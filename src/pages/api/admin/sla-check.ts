@@ -140,6 +140,11 @@ export const POST: APIRoute = async ({ locals }) => {
             if (!clienteInfo || clienteInfo.trim().length <= 1 || /^[.\-_]+$/.test(clienteInfo)) {
                 clienteInfo = conv.wa_user || "Cliente";
             }
+            // Si clienteInfo es un número largo (con código de país), mostrar solo últimos 10 dígitos
+            if (clienteInfo && /^\d{11,}$/.test(clienteInfo.replace(/\D/g, ''))) {
+                const digits = clienteInfo.replace(/\D/g, '');
+                clienteInfo = digits.slice(-10); // Últimos 10 dígitos
+            }
             const tiempoEspera = `${timeDiffMinutes} minutos`;
             const conversacionId = `#${conv.id}`;
             const ultimoMensaje = conv.last_msg_body?.substring(0, 50) || "";

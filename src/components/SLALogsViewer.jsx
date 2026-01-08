@@ -138,14 +138,28 @@ export default function SLALogsViewer() {
                                             {log.variables ? (
                                                 <details className="cursor-pointer">
                                                     <summary className="text-blue-600 hover:underline text-xs">
-                                                        Ver ({JSON.parse(log.variables).length})
+                                                        Ver variables
                                                     </summary>
                                                     <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded text-xs font-mono">
-                                                        {JSON.parse(log.variables).map((v, i) => (
-                                                            <div key={i}>
-                                                                <span className="text-slate-500">{'{{' + (i+1) + '}}'}</span> → {v}
-                                                            </div>
-                                                        ))}
+                                                        {(() => {
+                                                            try {
+                                                                const vars = typeof log.variables === 'string' 
+                                                                    ? JSON.parse(log.variables) 
+                                                                    : log.variables;
+                                                                
+                                                                if (Array.isArray(vars)) {
+                                                                    return vars.map((v, i) => (
+                                                                        <div key={i}>
+                                                                            <span className="text-slate-500">{'{{' + (i+1) + '}}'}</span> → {v}
+                                                                        </div>
+                                                                    ));
+                                                                } else {
+                                                                    return <div className="text-red-500">Formato inválido</div>;
+                                                                }
+                                                            } catch (err) {
+                                                                return <div className="text-red-500">Error: {log.variables}</div>;
+                                                            }
+                                                        })()}
                                                     </div>
                                                 </details>
                                             ) : (
