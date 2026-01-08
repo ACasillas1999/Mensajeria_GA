@@ -135,9 +135,11 @@ export const GET: APIRoute = async ({ request, locals }) => {
             // Verificar nuevas conversaciones o actualizaciones
             const [rows] = await pool.query(
               `SELECT c.id, c.wa_user, c.wa_profile_name, c.estado, c.ultimo_msg, c.ultimo_ts,
-                      c.asignado_a, u.nombre as asignado_nombre
+                      c.asignado_a, u.nombre as asignado_nombre,
+                      u.sucursal_id as asignado_sucursal_id, s.nombre as asignado_sucursal
                FROM conversaciones c
                LEFT JOIN usuarios u ON u.id = c.asignado_a
+               LEFT JOIN sucursales s ON s.id = u.sucursal_id
                WHERE c.ultimo_ts > ?
                ORDER BY c.ultimo_ts DESC
                LIMIT 20`,

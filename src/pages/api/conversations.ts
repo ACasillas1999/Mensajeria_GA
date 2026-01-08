@@ -8,6 +8,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const search = url.searchParams.get("search")?.trim() || "";
     const estado = url.searchParams.get("estado")?.trim().toUpperCase() || ""; // NUEVA|ABIERTA|RESUELTA (legacy)
     const statusId = url.searchParams.get("status_id") || ""; // Nuevo sistema
+    const sucursalId = url.searchParams.get("sucursal_id") || "";
     const limit  = Math.min(Number(url.searchParams.get("limit") || 50), 200);
     const offset = Math.max(Number(url.searchParams.get("offset") || 0), 0);
 
@@ -40,6 +41,14 @@ export const GET: APIRoute = async ({ request, locals }) => {
       params.push(estado);
     }
 
+    if (sucursalId) {
+      const sucIdNum = Number(sucursalId);
+      if (!Number.isNaN(sucIdNum)) {
+        where += " AND u.sucursal_id = ?";
+        params.push(sucIdNum);
+      }
+    }
+
     const user = (locals as any).user as { id:number, rol:string } | undefined;
     if (!user) {
       return new Response(JSON.stringify({ ok:false, error:'Unauthorized' }), { status: 401 });
@@ -64,11 +73,14 @@ export const GET: APIRoute = async ({ request, locals }) => {
         cs.icon AS status_icon,
         c.asignado_a,
         u.nombre AS asignado_nombre,
+        u.sucursal_id AS asignado_sucursal_id,
+        s.nombre AS asignado_sucursal,
         c.dentro_ventana_24h,
         COALESCE(cus.is_archived, FALSE) AS is_archived,
         COALESCE(cus.is_favorite, FALSE) AS is_favorite
       FROM conversaciones c
       LEFT JOIN usuarios u ON u.id = c.asignado_a
+      LEFT JOIN sucursales s ON s.id = u.sucursal_id
       LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
       LEFT JOIN conversation_user_status cus ON cus.conversacion_id = c.id AND cus.usuario_id = ?
       ${where}

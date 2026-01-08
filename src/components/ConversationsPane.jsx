@@ -31,12 +31,14 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   const [showNewChat, setShowNewChat] = useState(false);
   const [newPhone, setNewPhone] = useState("");
   const [agentFilter, setAgentFilter] = useState(""); // nombre del agente asignado
+  const [sucursales, setSucursales] = useState([]);
+  const [sucursalFilter, setSucursalFilter] = useState("");
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [sending, setSending] = useState(false);
   const [templateVariables, setTemplateVariables] = useState([]);
 
-  async function load(search = "", st = estado) {
+  async function load(search = "", st = estado, suc = sucursalFilter) {
     setLoading(true);
     try {
       const qs = new URLSearchParams({
@@ -44,11 +46,27 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
         limit: String(50),
       });
       if (st) qs.set('status_id', st); // Cambiado de 'estado' a 'status_id'
+      if (suc) qs.set('sucursal_id', suc);
       const r = await fetch(`${BASE}/api/conversations?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
       if (j.ok) setItems(j.items || []);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadSucursales() {
+    try {
+      const r = await fetch(`${BASE}/api/admin/sucursales`.replace(/\/\//g, '/'));
+      const j = await r.json();
+      if (j.ok) {
+        setSucursales(j.items || []);
+      } else {
+        setSucursales([]);
+      }
+    } catch (e) {
+      console.error('Error loading sucursales:', e);
+      setSucursales([]);
     }
   }
 
@@ -101,13 +119,14 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
   };
 
   // refresco silencioso para el polling (no toca `loading`)
-  async function refresh(search = q, st = estado) {
+  async function refresh(search = q, st = estado, suc = sucursalFilter) {
     try {
       const qs = new URLSearchParams({
         search,
         limit: String(50),
       });
       if (st) qs.set('status_id', st); // Cambiado de 'estado' a 'status_id'
+      if (suc) qs.set('sucursal_id', suc);
       const r = await fetch(`${BASE}/api/conversations?${qs.toString()}`.replace(/\/\//g, '/'));
       const j = await r.json();
       if (j.ok) setItems(j.items || []);
@@ -118,18 +137,16 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
 
   // Carga inicial - cargar conversaciones y notificaciones
   useEffect(() => {
-    load("");
     loadUnreadCounts();
+    loadSucursales();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Recargar cuando cambia el filtro de estado
+  // Recargar cuando cambia el filtro de estado o sucursal
   useEffect(() => {
-    if (statuses.length > 0) { // Solo si ya cargaron los estados
-      load("");
-    }
+    load("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estado]);
+  }, [estado, sucursalFilter]);
 
   // Cargar plantillas cuando se abre el modal
   useEffect(() => {
@@ -268,6 +285,8 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             title: conv.wa_profile_name || conv.wa_user,
             asignado_a: conv.asignado_a,
             asignado_nombre: conv.asignado_nombre,
+            asignado_sucursal_id: conv.asignado_sucursal_id ?? map.get(conv.id)?.asignado_sucursal_id ?? null,
+            asignado_sucursal: conv.asignado_sucursal ?? map.get(conv.id)?.asignado_sucursal ?? null,
           });
         } else {
           // Nueva conversación
@@ -284,6 +303,8 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
             last_at: conv.ultimo_ts,
             asignado_a: conv.asignado_a,
             asignado_nombre: conv.asignado_nombre,
+            asignado_sucursal_id: conv.asignado_sucursal_id ?? null,
+            asignado_sucursal: conv.asignado_sucursal ?? null,
           });
         }
       }
@@ -306,10 +327,13 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     }, 15000); // cada 15 segundos (reducido porque SSE es el principal)
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, estado]);
+  }, [q, estado, sucursalFilter]);
 
   // Filtrar según la vista seleccionada
   const filtered = items.filter(c => {
+    if (sucursalFilter && String(c.asignado_sucursal_id ?? '') !== sucursalFilter) {
+      return false;
+    }
     if (agentFilter && c.asignado_nombre !== agentFilter) {
       return false;
     }
@@ -383,6 +407,19 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
               <option value="">Todos los agentes</option>
               {Array.from(new Set(items.map(i => i.asignado_nombre).filter(Boolean))).map(name => (
                 <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            <select
+              value={sucursalFilter}
+              onChange={(e)=>setSucursalFilter(e.target.value)}
+              className="h-8 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-xs min-w-[150px] outline-none focus:border-emerald-400"
+              title="Filtrar por sucursal"
+            >
+              <option value="">Todas las sucursales</option>
+              {sucursales.map((sucursal) => (
+                <option key={sucursal.id} value={sucursal.id}>
+                  {sucursal.nombre}
+                </option>
               ))}
             </select>
           </div>
