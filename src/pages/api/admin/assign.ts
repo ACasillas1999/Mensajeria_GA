@@ -134,11 +134,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
                 // Detectar cuántas variables necesita la plantilla
                 const [tplRows] = await pool.query<RowDataPacket[]>(
-                  'SELECT body_text FROM plantillas WHERE nombre = ?',
+                  'SELECT body_text, idioma FROM plantillas WHERE nombre = ?',
                   [assignmentTemplate]
                 );
 
                 const bodyText = tplRows[0]?.body_text || '';
+                const templateLanguage = tplRows[0]?.idioma || 'es_MX';
                 const varMatches = bodyText.match(/\{\{(\d+)\}\}/g) || [];
                 const varCount = varMatches.length;
 
@@ -167,7 +168,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
                     type: "template",
                     template: {
                       name: assignmentTemplate,
-                      language: { code: "es_MX" },
+                      language: { code: templateLanguage },
                       components: [
                         {
                           type: "body",
