@@ -9,6 +9,7 @@ export default function SLASettings() {
     grace_period_minutes: 120,
     notify_unassigned_json: [],
     template_name: 'plantilla_test',
+    assignment_template_name: '',
     active: false
   });
   
@@ -37,7 +38,8 @@ export default function SLASettings() {
       if (jsonConfig.ok) {
         setConfig({
             ...jsonConfig.settings,
-            active: !!jsonConfig.settings.active
+            active: !!jsonConfig.settings.active,
+            assignment_template_name: jsonConfig.settings.assignment_template_name || ''
         });
       }
       
@@ -232,6 +234,80 @@ export default function SLASettings() {
                   })()}
                   
                   <p className="text-xs text-slate-400 dark:text-slate-500">Selecciona una plantilla aprobada (Language: es_MX).</p>
+            </div>
+        </div>
+
+        {/* Plantilla de Asignación */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <h3 className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                📬 Notificación de Asignación
+            </h3>
+            
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+                Plantilla de WhatsApp para notificar al agente cuando se le asigna una conversación.
+            </p>
+
+            <div>
+                <label className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2 block">
+                    Plantilla de asignación (opcional):
+                </label>
+                <select
+                    value={config.assignment_template_name || ''}
+                    onChange={(e) => setConfig({...config, assignment_template_name: e.target.value})}
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg"
+                >
+                    <option value="">Sin notificación</option>
+                    {templates.map((tpl) => {
+                        const varCount = (tpl.body_text?.match(/\{\{(\d+)\}\}/g) || []).length;
+                        return (
+                            <option key={tpl.id} value={tpl.nombre}>
+                                {tpl.nombre} ({varCount > 0 ? `${varCount} variables` : 'sin variables'}) - {tpl.estado}
+                            </option>
+                        );
+                    })}
+                </select>
+
+                {/* Preview de plantilla de asignación */}
+                {config.assignment_template_name && (() => {
+                    const selectedTpl = templates.find(t => t.nombre === config.assignment_template_name);
+                    if (!selectedTpl) return null;
+                    
+                    const varCount = (selectedTpl.body_text?.match(/\{\{(\d+)\}\}/g) || []).length;
+                    
+                    return (
+                        <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg space-y-2">
+                            <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                Vista previa:
+                            </div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap">
+                                {selectedTpl.body_text}
+                            </div>
+                            
+                            {selectedTpl.estado !== 'APPROVED' && (
+                                <div className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                    ⚠️ Solo plantillas APPROVED pueden enviarse
+                                </div>
+                            )}
+                            
+                            {varCount > 0 && (
+                                <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+                                    <div className="font-semibold">Variables que se llenarán automáticamente:</div>
+                                    <ul className="list-disc list-inside space-y-0.5 ml-2">
+                                        {varCount >= 1 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{1}}'}</code> → Nombre del agente</li>}
+                                        {varCount >= 2 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{2}}'}</code> → Nombre/teléfono del cliente</li>}
+                                        {varCount >= 3 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{3}}'}</code> → ID de conversación</li>}
+                                        {varCount >= 4 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{4}}'}</code> → Último mensaje</li>}
+                                        {varCount >= 5 && <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{'{{5}}'}</code> → Fecha/hora de asignación</li>}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+                
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+                    Si no seleccionas plantilla, no se enviará notificación de WhatsApp al asignar.
+                </p>
             </div>
         </div>
         </div>

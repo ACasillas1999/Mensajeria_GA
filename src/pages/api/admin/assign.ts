@@ -5,10 +5,10 @@ import { pool } from "../../../lib/db";
 export const POST: APIRoute = async ({ request, locals }) => {
   const user = (locals as any).user as { id: number; rol: string; nombre: string } | undefined;
   if (!user || (user.rol || '').toLowerCase() !== 'admin') {
-    return new Response(JSON.stringify({ ok:false, error:'Forbidden' }), { status: 403 });
+    return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), { status: 403 });
   }
   const { conversacion_id, user_id } = await request.json();
-  if (!conversacion_id) return new Response(JSON.stringify({ ok:false, error:"conversacion_id requerido" }), { status:400 });
+  if (!conversacion_id) return new Response(JSON.stringify({ ok: false, error: "conversacion_id requerido" }), { status: 400 });
 
   // Obtener el asignado actual antes de cambiar
   const [convRows] = await pool.query<RowDataPacket[]>(
@@ -89,6 +89,113 @@ export const POST: APIRoute = async ({ request, locals }) => {
            VALUES (?, ?, 'asignacion', FALSE)`,
           [user_id, conversacion_id]
         );
+
+        // Enviar notificación por WhatsApp si está configurada
+        try {
+          // Obtener configuración de plantilla de asignación
+          const [slaConfig] = await pool.query<RowDataPacket[]>(
+            'SELECT assignment_template_name FROM sla_settings LIMIT 1'
+          );
+
+          const assignmentTemplate = slaConfig[0]?.assignment_template_name;
+
+          if (assignmentTemplate) {
+            // Obtener teléfono del agente
+            const [agenteRows] = await pool.query<RowDataPacket[]>(
+              'SELECT telefono FROM usuarios WHERE id = ? AND telefono IS NOT NULL',
+              [user_id]
+            );
+
+            if (agenteRows.length > 0) {
+              const agenteTelefono = agenteRows[0].telefono;
+
+              // Obtener datos de la conversación
+              const [convData] = await pool.query<RowDataPacket[]>(
+                `SELECT c.wa_user, c.wa_profile_name, m.cuerpo as last_msg
+                 FROM conversaciones c
+                 LEFT JOIN mensajes m ON c.id = m.conversacion_id
+                 WHERE c.id = ?
+                 ORDER BY m.ts DESC LIMIT 1`,
+                [conversacion_id]
+              );
+
+              if (convData.length > 0) {
+                const conv = convData[0];
+
+                // Construir variables
+                let clienteInfo = conv.wa_profile_name || conv.wa_user;
+                if (!clienteInfo || clienteInfo.trim().length <= 1 || /^[.\-_]+$/.test(clienteInfo)) {
+                  clienteInfo = conv.wa_user || "Cliente";
+                }
+                if (clienteInfo && /^\d{11,}$/.test(clienteInfo.replace(/\D/g, ''))) {
+                  const digits = clienteInfo.replace(/\D/g, '');
+                  clienteInfo = digits.slice(-10);
+                }
+
+                const variables = [
+                  nombreNuevo || "Agente",
+                  clienteInfo,
+                  `#${conversacion_id}`,
+                  conv.last_msg?.substring(0, 50) || "Sin mensajes",
+                  new Date().toLocaleString('es-MX')
+                ];
+
+                // Enviar WhatsApp
+                const WABA_TOKEN = process.env.WABA_TOKEN;
+                const WABA_PHONE_ID = process.env.WABA_PHONE_ID || process.env.WABA_PHONE_NUMBER_ID;
+
+                if (WABA_TOKEN && WABA_PHONE_ID) {
+                  const axios = (await import('axios')).default;
+                  const cleanTo = agenteTelefono.replace(/\D/g, '');
+
+                  const payload: any = {
+                    messaging_product: "whatsapp",
+                    to: cleanTo,
+                    type: "template",
+                    template: {
+                      name: assignmentTemplate,
+                      language: { code: "es_MX" },
+                      components: [
+                        {
+                          type: "body",
+                          parameters: variables.map(v => ({ type: "text", text: v }))
+                        }
+                      ]
+                    }
+                  };
+
+                  try {
+                    await axios.post(
+                      `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`,
+                      payload,
+                      { headers: { 'Authorization': `Bearer ${WABA_TOKEN}`, 'Content-Type': 'application/json' } }
+                    );
+
+                    // Registrar en log
+                    await pool.query(
+                      `INSERT INTO sla_notification_log 
+                       (conversacion_id, destinatario_nombre, destinatario_telefono, template_name, variables, enviado_exitosamente)
+                       VALUES (?, ?, ?, ?, ?, TRUE)`,
+                      [conversacion_id, nombreNuevo, cleanTo, assignmentTemplate, JSON.stringify(variables)]
+                    );
+                  } catch (waError: any) {
+                    console.error('Error enviando WhatsApp de asignación:', waError?.response?.data || waError?.message);
+                    // Registrar error en log
+                    await pool.query(
+                      `INSERT INTO sla_notification_log 
+                       (conversacion_id, destinatario_nombre, destinatario_telefono, template_name, variables, enviado_exitosamente, error_mensaje)
+                       VALUES (?, ?, ?, ?, ?, FALSE, ?)`,
+                      [conversacion_id, nombreNuevo, cleanTo, assignmentTemplate, JSON.stringify(variables), waError?.response?.data?.error?.message || waError?.message]
+                    );
+                  }
+                }
+              }
+            }
+          }
+        } catch (notifError) {
+          console.error('Error en notificación de WhatsApp:', notifError);
+          // No fallar la asignación si falla la notificación
+        }
       }
     } catch (e) {
       console.error('Error creating assignment notification/event:', e);
@@ -96,5 +203,5 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
   }
 
-  return new Response(JSON.stringify({ ok:true, affected: res.affectedRows }), { headers: { "Content-Type":"application/json" }});
+  return new Response(JSON.stringify({ ok: true, affected: res.affectedRows }), { headers: { "Content-Type": "application/json" } });
 };
