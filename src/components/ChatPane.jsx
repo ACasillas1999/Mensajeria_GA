@@ -1083,19 +1083,31 @@ function pickMime() {
         const quotData = await quotRes.json();
         
         if (quotData.ok && quotData.quotations && quotData.quotations.length > 0) {
-          const quotationOptions = {
-            '': 'Sin cotización asociada'
-          };
-          
-          quotData.quotations.forEach(q => {
-            quotationOptions[q.id] = `${q.numero_cotizacion} - $${Number(q.monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
-          });
+          // Crear HTML con checkboxes para selección múltiple
+          const quotationsHTML = quotData.quotations.map(q => `
+            <div style="text-align: left; padding: 8px; margin: 4px 0; border: 1px solid #475569; border-radius: 6px; background: ${document.documentElement.classList.contains('dark') ? '#1e293b' : '#f8fafc'};">
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" value="${q.id}" style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+                <span style="flex: 1; color: ${document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a'};">
+                  <strong>${q.numero_cotizacion}</strong> - $${Number(q.monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                </span>
+              </label>
+            </div>
+          `).join('');
 
           const step3 = await Swal.fire({
-            title: 'Asociar Cotización',
-            text: `Selecciona la cotización asociada a esta venta (Ciclo #${quotData.ciclo_actual}):`,
-            input: 'select',
-            inputOptions: quotationOptions,
+            title: 'Asociar Cotizaciones',
+            html: `
+              <div style="text-align: left; margin-bottom: 15px; color: ${document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569'};">
+                Selecciona las cotizaciones asociadas a esta venta (Ciclo #${quotData.ciclo_actual}):
+              </div>
+              <div style="max-height: 300px; overflow-y: auto;">
+                ${quotationsHTML}
+              </div>
+              <div style="margin-top: 15px; padding: 10px; background: ${document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0'}; border-radius: 6px; font-size: 12px; color: ${document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b'};">
+                💡 Puedes seleccionar una o varias cotizaciones
+              </div>
+            `,
             showCancelButton: true,
             confirmButtonText: 'Finalizar',
             cancelButtonText: 'Atrás',
@@ -1106,11 +1118,15 @@ function pickMime() {
               popup: 'rounded-xl border border-slate-700',
               confirmButton: 'px-4 py-2 rounded-lg font-semibold',
               cancelButton: 'px-4 py-2 rounded-lg font-semibold'
+            },
+            preConfirm: () => {
+              const checkboxes = Swal.getPopup().querySelectorAll('input[type="checkbox"]:checked');
+              return Array.from(checkboxes).map(cb => Number(cb.value));
             }
           });
 
           if (!step3.isConfirmed) return;
-          quotation_id = step3.value ? Number(step3.value) : null;
+          quotation_id = step3.value && step3.value.length > 0 ? step3.value : null;
         }
       } catch (err) {
         console.error('Error cargando cotizaciones:', err);
