@@ -24,6 +24,7 @@ export const GET: APIRoute = async ({ locals }) => {
                     grace_period_minutes: 120,
                     notify_unassigned_json: [],
                     template_name: 'plantilla_test',
+                    assignment_template_name: '',
                     active: false
                 }
             }));
@@ -58,7 +59,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     try {
         const body = await request.json();
-        const { unanswered_threshold_minutes, grace_period_minutes, notify_unassigned_json, active, template_name } = body;
+        const { unanswered_threshold_minutes, grace_period_minutes, notify_unassigned_json, active, template_name, assignment_template_name } = body;
 
         // Validaciones básicas
         if (typeof unanswered_threshold_minutes !== 'number' || typeof grace_period_minutes !== 'number') {
@@ -79,15 +80,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
                      grace_period_minutes = ?, 
                      notify_unassigned_json = ?, 
                      active = ?,
-                     template_name = ?
+                     template_name = ?,
+                     assignment_template_name = ?
                  WHERE id = ?`,
-                [unanswered_threshold_minutes, grace_period_minutes, notifyJson, isActive, tplName, check[0].id]
+                [unanswered_threshold_minutes, grace_period_minutes, notifyJson, isActive, tplName, assignment_template_name || null, check[0].id]
             );
         } else {
             await pool.query(
-                `INSERT INTO sla_settings (unanswered_threshold_minutes, grace_period_minutes, notify_unassigned_json, active, template_name)
-                 VALUES (?, ?, ?, ?, ?)`,
-                [unanswered_threshold_minutes, grace_period_minutes, notifyJson, isActive, tplName]
+                `INSERT INTO sla_settings (unanswered_threshold_minutes, grace_period_minutes, notify_unassigned_json, active, template_name, assignment_template_name)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [unanswered_threshold_minutes, grace_period_minutes, notifyJson, isActive, tplName, assignment_template_name || null]
             );
         }
 
