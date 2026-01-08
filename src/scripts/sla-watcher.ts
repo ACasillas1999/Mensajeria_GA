@@ -224,7 +224,8 @@ async function checkSLA() {
             if (recipients.size > 0) {
                 for (const [phone, nombre] of recipients) {
                     // Construir variables personalizadas para este destinatario
-                    const nombreParaVariable = conv.asignado_a ? conv.agente_nombre : nombre;
+                    // Cada persona recibe un mensaje con SU PROPIO nombre
+                    const nombreParaVariable = nombre;
 
                     const templateVariables: string[] = [];
                     if (varCount >= 1) templateVariables.push(nombreParaVariable);
