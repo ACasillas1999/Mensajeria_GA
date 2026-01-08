@@ -209,6 +209,9 @@ async function checkSLA() {
             // Si está asignado, notificar al agente
             if (conv.asignado_a && conv.agente_telefono) {
                 recipients.set(conv.agente_telefono, conv.agente_nombre);
+                console.log(`✅ Agente asignado agregado: ${conv.agente_nombre} (${conv.agente_telefono})`);
+            } else if (conv.asignado_a && !conv.agente_telefono) {
+                console.log(`⚠️ Agente ${conv.agente_nombre} (ID: ${conv.asignado_a}) NO tiene teléfono registrado`);
             }
 
             // SIEMPRE notificar también a los admins configurados
