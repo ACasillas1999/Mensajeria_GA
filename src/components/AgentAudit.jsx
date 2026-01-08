@@ -140,28 +140,7 @@ export default function AgentAudit() {
     return 'Sin filtro';
   }
 
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  function buildHtmlRow(cells, rowClass = '', cellTag = 'td') {
-    const classAttr = rowClass ? ` class="${rowClass}"` : '';
-    const htmlCells = cells.map((cell) => {
-      if (cell && typeof cell === 'object' && Object.prototype.hasOwnProperty.call(cell, 'value')) {
-        const cellClass = cell.className ? ` class="${cell.className}"` : '';
-        return `<${cellTag}${cellClass}>${escapeHtml(cell.value)}</${cellTag}>`;
-      }
-      return `<${cellTag}>${escapeHtml(cell)}</${cellTag}>`;
-    });
-    return `<tr${classAttr}>${htmlCells.join('')}</tr>`;
-  }
-
-  function downloadHtmlFile(filename, html) {
-    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  function downloadBlob(filename, blob) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -226,119 +205,186 @@ export default function AgentAudit() {
       setAuditFilterApplied({ mode: 'all', startDate: '', endDate: '', weeks: '' });
     }
 
-    function exportFullReportXls() {
+    async function exportFullReportXlsx() {
       if (!canExportReport) return;
-      const generatedAt = new Date().toLocaleString('es-MX');
-      const statusNames = statusColumns.map((st) => st.name);
-      const maxCols = 6 + statusNames.length;
-      const padRow = (row) => {
-        const padded = row.slice();
-        while (padded.length < maxCols) padded.push('');
-        return padded;
-      };
+      try {
+        const ExcelJSImport = await import('exceljs');
+        const ExcelJS = ExcelJSImport.default ?? ExcelJSImport;
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Mensajeria';
+        workbook.created = new Date();
 
-      const rows = [];
-      rows.push(buildHtmlRow(padRow([
-        { value: 'Reporte', className: 'meta-label' },
-        { value: 'Auditoria de estatus por agente', className: 'meta-value' },
-      ])));
-      rows.push(buildHtmlRow(padRow([
-        { value: 'Agente', className: 'meta-label' },
-        { value: agent?.nombre || '', className: 'meta-value' },
-      ])));
-      rows.push(buildHtmlRow(padRow([
-        { value: 'Filtro', className: 'meta-label' },
-        { value: filterLabel, className: 'meta-value' },
-      ])));
-      rows.push(buildHtmlRow(padRow([
-        { value: 'Generado', className: 'meta-label' },
-        { value: generatedAt, className: 'meta-value' },
-      ])));
+        const sheet = workbook.addWorksheet('Reporte');
+        const statusNames = statusColumns.map((st) => st.name);
+        const maxCols = 6 + statusNames.length;
 
-      rows.push(`<tr class="spacer"><td colspan="${maxCols}"></td></tr>`);
-      rows.push(`<tr class="section"><td colspan="${maxCols}">Resumen global</td></tr>`);
-
-      if (statusAudit.summary) {
-        rows.push(buildHtmlRow(padRow([
-          'Agente',
-          'Conversaciones',
-          'Ciclos',
-          ...statusNames,
-        ]), 'header', 'th'));
-        rows.push(buildHtmlRow(padRow([
-          agent?.nombre || '',
-          statusAudit.summary.total_conversations || 0,
-          statusAudit.summary.total_cycles || 0,
-          ...statusColumns.map((st) => summaryCounts[String(st.id)] || 0),
-        ])));
-      } else {
-        rows.push(`<tr><td colspan="${maxCols}" class="muted">Sin datos de resumen</td></tr>`);
-      }
-
-      rows.push(`<tr class="spacer"><td colspan="${maxCols}"></td></tr>`);
-      rows.push(`<tr class="section"><td colspan="${maxCols}">Detalle por conversacion y ciclo</td></tr>`);
-      rows.push(buildHtmlRow(padRow([
-        'Conversacion',
-        'Cliente',
-        'Ciclo',
-        'Activo',
-        'Inicio',
-        'Fin',
-        ...statusNames,
-      ]), 'header', 'th'));
-
-      if (cycleRows.length === 0) {
-        rows.push(`<tr><td colspan="${maxCols}" class="muted">Sin ciclos registrados</td></tr>`);
-      } else {
-        cycleRows.forEach((cycle, index) => {
-          const rowClass = index % 2 === 1 ? 'row-alt' : '';
-          rows.push(buildHtmlRow(padRow([
-            cycle.conversation_id,
-            cycle.wa_profile_name || cycle.wa_user || '',
-            cycle.cycle_number || '',
-            {
-              value: cycle.is_active ? 'Si' : 'No',
-              className: cycle.is_active ? 'active' : 'inactive',
-            },
-            cycle.started_at || '',
-            cycle.completed_at || '',
-            ...statusColumns.map((st) => cycle.counts?.[String(st.id)] || 0),
-          ]), rowClass));
+        sheet.columns = Array.from({ length: maxCols }, (_, idx) => {
+          if (idx === 0) return { width: 16 };
+          if (idx === 1) return { width: 26 };
+          if (idx === 2) return { width: 12 };
+          if (idx === 3) return { width: 10 };
+          if (idx === 4) return { width: 20 };
+          if (idx === 5) return { width: 20 };
+          return { width: 14 };
         });
+
+        const colors = {
+          headerBg: 'FFE2E8F0',
+          headerFg: 'FF1E293B',
+          sectionBg: 'FF0F172A',
+          sectionFg: 'FFF8FAFC',
+          metaBg: 'FFF8FAFC',
+          metaLabelFg: 'FF475569',
+          metaValueFg: 'FF0F172A',
+          altRow: 'FFF8FAFC',
+          activeBg: 'FFDCFCE7',
+          activeFg: 'FF166534',
+          inactiveBg: 'FFF1F5F9',
+          inactiveFg: 'FF64748B',
+          border: 'FFD6DDE6',
+        };
+
+        const thinBorder = {
+          top: { style: 'thin', color: { argb: colors.border } },
+          left: { style: 'thin', color: { argb: colors.border } },
+          bottom: { style: 'thin', color: { argb: colors.border } },
+          right: { style: 'thin', color: { argb: colors.border } },
+        };
+
+        const applyBorder = (row) => {
+          row.eachCell({ includeEmpty: true }, (cell) => {
+            cell.border = thinBorder;
+            cell.alignment = cell.alignment || { vertical: 'middle' };
+          });
+        };
+
+        const addMetaRow = (label, value) => {
+          const row = sheet.addRow([label, value]);
+          sheet.mergeCells(row.number, 2, row.number, maxCols);
+          row.height = 18;
+          row.getCell(1).font = { bold: true, color: { argb: colors.metaLabelFg } };
+          row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.metaBg } };
+          row.getCell(2).font = { bold: true, color: { argb: colors.metaValueFg } };
+          row.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
+          applyBorder(row);
+        };
+
+        const addSectionRow = (title) => {
+          const row = sheet.addRow([title]);
+          sheet.mergeCells(row.number, 1, row.number, maxCols);
+          row.height = 20;
+          row.getCell(1).font = { bold: true, color: { argb: colors.sectionFg }, size: 11 };
+          row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.sectionBg } };
+          row.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+          applyBorder(row);
+        };
+
+        const styleHeaderRow = (row) => {
+          row.height = 18;
+          row.eachCell({ includeEmpty: true }, (cell) => {
+            cell.font = { bold: true, color: { argb: colors.headerFg } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.border = thinBorder;
+          });
+        };
+
+        addMetaRow('Reporte', 'Auditoria de estatus por agente');
+        addMetaRow('Agente', agent?.nombre || '');
+        addMetaRow('Filtro', filterLabel);
+        addMetaRow('Generado', new Date().toLocaleString('es-MX'));
+
+        sheet.addRow([]).height = 10;
+        addSectionRow('Resumen global');
+
+        if (statusAudit.summary) {
+          const summaryHeader = sheet.addRow([
+            'Agente',
+            'Conversaciones',
+            'Ciclos',
+            ...statusNames,
+          ]);
+          styleHeaderRow(summaryHeader);
+
+          const summaryRow = sheet.addRow([
+            agent?.nombre || '',
+            Number(statusAudit.summary.total_conversations || 0),
+            Number(statusAudit.summary.total_cycles || 0),
+            ...statusColumns.map((st) => Number(summaryCounts[String(st.id)] || 0)),
+          ]);
+          applyBorder(summaryRow);
+          summaryRow.eachCell({ includeEmpty: true }, (cell, col) => {
+            cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'left' : 'center' };
+          });
+        } else {
+          const emptyRow = sheet.addRow(['Sin datos de resumen']);
+          sheet.mergeCells(emptyRow.number, 1, emptyRow.number, maxCols);
+          emptyRow.getCell(1).font = { italic: true, color: { argb: colors.inactiveFg } };
+          applyBorder(emptyRow);
+        }
+
+        sheet.addRow([]).height = 10;
+        addSectionRow('Detalle por conversacion y ciclo');
+
+        const detailHeader = sheet.addRow([
+          'Conversacion',
+          'Cliente',
+          'Ciclo',
+          'Activo',
+          'Inicio',
+          'Fin',
+          ...statusNames,
+        ]);
+        styleHeaderRow(detailHeader);
+
+        if (cycleRows.length === 0) {
+          const emptyRow = sheet.addRow(['Sin ciclos registrados']);
+          sheet.mergeCells(emptyRow.number, 1, emptyRow.number, maxCols);
+          emptyRow.getCell(1).font = { italic: true, color: { argb: colors.inactiveFg } };
+          applyBorder(emptyRow);
+        } else {
+          cycleRows.forEach((cycle, index) => {
+            const row = sheet.addRow([
+              cycle.conversation_id,
+              cycle.wa_profile_name || cycle.wa_user || '',
+              cycle.cycle_number || '',
+              cycle.is_active ? 'Si' : 'No',
+              cycle.started_at || '',
+              cycle.completed_at || '',
+              ...statusColumns.map((st) => Number(cycle.counts?.[String(st.id)] || 0)),
+            ]);
+
+            applyBorder(row);
+            row.eachCell({ includeEmpty: true }, (cell, col) => {
+              cell.alignment = { vertical: 'middle', horizontal: col <= 2 ? 'left' : 'center' };
+              if (index % 2 === 1) {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.altRow } };
+              }
+            });
+
+            const activeCell = row.getCell(4);
+            activeCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: cycle.is_active ? colors.activeBg : colors.inactiveBg },
+            };
+            activeCell.font = {
+              bold: true,
+              color: { argb: cycle.is_active ? colors.activeFg : colors.inactiveFg },
+            };
+            activeCell.alignment = { vertical: 'middle', horizontal: 'center' };
+          });
+        }
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        });
+        downloadBlob(`agent-status-report-${selectedAgent}-${filterSlug}.xlsx`, blob);
+      } catch (err) {
+        console.error('Error exporting report:', err);
       }
-
-      const html = `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <style>
-      body { font-family: Calibri, "Segoe UI", Arial, sans-serif; font-size: 12px; color: #0f172a; }
-      table { border-collapse: collapse; width: 100%; }
-      th, td { border: 1px solid #d6dde6; padding: 6px 8px; vertical-align: top; }
-      .header th, .header td { background: #e2e8f0; color: #1e293b; font-weight: 700; }
-      .section td { background: #0f172a; color: #f8fafc; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
-      .meta-label { background: #f8fafc; font-weight: 700; color: #475569; width: 140px; }
-      .meta-value { font-weight: 700; color: #0f172a; }
-      .row-alt td { background: #f8fafc; }
-      .active { background: #dcfce7; color: #166534; font-weight: 700; text-align: center; }
-      .inactive { background: #f1f5f9; color: #64748b; text-align: center; }
-      .muted { color: #64748b; font-style: italic; }
-      .spacer td { border: none; height: 10px; padding: 0; }
-    </style>
-  </head>
-  <body>
-    <table>
-      ${rows.join('\n')}
-    </table>
-  </body>
-</html>`;
-
-      downloadHtmlFile(
-        `agent-status-report-${selectedAgent}-${filterSlug}.xls`,
-        html
-      );
     }
-
     return (
       <div className="space-y-4">
         {/* Header */}
@@ -386,7 +432,7 @@ export default function AgentAudit() {
                 </span>
               )}
               <button
-                onClick={exportFullReportXls}
+                onClick={exportFullReportXlsx}
                 disabled={!canExportReport}
                 className={`px-2 py-1 rounded border text-xs ${canExportReport
                   ? 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
