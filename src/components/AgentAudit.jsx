@@ -181,8 +181,7 @@ export default function AgentAudit() {
       : auditFilterApplied.mode === 'weeks'
         ? `${auditFilterApplied.weeks}w`
         : 'all';
-    const canExportSummary = !!statusAudit.summary && statusColumns.length > 0;
-    const canExportDetail = cycleRows.length > 0 && statusColumns.length > 0;
+    const canExportReport = statusColumns.length > 0 && (!!statusAudit.summary || cycleRows.length > 0);
     const hasRangeError = (auditFilterDraft.startDate && !auditFilterDraft.endDate)
       || (!auditFilterDraft.startDate && auditFilterDraft.endDate);
 
@@ -218,28 +217,38 @@ export default function AgentAudit() {
       setAuditFilterApplied({ mode: 'all', startDate: '', endDate: '', weeks: '' });
     }
 
-    function exportSummaryCsv() {
-      if (!statusAudit.summary) return;
-      const headers = [
-        'Agente',
-        'Conversaciones',
-        'Ciclos',
-        ...statusColumns.map((st) => st.name),
+    function exportFullReportCsv() {
+      if (!canExportReport) return;
+      const generatedAt = new Date().toLocaleString('es-MX');
+      const rows = [
+        ['Reporte', 'Auditoria de estatus por agente'],
+        ['Agente', agent?.nombre || ''],
+        ['Filtro', filterLabel],
+        ['Generado', generatedAt],
+        [],
+        ['Resumen global'],
       ];
-      const row = [
-        agent?.nombre || '',
-        statusAudit.summary.total_conversations || 0,
-        statusAudit.summary.total_cycles || 0,
-        ...statusColumns.map((st) => summaryCounts[String(st.id)] || 0),
-      ];
-      downloadCsv(
-        `agent-status-summary-${selectedAgent}-${filterSlug}.csv`,
-        [headers, row]
-      );
-    }
 
-    function exportDetailCsv() {
-      const headers = [
+      if (statusAudit.summary) {
+        rows.push([
+          'Agente',
+          'Conversaciones',
+          'Ciclos',
+          ...statusColumns.map((st) => st.name),
+        ]);
+        rows.push([
+          agent?.nombre || '',
+          statusAudit.summary.total_conversations || 0,
+          statusAudit.summary.total_cycles || 0,
+          ...statusColumns.map((st) => summaryCounts[String(st.id)] || 0),
+        ]);
+      } else {
+        rows.push(['Sin datos de resumen']);
+      }
+
+      rows.push([]);
+      rows.push(['Detalle por conversacion y ciclo']);
+      rows.push([
         'Conversacion',
         'Cliente',
         'Ciclo',
@@ -247,19 +256,27 @@ export default function AgentAudit() {
         'Inicio',
         'Fin',
         ...statusColumns.map((st) => st.name),
-      ];
-      const rows = cycleRows.map((cycle) => ([
-        cycle.conversation_id,
-        cycle.wa_profile_name || cycle.wa_user || '',
-        cycle.cycle_number || '',
-        cycle.is_active ? 'si' : 'no',
-        cycle.started_at || '',
-        cycle.completed_at || '',
-        ...statusColumns.map((st) => cycle.counts?.[String(st.id)] || 0),
-      ]));
+      ]);
+
+      if (cycleRows.length === 0) {
+        rows.push(['Sin ciclos registrados']);
+      } else {
+        for (const cycle of cycleRows) {
+          rows.push([
+            cycle.conversation_id,
+            cycle.wa_profile_name || cycle.wa_user || '',
+            cycle.cycle_number || '',
+            cycle.is_active ? 'si' : 'no',
+            cycle.started_at || '',
+            cycle.completed_at || '',
+            ...statusColumns.map((st) => cycle.counts?.[String(st.id)] || 0),
+          ]);
+        }
+      }
+
       downloadCsv(
-        `agent-status-detail-${selectedAgent}-${filterSlug}.csv`,
-        [headers, ...rows]
+        `agent-status-report-${selectedAgent}-${filterSlug}.csv`,
+        rows
       );
     }
 
@@ -310,22 +327,13 @@ export default function AgentAudit() {
                 </span>
               )}
               <button
-                onClick={exportSummaryCsv}
-                disabled={!canExportSummary}
-                className={`px-2 py-1 rounded border text-xs ${canExportSummary
+                onClick={exportFullReportCsv}
+                disabled={!canExportReport}
+                className={`px-2 py-1 rounded border text-xs ${canExportReport
                   ? 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
                   : 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-600'}`}
               >
-                Exportar resumen
-              </button>
-              <button
-                onClick={exportDetailCsv}
-                disabled={!canExportDetail}
-                className={`px-2 py-1 rounded border text-xs ${canExportDetail
-                  ? 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
-                  : 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-600'}`}
-              >
-                Exportar detalle
+                Exportar reporte
               </button>
             </div>
           </div>
