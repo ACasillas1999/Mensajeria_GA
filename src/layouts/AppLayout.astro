@@ -1,7 +1,7 @@
 ---
 import "../styles/global.css";
 
-const { title = "Mensajería Web GA" } = Astro.props as { title?: string };
+const { title = "Mensajeria Web GA" } = Astro.props as { title?: string };
 const path = Astro.url.pathname;
 const base = import.meta.env.BASE_URL || "/";
 
@@ -21,41 +21,100 @@ const isActive = (href: string) =>
 const user: any = (Astro.locals as any).user;
 const isAdmin = (user?.rol || "").toLowerCase() === "admin";
 const initial = (user?.nombre || "U").toString().slice(0, 1).toUpperCase();
+const hasUser = Boolean(user);
 
 // Helper to build URLs with base path
 const href = (p: string) => `${base}${p}`.replace(/\/\//g, "/");
 
 const mainLinks = [
-  { href: "/", icon: "home", label: "Inicio" },
-  { href: "/dashboard", icon: "bar-chart-2", label: "Dashboard" },
-  { href: "/mensajes", icon: "message-square", label: "Mensajes" },
-  { href: "/pipeline", icon: "trello", label: "Pipeline / CRM" },
-  { href: "/clientes", icon: "users", label: "Clientes" },
+  { href: "/", icon: "home", label: "Inicio", mode: "client" },
+  {
+    href: "/dashboard",
+    icon: "bar-chart-2",
+    label: "Dashboard",
+    mode: "client",
+  },
+  {
+    href: "/mensajes",
+    icon: "message-square",
+    label: "Mensajes",
+    mode: "both",
+  },
+  {
+    href: "/pipeline",
+    icon: "trello",
+    label: "Pipeline / CRM",
+    mode: "client",
+  },
+  { href: "/clientes", icon: "users", label: "Clientes", mode: "client" },
 ];
 
 const adminLinks = [
-  { href: "/admin/usuarios", icon: "user-check", label: "Usuarios" },
-  { href: "/admin/asignacion", icon: "share-2", label: "Asignacion" },
-  { href: "/admin/auditoria", icon: "eye", label: "Auditoria en vivo" },
-  { href: "/admin/crear-plantilla", icon: "file-plus", label: "Plantillas" },
-  { href: "/admin/auto-respuestas", icon: "cpu", label: "Auto-respuestas" },
+  {
+    href: "/admin/usuarios",
+    icon: "user-check",
+    label: "Usuarios",
+    mode: "client",
+  },
+  {
+    href: "/admin/asignacion",
+    icon: "share-2",
+    label: "Asignacion",
+    mode: "client",
+  },
+  {
+    href: "/admin/auditoria",
+    icon: "eye",
+    label: "Auditoria en vivo",
+    mode: "client",
+  },
+  {
+    href: "/admin/crear-plantilla",
+    icon: "file-plus",
+    label: "Plantillas",
+    mode: "client",
+  },
+  {
+    href: "/admin/auto-respuestas",
+    icon: "cpu",
+    label: "Auto-respuestas",
+    mode: "client",
+  },
   {
     href: "/admin/mensajes-no-reconocidos",
     icon: "help-circle",
     label: "Mensajes no reconocidos",
+    mode: "client",
   },
-  { href: "/admin/estados", icon: "tag", label: "Gestión de Estados" },
+  {
+    href: "/admin/estados",
+    icon: "tag",
+    label: "Gestion de Estados",
+    mode: "client",
+  },
   {
     href: "/admin/reportes/ventas",
     icon: "bar-chart",
     label: "Reporte de Ventas",
+    mode: "client",
   },
-  { href: "/admin/notificaciones", icon: "bell", label: "Config. Aletar SLA" },
+  {
+    href: "/admin/notificaciones",
+    icon: "bell",
+    label: "Config. Alertar SLA",
+    mode: "client",
+  },
 ];
 
 const footerLinks = [
-  { href: "/config", icon: "settings", label: "Config" },
-  { href: "/logout", icon: "log-out", label: "Cerrar sesión", forceIdle: true },
+  { href: "/config", icon: "settings", label: "Config", mode: "both" },
+  {
+    href: "/logout",
+    icon: "log-out",
+    label: "Cerrar sesion",
+    forceIdle: true,
+    mode: "both",
+  },
 ];
 ---
 
@@ -68,9 +127,12 @@ const footerLinks = [
     <link rel="apple-touch-icon" href="/logo-gawhats.png" />
     <meta name="theme-color" content="#0f172a" />
     <script is:inline>
-      // Inicializar tema antes de renderizar para evitar flash
+      // Inicializar modo + tema antes de renderizar para evitar flash
+      const savedMode = localStorage.getItem("app_mode") || "client";
+      document.documentElement.dataset.appMode = savedMode;
+      const themeKey = savedMode === "internal" ? "internal_theme" : "theme";
       const theme =
-        localStorage.getItem("theme") ||
+        localStorage.getItem(themeKey) ||
         (window.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
           : "light");
@@ -79,17 +141,17 @@ const footerLinks = [
   </head>
 
   <body
-    class="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+    class="app-body min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
   >
     <!-- Topbar -->
     <header
-      class="fixed top-0 inset-x-0 h-14 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur border-b border-slate-200 dark:border-slate-800"
+      class="app-topbar fixed top-0 inset-x-0 h-14 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur border-b border-slate-200 dark:border-slate-800"
     >
       <div class="h-full max-w-7xl mx-auto px-4 flex items-center gap-3">
         <button
           id="mobile-nav-open"
           class="md:hidden p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/80 text-slate-700 dark:text-slate-200 hover:border-emerald-400/70 transition"
-          aria-label="Abrir menú"
+          aria-label="Abrir menu"
         >
           <i data-feather="menu"></i>
         </button>
@@ -99,6 +161,16 @@ const footerLinks = [
         <div class="ml-auto flex items-center gap-3 min-w-0">
           <!-- Theme Toggle -->
           <div id="theme-toggle-container"></div>
+          <button
+            id="app-mode-toggle"
+            type="button"
+            class="app-mode-toggle flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/80 text-slate-700 dark:text-slate-200 text-[11px] sm:text-xs font-semibold shadow-sm hover:border-emerald-400/70 transition"
+            title="Cambiar a mensajes internos"
+            aria-pressed="false"
+          >
+            <span class="app-mode-dot" aria-hidden="true"></span>
+            <span data-mode-label>Mensajes internos</span>
+          </button>
           {
             user && (
               <div class="text-right leading-tight max-w-[200px] sm:max-w-xs">
@@ -107,7 +179,7 @@ const footerLinks = [
                 </div>
                 <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                   {user.rol}
-                  {user.sucursal ? ` · ${user.sucursal}` : ""}
+                  {user.sucursal ? ` - ${user.sucursal}` : ""}
                 </div>
               </div>
             )
@@ -123,13 +195,14 @@ const footerLinks = [
 
     <!-- Sidebar -->
     <aside
-      class="hidden md:block fixed left-0 top-14 bottom-0 w-16 z-30 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800"
+      class="app-sidebar hidden md:block fixed left-0 top-14 bottom-0 w-16 z-30 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800"
     >
       <nav class="h-full flex flex-col items-center py-4 gap-2">
         {
           mainLinks.map((link) => (
             <a
               href={href(link.href)}
+              data-mode-allow={link.mode}
               class={`${linkBase} ${isActive(link.href)}`}
               title={link.label}
             >
@@ -143,6 +216,7 @@ const footerLinks = [
             adminLinks.map((link) => (
               <a
                 href={href(link.href)}
+                data-mode-allow={link.mode}
                 class={`${linkBase} ${isActive(link.href)}`}
                 title={link.label}
               >
@@ -158,6 +232,7 @@ const footerLinks = [
           footerLinks.map((link) => (
             <a
               href={href(link.href)}
+              data-mode-allow={link.mode}
               class={`${linkBase} ${link.forceIdle ? idle : isActive(link.href)}`}
               title={link.label}
             >
@@ -183,11 +258,11 @@ const footerLinks = [
         <div
           class="h-14 px-4 flex items-center justify-between border-b border-slate-800"
         >
-          <div class="text-sm font-semibold text-emerald-300">Menú</div>
+          <div class="text-sm font-semibold text-emerald-300">Menu</div>
           <button
             id="mobile-nav-close"
             class="p-2 rounded-lg hover:bg-slate-800 transition"
-            aria-label="Cerrar menú"
+            aria-label="Cerrar menu"
           >
             <i data-feather="x"></i>
           </button>
@@ -198,6 +273,7 @@ const footerLinks = [
               mainLinks.map((link) => (
                 <a
                   href={href(link.href)}
+                  data-mode-allow={link.mode}
                   class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive(link.href)} hover:bg-slate-900/70`}
                 >
                   <i data-feather={link.icon} />
@@ -209,13 +285,17 @@ const footerLinks = [
 
           {
             isAdmin && (
-              <div class="space-y-1">
-                <div class="text-[11px] uppercase tracking-[0.08em] text-slate-500 px-2">
+              <div data-mode-allow="client" class="space-y-1">
+                <div
+                  data-mode-allow="client"
+                  class="text-[11px] uppercase tracking-[0.08em] text-slate-500 px-2"
+                >
                   Admin
                 </div>
                 {adminLinks.map((link) => (
                   <a
                     href={href(link.href)}
+                    data-mode-allow={link.mode}
                     class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive(link.href)} hover:bg-slate-900/70`}
                   >
                     <i data-feather={link.icon} />
@@ -231,6 +311,7 @@ const footerLinks = [
               footerLinks.map((link) => (
                 <a
                   href={href(link.href)}
+                  data-mode-allow={link.mode}
                   class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${link.forceIdle ? idle : isActive(link.href)} hover:bg-slate-900/70`}
                 >
                   <i data-feather={link.icon} />
@@ -243,18 +324,23 @@ const footerLinks = [
       </div>
     </div>
 
+    <!-- Overlay de transicion de modo -->
+    <div id="mode-transition-overlay" class="mode-transition-overlay"></div>
+
     <!-- Contenido -->
     <main
       id="page-root"
-      class="pt-16 md:pt-14 md:pl-16 pl-0 min-h-screen opacity-0 transition-opacity duration-150"
+      class="app-main pt-16 md:pt-14 md:pl-16 pl-0 min-h-screen opacity-0 transition-opacity duration-150"
     >
       <div class="mx-auto px-3 sm:px-4 md:px-5 pb-6">
         <slot />
       </div>
     </main>
 
+    <div id="global-internal-toasts" class="internal-toast-container global"></div>
+
     <script src="https://unpkg.com/feather-icons" defer></script>
-    <script is:inline define:vars={{ base }}>
+    <script is:inline define:vars={{ base, hasUser }}>
       // Icons + page transitions + mobile drawer
       window.addEventListener("DOMContentLoaded", () => {
         window.feather?.replace();
@@ -289,7 +375,7 @@ const footerLinks = [
           }
           e.preventDefault();
 
-          // Navegación más rápida: añadir timeout de seguridad
+          // Navegacion mas rapida: anadir timeout de seguridad
           let navigated = false;
           const navigate = () => {
             if (!navigated) {
@@ -299,7 +385,7 @@ const footerLinks = [
           };
 
           root.addEventListener("transitionend", navigate, { once: true });
-          // Timeout de seguridad: navegar después de 200ms aunque la transición no termine
+          // Timeout de seguridad: navegar despues de 200ms aunque la transicion no termine
           setTimeout(navigate, 200);
           root.classList.add("opacity-0");
         });
@@ -333,6 +419,225 @@ const footerLinks = [
         mobileNav
           ?.querySelectorAll("a")
           .forEach((a) => a.addEventListener("click", closeMobileNav));
+
+        const toastContainer = document.getElementById("global-internal-toasts");
+        if (toastContainer && hasUser) {
+          window.__internalGlobalNotifyActive = true;
+          const maxToasts = 3;
+          const lastSeen = {
+            channels: new Map(),
+            dms: new Map(),
+            channelsInit: false,
+            dmsInit: false,
+          };
+          let currentUserId = null;
+
+          const normalize = (path) => `${base}${path}`.replace(/\/\//g, "/");
+
+          const pushToast = (title, message) => {
+            if (!toastContainer) return;
+            const toast = document.createElement("div");
+            toast.className = "internal-toast";
+            const titleEl = document.createElement("div");
+            titleEl.className = "internal-toast-title";
+            titleEl.textContent = title || "Mensaje interno";
+            const bodyEl = document.createElement("div");
+            bodyEl.className = "internal-toast-body";
+            bodyEl.textContent = message || "Nuevo mensaje interno";
+            toast.appendChild(titleEl);
+            toast.appendChild(bodyEl);
+            toastContainer.appendChild(toast);
+
+            const allToasts = toastContainer.querySelectorAll(".internal-toast");
+            if (allToasts.length > maxToasts) {
+              allToasts[0]?.remove();
+            }
+
+            setTimeout(() => {
+              toast.remove();
+            }, 4500);
+          };
+
+          const handleUsers = (data) => {
+            if (!data?.items) return;
+            if (data.currentUserId) currentUserId = data.currentUserId;
+            const store = lastSeen.dms;
+            const initialized = lastSeen.dmsInit;
+            data.items.forEach((agent) => {
+              if (!agent?.last_message_id) return;
+              const key = agent.chat_id
+                ? `dm-${agent.chat_id}`
+                : `user-${agent.id}`;
+              const prev = store.get(key);
+              if (
+                initialized &&
+                currentUserId &&
+                prev !== agent.last_message_id &&
+                agent.last_message_user_id &&
+                agent.last_message_user_id !== currentUserId
+              ) {
+                pushToast(
+                  agent.nombre || "Mensaje interno",
+                  agent.last_message || "Nuevo mensaje interno",
+                );
+              }
+              store.set(key, agent.last_message_id);
+            });
+            lastSeen.dmsInit = true;
+          };
+
+          const handleChannels = (data) => {
+            if (!data?.items) return;
+            if (data.currentUserId) currentUserId = data.currentUserId;
+            const store = lastSeen.channels;
+            const initialized = lastSeen.channelsInit;
+            data.items.forEach((channel) => {
+              if (!channel?.last_message_id) return;
+              const prev = store.get(channel.id);
+              if (
+                initialized &&
+                currentUserId &&
+                prev !== channel.last_message_id &&
+                channel.last_message_user_id &&
+                channel.last_message_user_id !== currentUserId
+              ) {
+                const author = channel.last_message_user_name
+                  ? `${channel.last_message_user_name}: `
+                  : "";
+                pushToast(
+                  channel.name ? `#${channel.name}` : "Canal interno",
+                  `${author}${channel.last_message || "Nuevo mensaje"}`,
+                );
+              }
+              store.set(channel.id, channel.last_message_id);
+            });
+            lastSeen.channelsInit = true;
+          };
+
+          const readJson = async (response) => {
+            if (!response || !response.ok) return null;
+            try {
+              return await response.json();
+            } catch {
+              return null;
+            }
+          };
+
+          const poll = async () => {
+            try {
+              const [usersRes, channelsRes] = await Promise.all([
+                fetch(normalize("/api/internal/users"), {
+                  credentials: "same-origin",
+                }),
+                fetch(normalize("/api/internal/channels"), {
+                  credentials: "same-origin",
+                }),
+              ]);
+              const [usersData, channelsData] = await Promise.all([
+                readJson(usersRes),
+                readJson(channelsRes),
+              ]);
+              if (usersData?.ok) handleUsers(usersData);
+              if (channelsData?.ok) handleChannels(channelsData);
+            } catch (err) {
+              console.error("Error polling internal notifications:", err);
+            }
+          };
+
+          poll();
+          setInterval(poll, 4000);
+          document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) {
+              poll();
+            }
+          });
+        }
+
+        const modeToggle = document.getElementById("app-mode-toggle");
+        const updateModeToggle = (mode) => {
+          if (!modeToggle) return;
+          const label = modeToggle.querySelector("[data-mode-label]");
+          const isInternal = mode === "internal";
+          if (label) {
+            label.textContent = isInternal ? "Modo clientes" : "Mensajes internos";
+          }
+          modeToggle.title = isInternal
+            ? "Volver a modo clientes"
+            : "Cambiar a mensajes internos";
+          modeToggle.setAttribute("aria-pressed", String(isInternal));
+          modeToggle.dataset.mode = mode;
+        };
+
+        const getThemeKey = (mode) =>
+          mode === "internal" ? "internal_theme" : "theme";
+
+        const resolveTheme = (mode) => {
+          const stored = localStorage.getItem(getThemeKey(mode));
+          if (stored) return stored;
+          return window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        };
+
+        const applyMode = (nextMode, { animate = true } = {}) => {
+          const html = document.documentElement;
+          if (animate) {
+            html.dataset.appModeTransition = "true";
+            setTimeout(() => {
+              delete html.dataset.appModeTransition;
+            }, 220);
+          }
+          html.dataset.appMode = nextMode;
+          localStorage.setItem("app_mode", nextMode);
+          const theme = resolveTheme(nextMode);
+          html.classList.toggle("dark", theme === "dark");
+          updateModeToggle(nextMode);
+          window.dispatchEvent(
+            new CustomEvent("app-mode-change", { detail: { mode: nextMode } }),
+          );
+        };
+
+        updateModeToggle(document.documentElement.dataset.appMode || "client");
+
+        modeToggle?.addEventListener("click", () => {
+          const current = document.documentElement.dataset.appMode || "client";
+          const nextMode = current === "internal" ? "client" : "internal";
+
+          // Obtener el overlay de transicion
+          const overlay = document.getElementById("mode-transition-overlay");
+
+          if (overlay) {
+            // Activar la animacion del overlay
+            overlay.classList.add("active");
+
+            // Cambiar el modo en el punto medio de la animacion (cuando cubre toda la pantalla)
+            setTimeout(() => {
+              applyMode(nextMode);
+            }, 300);
+
+            // Remover la clase de animacion despues de que termine
+            setTimeout(() => {
+              overlay.classList.remove("active");
+            }, 600);
+          } else {
+            // Fallback si no existe el overlay
+            applyMode(nextMode);
+          }
+
+          // Agregar clase de animacion al boton
+          modeToggle.classList.add("animating");
+
+          // Remover la clase despues de que termine la animacion
+          setTimeout(() => {
+            modeToggle.classList.remove("animating");
+          }, 400);
+        });
+
+        window.addEventListener("storage", (event) => {
+          if (event.key !== "app_mode") return;
+          const nextMode = event.newValue || "client";
+          applyMode(nextMode, { animate: false });
+        });
       });
     </script>
 
@@ -340,15 +645,22 @@ const footerLinks = [
     <script>
       const container = document.getElementById("theme-toggle-container");
       if (container) {
-        const isDark = document.documentElement.classList.contains("dark");
-
         const button = document.createElement("button");
         button.className =
-          "w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition flex items-center justify-center text-2xl";
-        button.innerHTML = isDark ? "☀️" : "🌙";
-        button.title = isDark
-          ? "Cambiar a modo claro"
-          : "Cambiar a modo oscuro";
+          "w-12 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition flex items-center justify-center text-[10px] font-semibold uppercase tracking-wide";
+
+        const getThemeKey = () =>
+          document.documentElement.dataset.appMode === "internal"
+            ? "internal_theme"
+            : "theme";
+
+        const updateButton = () => {
+          const isDark = document.documentElement.classList.contains("dark");
+          button.textContent = isDark ? "Oscuro" : "Claro";
+          button.title = isDark
+            ? "Cambiar a modo claro"
+            : "Cambiar a modo oscuro";
+        };
 
         button.addEventListener("click", () => {
           const currentlyDark =
@@ -356,14 +668,12 @@ const footerLinks = [
           const newTheme = !currentlyDark;
 
           document.documentElement.classList.toggle("dark", newTheme);
-          localStorage.setItem("theme", newTheme ? "dark" : "light");
-
-          button.innerHTML = newTheme ? "☀️" : "🌙";
-          button.title = newTheme
-            ? "Cambiar a modo claro"
-            : "Cambiar a modo oscuro";
+          localStorage.setItem(getThemeKey(), newTheme ? "dark" : "light");
+          updateButton();
         });
 
+        updateButton();
+        window.addEventListener("app-mode-change", updateButton);
         container.appendChild(button);
       }
     </script>
