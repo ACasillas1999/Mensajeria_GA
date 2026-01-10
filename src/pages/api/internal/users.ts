@@ -14,7 +14,16 @@ export const GET: APIRoute = async ({ locals, request }) => {
 
     const url = new URL(request.url);
     const q = (url.searchParams.get("q") || "").trim();
-    const params: any[] = [user.id, user.id, user.id, user.id];
+    const params: any[] = [
+      user.id,
+      user.id,
+      user.id,
+      user.id,
+      user.id,
+      user.id,
+      user.id,
+      user.id,
+    ];
     let searchClause = "";
     if (q) {
       searchClause =
@@ -41,11 +50,32 @@ export const GET: APIRoute = async ({ locals, request }) => {
           ELSE 0
         END AS is_online,
         dm.chat_id,
+        td.typing_count,
+        td.typing_names,
         lm.id AS last_message_id,
         lm.content AS last_message,
         lm.created_at AS last_message_at,
         lm.user_id AS last_message_user_id,
-        IF(f.id IS NULL, 0, 1) AS is_favorite
+        IF(f.id IS NULL, 0, 1) AS is_favorite,
+        rs.last_read_message_id,
+        CASE
+          WHEN lm.id IS NULL THEN 0
+          WHEN lm.user_id = ? THEN 0
+          WHEN rs.last_read_message_id IS NULL THEN 1
+          WHEN rs.last_read_message_id < lm.id THEN 1
+          ELSE 0
+        END AS has_unread,
+        (
+          SELECT COUNT(*)
+          FROM internal_messages imc
+          WHERE imc.dm_chat_id = dm.chat_id
+            AND imc.deleted_at IS NULL
+            AND imc.user_id <> ?
+            AND (
+              rs.last_read_message_id IS NULL
+              OR imc.id > rs.last_read_message_id
+            )
+        ) AS unread_count
       FROM usuarios u
       LEFT JOIN sucursales s ON s.id = u.sucursal_id
       LEFT JOIN (
@@ -64,6 +94,18 @@ export const GET: APIRoute = async ({ locals, request }) => {
         JOIN internal_dm_participants p_other
           ON p_other.chat_id = c.id AND p_other.user_id != ?
       ) dm ON dm.other_user_id = u.id
+      LEFT JOIN (
+        SELECT
+          t.dm_chat_id,
+          COUNT(DISTINCT t.user_id) AS typing_count,
+          GROUP_CONCAT(DISTINCT u.nombre SEPARATOR ', ') AS typing_names
+        FROM internal_typing_status t
+        JOIN usuarios u ON u.id = t.user_id
+        WHERE t.dm_chat_id IS NOT NULL
+          AND t.updated_at >= DATE_SUB(NOW(), INTERVAL 6 SECOND)
+          AND t.user_id <> ?
+        GROUP BY t.dm_chat_id
+      ) td ON td.dm_chat_id = dm.chat_id
       LEFT JOIN internal_messages lm ON lm.id = (
         SELECT im.id
         FROM internal_messages im
@@ -73,6 +115,8 @@ export const GET: APIRoute = async ({ locals, request }) => {
       )
       LEFT JOIN internal_favorites f
         ON f.dm_chat_id = dm.chat_id AND f.user_id = ?
+      LEFT JOIN internal_read_status rs
+        ON rs.dm_chat_id = dm.chat_id AND rs.user_id = ?
       WHERE u.activo = 1
         AND LOWER(u.rol) IN ('agente', 'admin')
         AND u.id != ?

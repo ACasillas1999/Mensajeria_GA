@@ -154,7 +154,21 @@ CREATE TABLE IF NOT EXISTS internal_read_status (
   INDEX idx_dm (dm_chat_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 10. DATOS INICIALES (SEED)
+-- 10. TABLA DE ESCRIBIENDO
+CREATE TABLE IF NOT EXISTS internal_typing_status (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  channel_id INT,
+  dm_chat_id INT,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_user_channel (user_id, channel_id),
+  UNIQUE KEY unique_user_dm (user_id, dm_chat_id),
+  INDEX idx_channel_updated (channel_id, updated_at),
+  INDEX idx_dm_updated (dm_chat_id, updated_at),
+  INDEX idx_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 11. DATOS INICIALES (SEED)
 -- Canales por defecto
 INSERT IGNORE INTO internal_channels (id, name, description, type, created_by, write_permission, invite_permission)
 VALUES 

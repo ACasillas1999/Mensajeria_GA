@@ -77,7 +77,11 @@ function formatInternalTime(value) {
 
 function getAgentPresence(agent) {
   if (!agent) {
-    return { label: "Sin actividad", color: statusDotColor("offline") };
+    return {
+      label: "Sin actividad",
+      color: statusDotColor("offline"),
+      isOnline: false,
+    };
   }
   const lastSeen = agent.last_activity_at
     ? parseInternalDate(agent.last_activity_at)
@@ -86,16 +90,17 @@ function getAgentPresence(agent) {
     Boolean(agent.is_online) ||
     (lastSeen && Date.now() - lastSeen.getTime() <= 5 * 60 * 1000);
   if (isOnline) {
-    return { label: "En linea", color: statusDotColor("online") };
+    return { label: "En linea", color: statusDotColor("online"), isOnline: true };
   }
   if (lastSeen) {
     const relative = formatInternalRelative(agent.last_activity_at);
     return {
       label: relative ? `Visto hace ${relative}` : "Sin actividad",
       color: statusDotColor("offline"),
+      isOnline: false,
     };
   }
-  return { label: "Sin actividad", color: statusDotColor("offline") };
+  return { label: "Sin actividad", color: statusDotColor("offline"), isOnline: false };
 }
 
 function InternalMessagesWorkspace() {
@@ -123,10 +128,15 @@ function InternalMessagesWorkspace() {
   const [sending, setSending] = useState(false);
   const [canWrite, setCanWrite] = useState(true);
   const [notifications, setNotifications] = useState([]);
+  const [typingUsers, setTypingUsers] = useState([]);
   const [contextMenu, setContextMenu] = useState(null);
   const containerRef = useRef(null);
   const searchRef = useRef(null);
   const menuRef = useRef(null);
+  const lastTypingSentRef = useRef(0);
+  const isAtBottomRef = useRef(true);
+  const agentsSignatureRef = useRef("");
+  const channelsSignatureRef = useRef("");
   const lastSeenRef = useRef({
     channels: new Map(),
     dms: new Map(),
@@ -166,6 +176,47 @@ function InternalMessagesWorkspace() {
   const handleResetList = () => {
     setListFilter("all");
     setQuery("");
+  };
+
+  const scrollToBottom = (behavior = "auto") => {
+    if (!containerRef.current) return;
+    const bodies = containerRef.current.querySelectorAll(".internal-chat-body");
+    let target = null;
+    bodies.forEach((body) => {
+      if (body instanceof HTMLElement && body.offsetParent !== null) {
+        target = body;
+      }
+    });
+    if (!target) return;
+    target.scrollTo({ top: target.scrollHeight, behavior });
+  };
+
+  const notifyTyping = async () => {
+    if (!selectedType || !selectedId) return;
+    if (selectedType === "dm" && !currentChatId) return;
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 1500) return;
+    lastTypingSentRef.current = now;
+    const payload =
+      selectedType === "dm"
+        ? { type: "dm", chat_id: currentChatId }
+        : { type: "channel", channel_id: selectedId };
+    try {
+      await fetch(`${BASE}/api/internal/typing`.replace(/\/\//g, "/"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.error("Error sending typing signal:", err);
+    }
+  };
+
+  const handleDraftChange = (event) => {
+    const value = event.target.value;
+    setDraft(value);
+    if (!value.trim()) return;
+    notifyTyping();
   };
 
   const copyText = async (text) => {
@@ -230,13 +281,34 @@ function InternalMessagesWorkspace() {
     closeContextMenu();
   };
 
-  const loadAgents = async () => {
-    setLoadingAgents(true);
+  const loadAgents = async ({ silent = false } = {}) => {
+    if (!silent) setLoadingAgents(true);
     try {
       const r = await fetch(`${BASE}/api/internal/users`.replace(/\/\//g, "/"));
       const j = await r.json();
       if (j.ok) {
-        setAgents(j.items || []);
+        const items = j.items || [];
+        const signature = items
+          .map((agent) =>
+            [
+              agent.id,
+              agent.chat_id || "",
+              agent.last_message_id || "",
+              agent.last_message_at || "",
+              agent.has_unread ? 1 : 0,
+              agent.unread_count || 0,
+              agent.typing_count || 0,
+              agent.typing_names || "",
+              agent.is_favorite ? 1 : 0,
+              agent.is_online ? 1 : 0,
+              agent.last_activity_at || "",
+            ].join(":"),
+          )
+          .join("|");
+        if (signature !== agentsSignatureRef.current) {
+          agentsSignatureRef.current = signature;
+          setAgents(items);
+        }
         if (j.currentUserId) {
           setCurrentUserId(j.currentUserId);
         }
@@ -267,19 +339,37 @@ function InternalMessagesWorkspace() {
     } catch (err) {
       console.error("Error loading internal users:", err);
     } finally {
-      setLoadingAgents(false);
+      if (!silent) setLoadingAgents(false);
     }
   };
 
-  const loadChannels = async () => {
-    setLoadingChannels(true);
+  const loadChannels = async ({ silent = false } = {}) => {
+    if (!silent) setLoadingChannels(true);
     try {
       const r = await fetch(
         `${BASE}/api/internal/channels`.replace(/\/\//g, "/"),
       );
       const j = await r.json();
       if (j.ok) {
-        setChannels(j.items || []);
+        const items = j.items || [];
+        const signature = items
+          .map((channel) =>
+            [
+              channel.id,
+              channel.last_message_id || "",
+              channel.last_message_at || "",
+              channel.has_unread ? 1 : 0,
+              channel.unread_count || 0,
+              channel.typing_count || 0,
+              channel.typing_names || "",
+              channel.is_favorite ? 1 : 0,
+            ].join(":"),
+          )
+          .join("|");
+        if (signature !== channelsSignatureRef.current) {
+          channelsSignatureRef.current = signature;
+          setChannels(items);
+        }
         if (j.currentUserId) {
           setCurrentUserId(j.currentUserId);
         }
@@ -312,7 +402,7 @@ function InternalMessagesWorkspace() {
     } catch (err) {
       console.error("Error loading internal channels:", err);
     } finally {
-      setLoadingChannels(false);
+      if (!silent) setLoadingChannels(false);
     }
   };
 
@@ -369,6 +459,10 @@ function InternalMessagesWorkspace() {
         preview: channel.last_message || channel.description || "Canal interno",
         time: channel.last_message_at,
         isFavorite: Boolean(channel.is_favorite),
+        hasUnread: Boolean(channel.has_unread),
+        unreadCount: Number(channel.unread_count || 0),
+        typingCount: Number(channel.typing_count || 0),
+        typingNames: channel.typing_names || "",
         meta: channel,
       });
     });
@@ -382,6 +476,10 @@ function InternalMessagesWorkspace() {
         preview: agent.last_message || agent.sucursal || "Sin sucursal",
         time: agent.last_message_at,
         isFavorite: Boolean(agent.is_favorite),
+        hasUnread: Boolean(agent.has_unread),
+        unreadCount: Number(agent.unread_count || 0),
+        typingCount: Number(agent.typing_count || 0),
+        typingNames: agent.typing_names || "",
         meta: agent,
         dmChatId: agent.chat_id || null,
       });
@@ -559,12 +657,96 @@ function InternalMessagesWorkspace() {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      loadAgents();
-      loadChannels();
-    }, 5000);
+      loadAgents({ silent: true });
+      loadChannels({ silent: true });
+    }, 3000);
 
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (!selectedType || !selectedId) return;
+    const lastMessage = messages.length ? messages[messages.length - 1] : null;
+    const isMine = Boolean(lastMessage && lastMessage.user_id === currentUserId);
+    if (isAtBottomRef.current || isMine) {
+      scrollToBottom(isMine ? "smooth" : "auto");
+    }
+  }, [messages, selectedId, selectedType, currentUserId]);
+
+  useEffect(() => {
+    if (!selectedType || !selectedId) return;
+    isAtBottomRef.current = true;
+    scrollToBottom();
+  }, [selectedId, selectedType]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const bodies = containerRef.current.querySelectorAll(".internal-chat-body");
+    let target = null;
+    bodies.forEach((body) => {
+      if (body instanceof HTMLElement && body.offsetParent !== null) {
+        target = body;
+      }
+    });
+    if (!target) return;
+    const handleScroll = () => {
+      const threshold = 80;
+      const distance =
+        target.scrollHeight - target.scrollTop - target.clientHeight;
+      isAtBottomRef.current = distance <= threshold;
+    };
+    target.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      target.removeEventListener("scroll", handleScroll);
+    };
+  }, [selectedId, selectedType]);
+
+  useEffect(() => {
+    let active = true;
+    const fetchTyping = async () => {
+      if (!selectedType || !selectedId) {
+        if (active) setTypingUsers([]);
+        return;
+      }
+      let url = "";
+      if (selectedType === "dm") {
+        if (!currentChatId) {
+          if (active) setTypingUsers([]);
+          return;
+        }
+        url = `${BASE}/api/internal/typing?type=dm&chat_id=${currentChatId}`.replace(
+          /\/\//g,
+          "/",
+        );
+      } else {
+        url = `${BASE}/api/internal/typing?type=channel&channel_id=${selectedId}`.replace(
+          /\/\//g,
+          "/",
+        );
+      }
+      try {
+        const r = await fetch(url);
+        const j = await r.json();
+        if (!active) return;
+        if (j.ok) {
+          setTypingUsers(j.items || []);
+        } else {
+          setTypingUsers([]);
+        }
+      } catch (err) {
+        if (active) setTypingUsers([]);
+      }
+    };
+
+    fetchTyping();
+    const intervalId = setInterval(fetchTyping, 2000);
+
+    return () => {
+      active = false;
+      clearInterval(intervalId);
+    };
+  }, [selectedType, selectedId, currentChatId]);
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -743,6 +925,18 @@ function InternalMessagesWorkspace() {
     }
   };
 
+  const typingLabel = useMemo(() => {
+    if (!typingUsers.length || !selectedType) return "";
+    if (selectedType === "dm") return "Escribiendo...";
+    if (typingUsers.length === 1) {
+      return `${typingUsers[0].nombre} esta escribiendo...`;
+    }
+    if (typingUsers.length === 2) {
+      return `${typingUsers[0].nombre} y ${typingUsers[1].nombre} estan escribiendo...`;
+    }
+    return `${typingUsers[0].nombre} y ${typingUsers.length - 1} mas estan escribiendo...`;
+  }, [typingUsers, selectedType]);
+
   const isChannelSelected = selectedType === "channel";
   const headerTitle = isChannelSelected
     ? currentChannel
@@ -751,11 +945,13 @@ function InternalMessagesWorkspace() {
     : currentAgent
       ? currentAgent.nombre
       : "Selecciona un canal o agente";
-  const headerSubtitle = isChannelSelected
-    ? currentChannel?.description || "Canal interno"
-    : currentAgent
-      ? `${currentAgent.rol || "AGENTE"} - ${currentAgent.sucursal || "Sin sucursal"}`
-      : "Directorio interno";
+  const headerSubtitle = typingLabel
+    ? typingLabel
+    : isChannelSelected
+      ? currentChannel?.description || "Canal interno"
+      : currentAgent
+        ? `${currentAgent.rol || "AGENTE"} - ${currentAgent.sucursal || "Sin sucursal"}`
+        : "Directorio interno";
   const headerPill = isChannelSelected
     ? currentChannel
       ? currentChannel.type === "private"
@@ -793,17 +989,52 @@ function InternalMessagesWorkspace() {
     const timeLabel = item.time ? formatInternalRelative(item.time) : "";
     const presence = !isChannel ? getAgentPresence(item.meta) : null;
     const canFavorite = isChannel ? true : Boolean(item.dmChatId);
+    const unreadCount = Number(item.unreadCount || 0);
+    const unreadLabel = unreadCount > 99 ? "99+" : String(unreadCount);
+    const typingCount = Number(item.typingCount || 0);
+    let typingPreview = "";
+    if (typingCount > 0) {
+      if (!isChannel) {
+        typingPreview = "Escribiendo...";
+      } else if (item.typingNames) {
+        const names = String(item.typingNames).split(",").map((name) => name.trim());
+        if (names.length === 1) {
+          typingPreview = `${names[0]} esta escribiendo...`;
+        } else if (names.length === 2) {
+          typingPreview = `${names[0]} y ${names[1]} estan escribiendo...`;
+        } else {
+          typingPreview = `${names[0]} y ${typingCount - 1} mas estan escribiendo...`;
+        }
+      } else {
+        typingPreview = "Escribiendo...";
+      }
+    }
+    const previewText = typingPreview || item.preview;
     return (
-      <button
+      <div
         key={item.key}
         onClick={() => selectTarget(item.type, item.id)}
         onContextMenu={(event) => openContextMenu(event, item)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectTarget(item.type, item.id);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-pressed={isSelected}
         className={`internal-list-item ${isSelected ? "is-active" : ""}`}
       >
-        <div className={`internal-avatar${isChannel ? " channel" : ""}`}>
-          {isChannel
-            ? "#"
-            : String(item.name || "U").trim()[0]?.toUpperCase() || "U"}
+        <div className="internal-avatar-wrap">
+          <div className={`internal-avatar${isChannel ? " channel" : ""}`}>
+            {isChannel
+              ? "#"
+              : String(item.name || "U").trim()[0]?.toUpperCase() || "U"}
+          </div>
+          {!isChannel && presence?.isOnline && (
+            <span className="internal-avatar-status" aria-hidden="true"></span>
+          )}
         </div>
         <div className="internal-item-body">
           <div className="internal-item-title-row">
@@ -816,6 +1047,15 @@ function InternalMessagesWorkspace() {
             <div className="internal-item-meta">
               {timeLabel && (
                 <span className="internal-item-time">{timeLabel}</span>
+              )}
+              {unreadCount > 0 && (
+                <span
+                  className="internal-unread-badge"
+                  title="Mensajes pendientes"
+                  aria-label={`Mensajes pendientes: ${unreadCount}`}
+                >
+                  {unreadLabel}
+                </span>
               )}
               <button
                 type="button"
@@ -846,21 +1086,18 @@ function InternalMessagesWorkspace() {
               </button>
             </div>
           </div>
-          <div className="internal-item-preview">{item.preview}</div>
+          <div
+            className={`internal-item-preview ${
+              typingPreview ? "is-typing" : ""
+            }`}
+          >
+            {previewText}
+          </div>
           {!isChannel && presence?.label && (
             <div className="internal-item-status">{presence.label}</div>
           )}
         </div>
-        {!isChannel && (
-          <span
-            className="internal-status-dot"
-            style={{
-              backgroundColor: presence?.color || statusDotColor("offline"),
-            }}
-            title={presence?.label || "Sin actividad"}
-          ></span>
-        )}
-      </button>
+      </div>
     );
   };
 
@@ -1058,7 +1295,7 @@ function InternalMessagesWorkspace() {
         <div className="flex items-center gap-2">
           <input
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={handleDraftChange}
             onKeyDown={(event) => event.key === "Enter" && handleSend()}
             placeholder={inputPlaceholder}
             className="flex-1 internal-input text-xs px-3 py-2 rounded-lg"
@@ -1313,6 +1550,16 @@ function ClientMessagesWorkspace({ initialId = null }) {
 
 function ChatWorkspaceInner({ initialId = null }) {
   const mode = useAppMode();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
+
+  if (!isReady) {
+    return <section className="h-full" />;
+  }
+
   if (mode === "internal") {
     return <InternalMessagesWorkspace />;
   }

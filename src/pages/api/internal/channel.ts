@@ -100,6 +100,21 @@ export const GET: APIRoute = async ({ locals, request }) => {
       [channelId, limit],
     );
 
+    const lastMessageId =
+      messages.length > 0 ? Number(messages[messages.length - 1].id) : null;
+    if (lastMessageId) {
+      await pool.query(
+        `
+        INSERT INTO internal_read_status (user_id, channel_id, last_read_message_id)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          last_read_message_id = VALUES(last_read_message_id),
+          last_read_at = CURRENT_TIMESTAMP
+        `,
+        [user.id, channelId, lastMessageId],
+      );
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -202,6 +217,17 @@ export const POST: APIRoute = async ({ locals, request }) => {
         WHERE im.id = ?
         `,
         [msgRes.insertId],
+      );
+
+      await conn.query(
+        `
+        INSERT INTO internal_read_status (user_id, channel_id, last_read_message_id)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          last_read_message_id = VALUES(last_read_message_id),
+          last_read_at = CURRENT_TIMESTAMP
+        `,
+        [user.id, channelId, msgRes.insertId],
       );
 
       await conn.commit();

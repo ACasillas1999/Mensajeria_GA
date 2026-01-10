@@ -91,6 +91,21 @@ export const GET: APIRoute = async ({ locals, request }) => {
       [chatId, limit],
     );
 
+    const lastMessageId =
+      messages.length > 0 ? Number(messages[messages.length - 1].id) : null;
+    if (lastMessageId) {
+      await pool.query(
+        `
+        INSERT INTO internal_read_status (user_id, dm_chat_id, last_read_message_id)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          last_read_message_id = VALUES(last_read_message_id),
+          last_read_at = CURRENT_TIMESTAMP
+        `,
+        [user.id, chatId, lastMessageId],
+      );
+    }
+
     return new Response(
       JSON.stringify({ ok: true, chat_id: chatId, items: messages, currentUserId: user.id }),
       { headers: { "Content-Type": "application/json" } },
@@ -202,6 +217,17 @@ export const POST: APIRoute = async ({ locals, request }) => {
       const [msgRows] = await conn.query<RowDataPacket[]>(
         "SELECT id, user_id, content, created_at FROM internal_messages WHERE id = ?",
         [msgRes.insertId],
+      );
+
+      await conn.query(
+        `
+        INSERT INTO internal_read_status (user_id, dm_chat_id, last_read_message_id)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          last_read_message_id = VALUES(last_read_message_id),
+          last_read_at = CURRENT_TIMESTAMP
+        `,
+        [user.id, chatId, msgRes.insertId],
       );
       await conn.commit();
 

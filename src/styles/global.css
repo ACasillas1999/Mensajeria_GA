@@ -613,6 +613,22 @@ input::placeholder {
   gap: 6px;
 }
 
+.internal-unread-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--internal-accent, #2563eb);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
 .internal-item-preview {
   font-size: 11px;
   color: var(--internal-muted);
@@ -620,6 +636,11 @@ input::placeholder {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 2px;
+}
+
+.internal-item-preview.is-typing {
+  color: var(--internal-accent, #2563eb);
+  font-weight: 600;
 }
 
 .internal-item-status {
@@ -640,6 +661,23 @@ input::placeholder {
   font-weight: 600;
   color: var(--internal-text);
   flex-shrink: 0;
+}
+
+.internal-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.internal-avatar-status {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #22c55e;
+  border: 2px solid var(--internal-directory-bg);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.15);
 }
 
 .internal-avatar.channel {
