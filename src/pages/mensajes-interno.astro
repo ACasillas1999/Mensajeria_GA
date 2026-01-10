@@ -1,0 +1,43 @@
+---
+import "../styles/global.css";
+import ChatWorkspace from "../components/ChatWorkspace.jsx";
+
+const qp = Astro.url.searchParams;
+const initialType = qp.get("type") || null;
+const initialId = Number(qp.get("id") || 0) || null;
+const title = qp.get("name") || "Chat interno";
+---
+
+<html lang="es" data-app-mode="internal">
+  <head>
+    <meta charset="utf-8" />
+    <title>{title}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/logo-gawhats.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/logo-gawhats.png" />
+    <meta name="theme-color" content="#0f172a" />
+    <script is:inline>
+      document.documentElement.dataset.appMode = "internal";
+      const theme =
+        localStorage.getItem("internal_theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light");
+      document.documentElement.classList.toggle("dark", theme === "dark");
+    </script>
+  </head>
+
+  <body
+    class="app-body min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+  >
+    <main class="h-screen p-3">
+      <ChatWorkspace
+        client:visible
+        forceMode="internal"
+        hideInternalDirectory={true}
+        initialInternalType={initialType}
+        initialInternalId={initialId}
+      />
+    </main>
+  </body>
+</html>

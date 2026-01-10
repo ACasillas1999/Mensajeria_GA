@@ -103,7 +103,11 @@ function getAgentPresence(agent) {
   return { label: "Sin actividad", color: statusDotColor("offline"), isOnline: false };
 }
 
-function InternalMessagesWorkspace() {
+function InternalMessagesWorkspace({
+  initialType = null,
+  initialId = null,
+  hideDirectory = false,
+}) {
   const [leftWidth, setLeftWidth] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("internalWorkspace_leftWidth");
@@ -137,6 +141,9 @@ function InternalMessagesWorkspace() {
   const isAtBottomRef = useRef(true);
   const agentsSignatureRef = useRef("");
   const channelsSignatureRef = useRef("");
+  const didInitSelection = useRef(false);
+  const hasLoadedAgentsRef = useRef(false);
+  const hasLoadedChannelsRef = useRef(false);
   const lastSeenRef = useRef({
     channels: new Map(),
     dms: new Map(),
@@ -190,6 +197,15 @@ function InternalMessagesWorkspace() {
     if (!target) return;
     target.scrollTo({ top: target.scrollHeight, behavior });
   };
+
+  useEffect(() => {
+    if (didInitSelection.current) return;
+    if (!initialType || !initialId) return;
+    if (initialType !== "dm" && initialType !== "channel") return;
+    didInitSelection.current = true;
+    setSelectedType(initialType);
+    setSelectedId(Number(initialId));
+  }, [initialType, initialId]);
 
   const notifyTyping = async () => {
     if (!selectedType || !selectedId) return;
@@ -263,6 +279,9 @@ function InternalMessagesWorkspace() {
       case "open":
         selectTarget(item.type, item.id);
         break;
+      case "popout":
+        openPopout(item);
+        break;
       case "pin":
         toggleFavorite(item);
         break;
@@ -281,13 +300,37 @@ function InternalMessagesWorkspace() {
     closeContextMenu();
   };
 
+  const openPopout = (item) => {
+    if (typeof window === "undefined") return;
+    if (!item?.type || !item?.id) return;
+    const name = encodeURIComponent(item.name || "Chat interno");
+    const url = `${BASE}/mensajes-interno?type=${item.type}&id=${item.id}&name=${name}`.replace(
+      /\/\//g,
+      "/",
+    );
+    const width = Math.min(980, window.screen.availWidth - 40);
+    const height = Math.min(760, window.screen.availHeight - 40);
+    const features = `popup=yes,width=${width},height=${height},left=20,top=20,noopener`;
+    const win = window.open(url, `internal-${item.type}-${item.id}`, features);
+    win?.focus();
+  };
+
   const loadAgents = async ({ silent = false } = {}) => {
     if (!silent) setLoadingAgents(true);
     try {
       const r = await fetch(`${BASE}/api/internal/users`.replace(/\/\//g, "/"));
       const j = await r.json();
       if (j.ok) {
-        const items = j.items || [];
+        const items = (j.items || []).map((agent) => {
+          const parsedId = Number(agent.id);
+          const parsedChatId = Number(agent.chat_id);
+          return {
+            ...agent,
+            id: Number.isNaN(parsedId) ? agent.id : parsedId,
+            chat_id:
+              Number.isNaN(parsedChatId) || !agent.chat_id ? agent.chat_id : parsedChatId,
+          };
+        });
         const signature = items
           .map((agent) =>
             [
@@ -309,6 +352,7 @@ function InternalMessagesWorkspace() {
           agentsSignatureRef.current = signature;
           setAgents(items);
         }
+        hasLoadedAgentsRef.current = true;
         if (j.currentUserId) {
           setCurrentUserId(j.currentUserId);
         }
@@ -351,7 +395,13 @@ function InternalMessagesWorkspace() {
       );
       const j = await r.json();
       if (j.ok) {
-        const items = j.items || [];
+        const items = (j.items || []).map((channel) => {
+          const parsedId = Number(channel.id);
+          return {
+            ...channel,
+            id: Number.isNaN(parsedId) ? channel.id : parsedId,
+          };
+        });
         const signature = items
           .map((channel) =>
             [
@@ -370,6 +420,7 @@ function InternalMessagesWorkspace() {
           channelsSignatureRef.current = signature;
           setChannels(items);
         }
+        hasLoadedChannelsRef.current = true;
         if (j.currentUserId) {
           setCurrentUserId(j.currentUserId);
         }
@@ -498,6 +549,7 @@ function InternalMessagesWorkspace() {
   );
 
   useEffect(() => {
+    if (!hasLoadedAgentsRef.current) return;
     if (
       selectedType === "dm" &&
       selectedId &&
@@ -509,6 +561,7 @@ function InternalMessagesWorkspace() {
   }, [agents, selectedId, selectedType]);
 
   useEffect(() => {
+    if (!hasLoadedChannelsRef.current) return;
     if (
       selectedType === "channel" &&
       selectedId &&
@@ -876,7 +929,8 @@ function InternalMessagesWorkspace() {
 
   const selectTarget = (type, id) => {
     setSelectedType(type);
-    setSelectedId(id);
+    const parsedId = Number(id);
+    setSelectedId(Number.isNaN(parsedId) ? id : parsedId);
   };
 
   const toggleFavorite = async (item) => {
@@ -1315,36 +1369,49 @@ function InternalMessagesWorkspace() {
 
   return (
     <section ref={containerRef} className="flex gap-0 h-full relative">
-      <aside
-        className={`md:hidden w-full h-full ${selectedId ? "hidden" : "block"}`}
-      >
-        {directoryPane}
-      </aside>
+      {!hideDirectory && (
+        <>
+          <aside
+            className={`md:hidden w-full h-full ${
+              selectedId ? "hidden" : "block"
+            }`}
+          >
+            {directoryPane}
+          </aside>
 
-      <section
-        className={`md:hidden w-full h-full ${selectedId ? "block" : "hidden"}`}
-      >
-        {renderChatPane({ paddingClass: "p-4", showBack: true })}
-      </section>
+          <section
+            className={`md:hidden w-full h-full ${
+              selectedId ? "block" : "hidden"
+            }`}
+          >
+            {renderChatPane({ paddingClass: "p-4", showBack: true })}
+          </section>
 
-      <aside
-        style={{ width: `${leftWidth}px` }}
-        className="hidden md:block flex-shrink-0 h-full"
-      >
-        {directoryPane}
-      </aside>
+          <aside
+            style={{ width: `${leftWidth}px` }}
+            className="hidden md:block flex-shrink-0 h-full"
+          >
+            {directoryPane}
+          </aside>
 
-      <div
-        onMouseDown={handleMouseDown}
-        className={`hidden md:block w-1 cursor-col-resize transition-colors flex-shrink-0 select-none ${
-          isDragging ? "internal-divider-bg" : "internal-divider-muted"
-        }`}
-        title="Arrastra para redimensionar"
-      />
+          <div
+            onMouseDown={handleMouseDown}
+            className={`hidden md:block w-1 cursor-col-resize transition-colors flex-shrink-0 select-none ${
+              isDragging ? "internal-divider-bg" : "internal-divider-muted"
+            }`}
+            title="Arrastra para redimensionar"
+          />
 
-      <section className="hidden md:block flex-1 min-w-0 h-full">
-        {renderChatPane({ paddingClass: "p-6", showBack: false })}
-      </section>
+          <section className="hidden md:block flex-1 min-w-0 h-full">
+            {renderChatPane({ paddingClass: "p-6", showBack: false })}
+          </section>
+        </>
+      )}
+      {hideDirectory && (
+        <section className="w-full h-full">
+          {renderChatPane({ paddingClass: "p-4", showBack: false })}
+        </section>
+      )}
       <div className="internal-toast-container">
         {notifications.map((note) => (
           <div key={note.id} className="internal-toast">
@@ -1366,6 +1433,13 @@ function InternalMessagesWorkspace() {
             onClick={() => handleContextAction("open", contextMenu.item)}
           >
             Abrir chat
+          </button>
+          <button
+            type="button"
+            className="internal-context-item"
+            onClick={() => handleContextAction("popout", contextMenu.item)}
+          >
+            Abrir en ventana flotante
           </button>
           <button
             type="button"
@@ -1548,7 +1622,13 @@ function ClientMessagesWorkspace({ initialId = null }) {
   );
 }
 
-function ChatWorkspaceInner({ initialId = null }) {
+function ChatWorkspaceInner({
+  initialId = null,
+  forceMode = null,
+  initialInternalType = null,
+  initialInternalId = null,
+  hideInternalDirectory = false,
+}) {
   const mode = useAppMode();
   const [isReady, setIsReady] = useState(false);
 
@@ -1560,16 +1640,35 @@ function ChatWorkspaceInner({ initialId = null }) {
     return <section className="h-full" />;
   }
 
-  if (mode === "internal") {
-    return <InternalMessagesWorkspace />;
+  const resolvedMode = forceMode || mode;
+  if (resolvedMode === "internal") {
+    return (
+      <InternalMessagesWorkspace
+        initialType={initialInternalType}
+        initialId={initialInternalId}
+        hideDirectory={hideInternalDirectory}
+      />
+    );
   }
   return <ClientMessagesWorkspace initialId={initialId} />;
 }
 
-export default function ChatWorkspace({ initialId = null }) {
+export default function ChatWorkspace({
+  initialId = null,
+  forceMode = null,
+  initialInternalType = null,
+  initialInternalId = null,
+  hideInternalDirectory = false,
+}) {
   return (
     <AppDataProvider>
-      <ChatWorkspaceInner initialId={initialId} />
+      <ChatWorkspaceInner
+        initialId={initialId}
+        forceMode={forceMode}
+        initialInternalType={initialInternalType}
+        initialInternalId={initialInternalId}
+        hideInternalDirectory={hideInternalDirectory}
+      />
     </AppDataProvider>
   );
 }
