@@ -1071,6 +1071,13 @@ function pickMime() {
           popup: 'rounded-xl border border-slate-700',
           confirmButton: 'px-4 py-2 rounded-lg font-semibold',
           cancelButton: 'px-4 py-2 rounded-lg font-semibold'
+        },
+        didOpen: () => {
+          // Hide any leftover select element from previous step
+          const selectElement = Swal.getPopup().querySelector('.swal2-select');
+          if (selectElement) {
+            selectElement.style.display = 'none';
+          }
         }
       });
 
@@ -1189,6 +1196,18 @@ function pickMime() {
           color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
           customClass: {
             popup: 'rounded-xl border border-slate-700'
+          },
+          didOpen: () => {
+            // Hide any leftover select element from previous steps
+            const selectElement = Swal.getPopup().querySelector('.swal2-select');
+            if (selectElement) {
+              selectElement.style.display = 'none';
+            }
+            // Also hide any leftover input elements
+            const inputElement = Swal.getPopup().querySelector('.swal2-input');
+            if (inputElement) {
+              inputElement.style.display = 'none';
+            }
           }
         });
 

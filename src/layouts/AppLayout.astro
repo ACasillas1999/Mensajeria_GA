@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import "../styles/swal2-custom.css";
 
 const { title = "Mensajeria Web GA" } = Astro.props as { title?: string };
 const path = Astro.url.pathname;
@@ -337,7 +338,8 @@ const footerLinks = [
       </div>
     </main>
 
-    <div id="global-internal-toasts" class="internal-toast-container global"></div>
+    <div id="global-internal-toasts" class="internal-toast-container global">
+    </div>
 
     <script src="https://unpkg.com/feather-icons" defer></script>
     <script is:inline define:vars={{ base, hasUser }}>
@@ -420,7 +422,9 @@ const footerLinks = [
           ?.querySelectorAll("a")
           .forEach((a) => a.addEventListener("click", closeMobileNav));
 
-        const toastContainer = document.getElementById("global-internal-toasts");
+        const toastContainer = document.getElementById(
+          "global-internal-toasts",
+        );
         if (toastContainer && hasUser) {
           window.__internalGlobalNotifyActive = true;
           const maxToasts = 3;
@@ -448,7 +452,8 @@ const footerLinks = [
             toast.appendChild(bodyEl);
             toastContainer.appendChild(toast);
 
-            const allToasts = toastContainer.querySelectorAll(".internal-toast");
+            const allToasts =
+              toastContainer.querySelectorAll(".internal-toast");
             if (allToasts.length > maxToasts) {
               allToasts[0]?.remove();
             }
@@ -559,7 +564,9 @@ const footerLinks = [
           const label = modeToggle.querySelector("[data-mode-label]");
           const isInternal = mode === "internal";
           if (label) {
-            label.textContent = isInternal ? "Modo clientes" : "Mensajes internos";
+            label.textContent = isInternal
+              ? "Modo clientes"
+              : "Mensajes internos";
           }
           modeToggle.title = isInternal
             ? "Volver a modo clientes"
