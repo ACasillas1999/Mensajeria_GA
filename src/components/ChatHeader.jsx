@@ -283,7 +283,65 @@ export default function ChatHeader({
                 >
                   ✅ <span>Completar ciclo</span>
                 </button>
-                {/* Estado y agente en móvil se manejan con modales o selectores en el menú */}
+                
+                {/* Selector de estado - Móvil/Tablet */}
+                <div className="px-3 py-2">
+                  <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase block mb-1">Estado</label>
+                  <select
+                    value={conversation.status_id || ""}
+                    onChange={(e) => {
+                      const newStatusId = Number(e.target.value);
+                      const newStatus = statuses.find((s) => s.id === newStatusId);
+
+                      if (newStatus?.required_fields) {
+                        try {
+                          const fields = Array.isArray(newStatus.required_fields)
+                            ? newStatus.required_fields
+                            : JSON.parse(newStatus.required_fields);
+
+                          if (Array.isArray(fields) && fields.length > 0) {
+                            setStatusChangeModal({ show: true, newStatusId, status: newStatus });
+                            e.target.value = conversation.status_id || "";
+                            setShowActionsMenu(false);
+                            return;
+                          }
+                        } catch (err) {
+                          console.error("Error validando required_fields:", err);
+                        }
+                      }
+
+                      handleStatusChange(newStatusId, null);
+                      setShowActionsMenu(false);
+                    }}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm rounded px-2 py-1.5"
+                  >
+                    {statuses.filter((s) => !s.is_final).map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.icon} {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Selector de agente - Móvil/Tablet */}
+                <div className="px-3 py-2">
+                  <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase block mb-1">Asignar a</label>
+                  <select
+                    value={conversation.asignado_a || ""}
+                    onChange={(e) => {
+                      handleAssignAgent(e.target.value ? Number(e.target.value) : null);
+                      setShowActionsMenu(false);
+                    }}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm rounded px-2 py-1.5"
+                  >
+                    <option value="">Sin asignar</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        👤 {u.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Herramientas */}
@@ -316,8 +374,7 @@ export default function ChatHeader({
             if (e.key === "Escape") clearSearch();
           }}
           placeholder="Buscar en chat..."
-          className="flex-1 md:flex-initial h-8 px-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs outline-none focus:border-emerald-400"
-          style={{ width: "160px" }}
+          className="flex-1 md:w-40 h-10 md:h-8 px-3 md:px-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm md:text-xs outline-none focus:border-emerald-400"
         />
         {searchResults.length > 0 && (
           <div className="flex items-center gap-1">
