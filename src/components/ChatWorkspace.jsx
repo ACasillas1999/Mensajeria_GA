@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import ConversationsPane from "./ConversationsPane.jsx";
 import ChatPane from "./ChatPane.jsx";
 import { AppDataProvider } from "../contexts/AppDataContext.jsx";
+import ChannelCreationModal from "./ChannelCreationModal.jsx";
+import ChannelInfoPanel from "./ChannelInfoPanel.jsx";
 
 const BASE = import.meta.env.BASE_URL || "";
 const MIN_WIDTH = 280;
@@ -134,6 +136,9 @@ function InternalMessagesWorkspace({
   const [notifications, setNotifications] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
   const [contextMenu, setContextMenu] = useState(null);
+  const [showChannelModal, setShowChannelModal] = useState(false);
+  const [showChannelInfo, setShowChannelInfo] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const containerRef = useRef(null);
   const searchRef = useRef(null);
   const menuRef = useRef(null);
@@ -423,6 +428,9 @@ function InternalMessagesWorkspace({
         hasLoadedChannelsRef.current = true;
         if (j.currentUserId) {
           setCurrentUserId(j.currentUserId);
+        }
+        if (typeof j.isAdmin === "boolean") {
+          setIsAdmin(j.isAdmin);
         }
         const currentId = j.currentUserId || currentUserId;
         const store = lastSeenRef.current.channels;
@@ -1211,6 +1219,24 @@ function InternalMessagesWorkspace({
               />
             </svg>
           </button>
+          {isAdmin && (
+            <button
+              type="button"
+              className="internal-icon-button internal-icon-button-sm"
+              aria-label="Crear canal"
+              title="Crear canal"
+              onClick={() => setShowChannelModal(true)}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M3 7h14M3 12h14M8 2v16"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
       <div className="internal-directory-search">
@@ -1301,6 +1327,23 @@ function InternalMessagesWorkspace({
         </div>
         {headerPill && (
           <span className="internal-pill text-[10px]">{headerPill}</span>
+        )}
+        {selectedType === "channel" && selectedId && (
+          <button
+            type="button"
+            onClick={() => setShowChannelInfo(true)}
+            className="internal-icon-button"
+            title="Información del canal"
+            aria-label="Información del canal"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
         )}
       </div>
       <div
@@ -1485,6 +1528,33 @@ function InternalMessagesWorkspace({
           )}
         </div>
       )}
+
+      <ChannelCreationModal
+        isOpen={showChannelModal}
+        onClose={() => setShowChannelModal(false)}
+        onSuccess={(newChannel) => {
+          loadChannels({ silent: true });
+          setSelectedType("channel");
+          setSelectedId(newChannel.id);
+        }}
+        agents={agents}
+        currentUserId={currentUserId}
+      />
+
+      <ChannelInfoPanel
+        isOpen={showChannelInfo}
+        onClose={() => setShowChannelInfo(false)}
+        channelId={selectedType === "channel" ? selectedId : null}
+        currentUserId={currentUserId}
+        onChannelUpdated={() => {
+          loadChannels({ silent: true });
+        }}
+        onChannelDeleted={() => {
+          setSelectedType(null);
+          setSelectedId(null);
+          loadChannels({ silent: true });
+        }}
+      />
     </section>
   );
 }

@@ -111,13 +111,137 @@ export const GET: APIRoute = async ({ locals, request }) => {
     );
 
     return new Response(
-      JSON.stringify({ ok: true, items: rows, currentUserId: user.id }),
+      JSON.stringify({ ok: true, items: rows, currentUserId: user.id, isAdmin }),
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (error) {
     console.error("Error getting internal channels:", error);
     return new Response(
       JSON.stringify({ ok: false, error: "Error al cargar canales" }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
+};
+
+export const POST: APIRoute = async ({ locals, request }) => {
+  try {
+    const user = (locals as any).user as { id: number; rol?: string } | undefined;
+    if (!user) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "No autenticado" }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    // Only admins can create channels
+    const isAdmin = String(user.rol || "").toLowerCase() === "admin";
+    if (!isAdmin) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Solo administradores pueden crear canales" }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    const body = await request.json();
+    const { name, description, type, member_ids } = body;
+
+    // Validate channel name
+    if (!name || typeof name !== "string") {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Nombre de canal requerido" }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    // Clean and validate channel name (lowercase, no spaces, alphanumeric + hyphens)
+    const cleanName = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    if (!cleanName || cleanName.length < 2 || cleanName.length > 50) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Nombre de canal inválido (2-50 caracteres, solo letras, números y guiones)" }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    // Validate type
+    const channelType = type === "private" ? "private" : "public";
+
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // Create channel
+      const [result] = await connection.query<any>(
+        `INSERT INTO internal_channels (name, description, type, created_by)
+         VALUES (?, ?, ?, ?)`,
+        [cleanName, description || null, channelType, user.id]
+      );
+
+      const channelId = result.insertId;
+
+      // Add creator as owner
+      await connection.query(
+        `INSERT INTO internal_channel_members (channel_id, user_id, role)
+         VALUES (?, ?, 'owner')`,
+        [channelId, user.id]
+      );
+
+      // Add additional members if provided
+      if (Array.isArray(member_ids) && member_ids.length > 0) {
+        const validMemberIds = member_ids.filter((id) => typeof id === "number" && id !== user.id);
+        if (validMemberIds.length > 0) {
+          const values = validMemberIds.map((memberId) => [channelId, memberId, "member", user.id]);
+          await connection.query(
+            `INSERT INTO internal_channel_members (channel_id, user_id, role, invited_by)
+             VALUES ?`,
+            [values]
+          );
+        }
+      }
+
+      // Create welcome message
+      await connection.query(
+        `INSERT INTO internal_messages (channel_id, user_id, message_type, content)
+         VALUES (?, ?, 'text', ?)`,
+        [
+          channelId,
+          user.id,
+          `¡Bienvenido al canal #${cleanName}! ${description ? description : ""}`,
+        ]
+      );
+
+      await connection.commit();
+
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          channel: {
+            id: channelId,
+            name: cleanName,
+            description,
+            type: channelType,
+          },
+        }),
+        { headers: { "Content-Type": "application/json" } },
+      );
+    } catch (error: any) {
+      await connection.rollback();
+
+      // Check for duplicate channel name
+      if (error.code === "ER_DUP_ENTRY") {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Ya existe un canal con ese nombre" }),
+          { status: 409, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      throw error;
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error("Error creating channel:", error);
+    return new Response(
+      JSON.stringify({ ok: false, error: "Error al crear canal" }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }
