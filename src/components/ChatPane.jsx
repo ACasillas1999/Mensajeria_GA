@@ -396,6 +396,7 @@ export default function ChatPane({ conversation }) {
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [showComposerMenu, setShowComposerMenu] = useState(false);
   const [pendingFileData, setPendingFileData] = useState(null);
   const [insideWindow, setInsideWindow] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState(null); // tiempo restante en ms
@@ -2094,46 +2095,79 @@ function pickMime() {
         </div>
       ) : (
         <form onSubmit={send} className="p-3 border-t border-slate-800 flex items-center gap-2">
-          <label className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer" title="Adjuntar archivo">
-            <input type="file" className="hidden" onChange={async (e) => {
-              const selectedFile = e.target.files?.[0];
-              if (!selectedFile) return;
-              
-              // Detectar si es PDF
-              const isPDF = selectedFile.type === 'application/pdf';
-              
-              if (isPDF) {
-                // Preguntar si es cotización con SweetAlert
-                const result = await Swal.fire({
-                  title: '¿Es una cotización?',
-                  text: 'Este archivo es un PDF. ¿Deseas registrarlo como cotización?',
-                  icon: 'question',
-                  showCancelButton: true,
-                  confirmButtonText: 'Sí, es cotización',
-                  cancelButtonText: 'No, enviar normal',
-                  confirmButtonColor: '#10b981',
-                  cancelButtonColor: '#6b7280'
-                });
-                
-                if (result.isConfirmed) {
-                  // Guardar archivo y mostrar modal
-                  setPendingFileData({ file: selectedFile, inputElement: e.target });
-                  setShowQuotationModal(true);
-                  return;
-                }
-              }
-              
-              // Flujo normal
-              setFile(selectedFile);
-            }} />
-            📎
-          </label>
-          <button type="button" onClick={() => setShowQuickReplies(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700" title="Respuestas rápidas">
-            ⚡
-          </button>
-          <button type="button" onClick={() => setShowLocationPicker(true)} className="inline-flex items-center justify-center w-10 h-10 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700" title="Enviar ubicación">
-            📍
-          </button>
+          {/* Menú de acciones del composer */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowComposerMenu(!showComposerMenu)}
+              className="inline-flex items-center justify-center w-10 h-10 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition"
+              title="Más opciones"
+            >
+              +
+            </button>
+            
+            {showComposerMenu && (
+              <div className="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-50">
+                <label className="w-full px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer">
+                  <input type="file" className="hidden" onChange={async (e) => {
+                    const selectedFile = e.target.files?.[0];
+                    if (!selectedFile) return;
+                    
+                    // Detectar si es PDF
+                    const isPDF = selectedFile.type === 'application/pdf';
+                    
+                    if (isPDF) {
+                      // Preguntar si es cotización con SweetAlert
+                      const result = await Swal.fire({
+                        title: '¿Es una cotización?',
+                        text: 'Este archivo es un PDF. ¿Deseas registrarlo como cotización?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, es cotización',
+                        cancelButtonText: 'No, enviar normal',
+                        confirmButtonColor: '#10b981',
+                        cancelButtonColor: '#6b7280'
+                      });
+                      
+                      if (result.isConfirmed) {
+                        // Guardar archivo y mostrar modal
+                        setPendingFileData({ file: selectedFile, inputElement: e.target });
+                        setShowQuotationModal(true);
+                        setShowComposerMenu(false);
+                        return;
+                      }
+                    }
+                    
+                    // Flujo normal
+                    setFile(selectedFile);
+                    setShowComposerMenu(false);
+                  }} />
+                  📎 <span>Adjuntar archivo</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowQuickReplies(true);
+                    setShowComposerMenu(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                >
+                  ⚡ <span>Respuestas rápidas</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLocationPicker(true);
+                    setShowComposerMenu(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                >
+                  📍 <span>Enviar ubicación</span>
+                </button>
+              </div>
+            )}
+          </div>
+          
           <textarea
             value={text}
             onChange={e => setText(e.target.value)}
