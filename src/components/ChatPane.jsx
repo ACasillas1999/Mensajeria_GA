@@ -3,6 +3,7 @@ import MediaModal from "./MediaModal.jsx";
 import QuickReplies from "./QuickReplies.jsx";
 import ConversationTraceView from "./ConversationTraceView.jsx";
 import QuotationModal from "./QuotationModal.jsx";
+import ChatHeader from "./ChatHeader.jsx";
 
 // Lazy load heavy components
 const TemplatePicker = lazy(() => import("./TemplatePicker.jsx"));
@@ -407,6 +408,9 @@ export default function ChatPane({ conversation }) {
 
   // trazabilidad
   const [showTraceView, setShowTraceView] = useState(false);
+
+  // menú de acciones (responsive)
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
 
   // atajos de respuestas rápidas (usar el caché del contexto)
   const shortcuts = allQuickReplies.filter(i => i.atajo);
@@ -1822,199 +1826,33 @@ function pickMime() {
           <p className="mt-3 text-sm text-slate-900 dark:text-slate-200 font-medium">Cargando conversacion...</p>
         </div>
       )}
-      <div className="flex-shrink-0 h-12 px-4 flex items-center gap-3 border-b border-slate-800">
-        <div className="font-medium truncate">{conversation.title || `Chat ${conversation.id}`}</div>
-        <div className="text-xs text-slate-700 dark:text-slate-400 truncate">{conversation.wa_user}</div>
-
-        {/* Indicador de ventana de 24h */}
-        {insideWindow && timeRemaining ? (
-          <div
-            className={`text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 ${
-              timeRemaining <= 2 * 60 * 60 * 1000
-                ? 'bg-amber-900/30 border-amber-600/50 text-amber-300'
-                : 'bg-emerald-900/30 border-emerald-600/50 text-emerald-300'
-            }`}
-            title={`Tiempo restante para enviar mensajes libres: ${formatTimeRemaining(timeRemaining)}`}
-          >
-            <span>{timeRemaining <= 2 * 60 * 60 * 1000 ? '⏰' : '✓'}</span>
-            <span>{formatTimeRemaining(timeRemaining)}</span>
-          </div>
-        ) : !insideWindow ? (
-          <div
-            className="text-[10px] px-2 py-0.5 rounded-full border bg-red-900/30 border-red-600/50 text-red-300 flex items-center gap-1"
-            title="Fuera de la ventana de 24h - Solo plantillas"
-          >
-            <span>🔒</span>
-            <span>Fuera de ventana</span>
-          </div>
-        ) : null}
-
-        <div className="ml-auto flex items-center gap-2">
-          {/* Botón favorito */}
-          <button
-            type="button"
-            onClick={toggleFavorite}
-            title={conversation.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
-            className={`h-8 px-2 rounded text-xs transition ${
-              conversation.is_favorite
-                ? 'bg-yellow-600/20 border border-yellow-600/60 text-amber-900 dark:text-yellow-300'
-                : 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-400'
-            }`}
-          >
-            {conversation.is_favorite ? '⭐' : '☆'}
-          </button>
-          {/* Botón archivar */}
-          <button
-            type="button"
-            onClick={toggleArchive}
-            title={conversation.is_archived ? "Desarchivar" : "Archivar"}
-            className={`h-8 px-2 rounded text-xs ${
-              conversation.is_archived
-                ? 'bg-slate-700/60 text-slate-300'
-                : 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-400'
-            }`}
-          >
-            📦
-          </button>
-          {/* Botón historial de llamadas */}
-          <button
-            type="button"
-            onClick={loadCallHistory}
-            title="Ver historial de llamadas"
-            className="h-8 px-2 rounded text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-400"
-          >
-            📞
-          </button>
-          {/* Botón trazabilidad */}
-          <button
-            type="button"
-            onClick={() => setShowTraceView(true)}
-            title="Ver trazabilidad completa (Ticket)"
-            className="h-8 px-2 rounded text-xs bg-gradient-to-r from-purple-200 dark:from-purple-900/40 to-blue-200 dark:to-blue-900/40 hover:from-purple-300 dark:hover:from-purple-800/60 hover:to-blue-300 dark:hover:to-blue-800/60 border border-purple-400 dark:border-purple-700/50 text-purple-900 dark:text-purple-200 transition font-medium"
-          >
-            🎫 Trazabilidad
-          </button>
-          {/* Botón completar ciclo */}
-          <button
-            type="button"
-            onClick={handleCompleteCycle}
-            title="Completar ciclo actual y reiniciar conversación"
-            className="h-8 px-2 rounded text-xs bg-gradient-to-r from-green-200 dark:from-green-900/40 to-emerald-200 dark:to-emerald-900/40 hover:from-green-300 dark:hover:from-green-800/60 hover:to-emerald-300 dark:hover:to-emerald-800/60 border border-green-400 dark:border-green-700/50 text-green-900 dark:text-green-200 transition font-medium"
-          >
-            ✅ Completar Ciclo
-          </button>
-          {conversation.status_name && (
-            <span
-              className="text-[10px] px-2 py-0.5 rounded-full border text-white"
-              style={{
-                backgroundColor: conversation.status_color + '40',
-                borderColor: conversation.status_color
-              }}
-            >
-              {conversation.status_icon} {conversation.status_name}
-            </span>
-          )}
-          <select
-            value={conversation.status_id || ''}
-            onChange={(e)=>{
-              const newStatusId = Number(e.target.value);
-              const newStatus = statuses.find(s => s.id === newStatusId);
-
-              // Si el estado tiene campos requeridos, mostrar modal
-              if (newStatus?.required_fields) {
-                try {
-                  // required_fields puede venir como array (MySQL lo parsea) o como string
-                  const fields = Array.isArray(newStatus.required_fields)
-                    ? newStatus.required_fields
-                    : JSON.parse(newStatus.required_fields);
-
-                  if (Array.isArray(fields) && fields.length > 0) {
-                    setStatusChangeModal({ show: true, newStatusId, status: newStatus });
-                    // Resetear el select al valor actual
-                    e.target.value = conversation.status_id || '';
-                    return;
-                  }
-                } catch (err) {
-                  console.error('Error validando required_fields:', err);
-                }
-              }
-
-              // Si no tiene campos requeridos, cambiar directamente
-              handleStatusChange(newStatusId, null);
-            }}
-            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs rounded px-2 py-1"
-          >
-            {statuses.filter(s => !s.is_final).map(s => (
-              <option key={s.id} value={s.id}>
-                {s.icon} {s.name}
-              </option>
-            ))}
-          </select>
-          {/* Selector de agente asignado */}
-          <select
-            value={conversation.asignado_a || ''}
-            onChange={(e) => handleAssignAgent(e.target.value ? Number(e.target.value) : null)}
-            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs rounded px-2 py-1"
-            title="Asignar a agente"
-          >
-            <option value="">Sin asignar</option>
-            {users.map(u => (
-              <option key={u.id} value={u.id}>
-                👤 {u.nombre}
-              </option>
-            ))}
-          </select>
-          <div className="flex items-center gap-1">
-            <input
-              value={searchQ}
-              onChange={(e)=>setSearchQ(e.target.value)}
-              onKeyDown={(e)=>{
-                if (e.key==='Enter') runSearch();
-                if (e.key==='Escape') clearSearch();
-              }}
-              placeholder="Buscar en chat..."
-              className="h-8 px-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs outline-none focus:border-emerald-400"
-              style={{width:'160px'}}
-            />
-            {searchResults.length > 0 && (
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-slate-700 dark:text-slate-400 px-2">
-                  {currentSearchIndex + 1} de {searchResults.length}
-                </span>
-                <button
-                  type="button"
-                  onClick={prevSearchResult}
-                  title="Anterior (↑)"
-                  className="h-8 w-8 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  onClick={nextSearchResult}
-                  title="Siguiente (↓)"
-                  className="h-8 w-8 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs"
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  title="Cerrar búsqueda (Esc)"
-                  className="h-8 w-8 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-            {searchResults.length === 0 && searchQ && (
-              <button type="button" onClick={runSearch} title="Buscar" className="h-8 px-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs">🔎</button>
-            )}
-          </div>
-          <button type="button" onClick={openAttachments} title="Ver adjuntos" className="h-8 px-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs">📎</button>
-          <button type="button" onClick={() => setShowTemplates(true)} title="Enviar plantilla" className="h-8 px-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs">📋</button>
-        </div>
-      </div>
+      <ChatHeader
+        conversation={conversation}
+        insideWindow={insideWindow}
+        timeRemaining={timeRemaining}
+        formatTimeRemaining={formatTimeRemaining}
+        toggleFavorite={toggleFavorite}
+        toggleArchive={toggleArchive}
+        loadCallHistory={loadCallHistory}
+        setShowTraceView={setShowTraceView}
+        handleCompleteCycle={handleCompleteCycle}
+        handleStatusChange={handleStatusChange}
+        handleAssignAgent={handleAssignAgent}
+        openAttachments={openAttachments}
+        setShowTemplates={setShowTemplates}
+        searchQ={searchQ}
+        setSearchQ={setSearchQ}
+        runSearch={runSearch}
+        clearSearch={clearSearch}
+        searchResults={searchResults}
+        currentSearchIndex={currentSearchIndex}
+        prevSearchResult={prevSearchResult}
+        nextSearchResult={nextSearchResult}
+        statuses={statuses}
+        users={users}
+        statusChangeModal={statusChangeModal}
+        setStatusChangeModal={setStatusChangeModal}
+      />
 
       {/* Mensajes */}
       <div ref={scrollerRef} className="flex-1 overflow-y-auto thin-scroll p-4 space-y-2 bg-gray-100 dark:bg-slate-900 bg-cover bg-center bg-no-repeat bg-fixed">
@@ -2321,38 +2159,64 @@ function pickMime() {
       )}
 
       {/* Sección de comentarios internos */}
-      <div className="border-t border-slate-800">
+      <div className="border-t border-amber-200/50 dark:border-amber-800/50">
         <button
           type="button"
           onClick={() => setShowComments(!showComments)}
-          className="w-full px-4 py-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900/50 transition"
+          className="w-full px-4 py-3 flex items-center justify-between text-sm font-medium text-amber-700 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10 hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-all"
         >
-          <span className="flex-1 text-left font-medium">
-            💬 Comentarios internos ({comments.length})
-          </span>
-          <span className="text-slate-500">{showComments ? '▼' : '▶'}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-base">📑</span>
+            <span>Comentarios internos</span>
+            {comments.length > 0 && (
+              <span className="px-2 py-0.5 text-[10px] font-semibold bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded-full">
+                {comments.length}
+              </span>
+            )}
+          </div>
+          <span className="text-amber-600 dark:text-amber-500">{showComments ? '▼' : '▶'}</span>
         </button>
 
         {showComments && (
-          <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 flex-wrap">
+          <div className="bg-amber-50/20 dark:bg-amber-950/20">
             {/* Lista de comentarios */}
-            <div className="max-h-48 overflow-y-auto thin-scroll p-3 space-y-2">
+            <div className="max-h-60 overflow-y-auto thin-scroll px-4 py-3 space-y-3">
               {comments.length === 0 ? (
-                <div className="text-xs text-slate-600 dark:text-slate-500 text-center py-4">
-                  No hay comentarios internos aún
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">📝</div>
+                  <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
+                    No hay comentarios internos aún
+                  </p>
+                  <p className="text-xs text-amber-600/70 dark:text-amber-500/70 mt-1">
+                    Agrega notas privadas para tu equipo
+                  </p>
                 </div>
               ) : (
                 comments.map(c => (
-                  <div key={c.id} className="bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 rounded-lg p-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-sky-700 dark:text-sky-300">
-                        {c.usuario_nombre || 'Usuario'}
-                      </span>
-                      <span className="text-[10px] text-slate-500">
-                        {new Date(c.creado_en).toLocaleString()}
-                      </span>
+                  <div 
+                    key={c.id} 
+                    className="bg-white dark:bg-slate-800/50 border border-amber-200 dark:border-amber-800/50 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        {(c.usuario_nombre || 'U')[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                          {c.usuario_nombre || 'Usuario'}
+                        </span>
+                        <span className="text-[10px] text-amber-600/70 dark:text-amber-500/70 ml-2">
+                          {new Date(c.creado_en).toLocaleString('es-ES', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-sm text-slate-900 dark:text-slate-300 whitespace-pre-wrap">
+                    <div className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed pl-9">
                       {c.comentario}
                     </div>
                   </div>
@@ -2361,20 +2225,28 @@ function pickMime() {
             </div>
 
             {/* Formulario para nuevo comentario */}
-            <form onSubmit={createComment} className="p-3 border-t border-slate-800 flex gap-2">
-              <textarea
-                value={newComment}
-                onChange={e => setNewComment(e.target.value)}
-                placeholder="Escribe un comentario interno..."
-                rows={2}
-                className="resize-none flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-sky-400"
-              />
-              <button
-                type="submit"
-                className="px-3 py-2 rounded bg-sky-600 text-white font-semibold hover:bg-sky-500 self-end"
-              >
-                Agregar
-              </button>
+            <form onSubmit={createComment} className="px-4 py-3 border-t border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-950/30">
+              <div className="flex gap-2">
+                <textarea
+                  value={newComment}
+                  onChange={e => setNewComment(e.target.value)}
+                  placeholder="Escribe una nota interna para tu equipo..."
+                  rows={3}
+                  className="resize-none flex-1 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/50 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-amber-500/50 dark:placeholder-amber-600/50 outline-none focus:border-amber-500 dark:focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={!newComment.trim()}
+                  className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 disabled:cursor-not-allowed text-white font-semibold transition-colors self-end shadow-sm hover:shadow-md"
+                  title="Agregar comentario"
+                >
+                  <span className="hidden sm:inline">Agregar</span>
+                  <span className="sm:hidden">+</span>
+                </button>
+              </div>
+              <p className="text-[10px] text-amber-600/70 dark:text-amber-500/70 mt-2">
+                💡 Los comentarios internos solo son visibles para tu equipo
+              </p>
             </form>
           </div>
         )}
