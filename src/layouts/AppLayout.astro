@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import "../styles/swal2-custom.css";
+import "../styles/shepherd-custom.css";
 
 const { title = "Mensajeria Web GA" } = Astro.props as { title?: string };
 const path = Astro.url.pathname;
@@ -139,6 +140,22 @@ const footerLinks = [
           : "light");
       document.documentElement.classList.toggle("dark", theme === "dark");
     </script>
+
+    <!-- Microsoft Clarity Analytics -->
+    <script type="text/javascript" is:inline>
+      (function (c, l, a, r, i, t, y) {
+        c[a] =
+          c[a] ||
+          function () {
+            (c[a].q = c[a].q || []).push(arguments);
+          };
+        t = l.createElement(r);
+        t.async = 1;
+        t.src = "https://www.clarity.ms/tag/" + i;
+        y = l.getElementsByTagName(r)[0];
+        y.parentNode.insertBefore(t, y);
+      })(window, document, "clarity", "script", "uzeps5bnh6");
+    </script>
   </head>
 
   <body
@@ -160,10 +177,21 @@ const footerLinks = [
           {title}
         </h1>
         <div class="ml-auto flex items-center gap-3 min-w-0">
+          <!-- Help Button -->
+          <button
+            id="help-tour-button"
+            type="button"
+            class="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition flex items-center justify-center"
+            title="Ayuda / Tour Guiado"
+            aria-label="Iniciar tour guiado"
+          >
+            <i data-feather="help-circle" class="w-5 h-5"></i>
+          </button>
           <!-- Theme Toggle -->
           <div id="theme-toggle-container"></div>
           <button
             id="app-mode-toggle"
+            data-tour="mode-toggle"
             type="button"
             class="app-mode-toggle flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/80 text-slate-700 dark:text-slate-200 text-[11px] sm:text-xs font-semibold shadow-sm hover:border-emerald-400/70 transition"
             title="Cambiar a mensajes internos"

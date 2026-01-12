@@ -1,6 +1,7 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
 import ChatWorkspace from "../components/ChatWorkspace.jsx";
+import GuidedTour from "../components/GuidedTour.jsx";
 
 const qp = Astro.url.searchParams;
 const initialId = Number(qp.get("conversation_id") || 0) || null;
@@ -26,6 +27,7 @@ const initialId = Number(qp.get("conversation_id") || 0) || null;
     </div>
 
     <ChatWorkspace client:visible initialId={initialId} />
+    <GuidedTour client:only="react" />
   </div>
 
   <script>
@@ -40,6 +42,24 @@ const initialId = Number(qp.get("conversation_id") || 0) || null;
           setTimeout(() => loader.remove(), 300);
         }
       }, 500);
+
+      // Iniciar tour en primera visita
+      setTimeout(() => {
+        const hasSeenTour = localStorage.getItem("mensajeria-tour-completed");
+        if (!hasSeenTour && window.__startGuidedTour) {
+          window.__startGuidedTour();
+        }
+      }, 1000);
+
+      // Conectar botón de ayuda con el tour
+      const helpButton = document.getElementById("help-tour-button");
+      if (helpButton) {
+        helpButton.addEventListener("click", () => {
+          if (window.__startGuidedTour) {
+            window.__startGuidedTour();
+          }
+        });
+      }
     });
   </script>
 </AppLayout>

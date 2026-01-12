@@ -1156,7 +1156,7 @@ function InternalMessagesWorkspace({
   };
 
   const directoryPane = (
-    <div className="h-full internal-directory rounded-xl border overflow-hidden">
+    <div className="h-full internal-directory rounded-xl border overflow-hidden" data-tour="internal-directory">
       <div className="internal-directory-header">
         <div className="internal-directory-title">
           <span>Chat</span>

@@ -863,6 +863,7 @@ input::placeholder {
 }
 
 .internal-message {
+  width: fit-content;
   max-width: 58%;
   padding: 10px 12px;
   border-radius: 14px;
