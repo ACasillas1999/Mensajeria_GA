@@ -4,8 +4,8 @@ import { pool } from "../../lib/db";
 
 export const GET: APIRoute = async ({ locals }) => {
   try {
-    const user = (locals as any).user as { id:number, rol:string } | undefined;
-    if (!user) return new Response(JSON.stringify({ ok:false, error:'Unauthorized' }), { status: 401 });
+    const user = (locals as any).user as { id: number, rol: string } | undefined;
+    if (!user) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
 
     // Counts scoped to user (mine) and global if admin
     const myId = user.id;
@@ -56,11 +56,31 @@ export const GET: APIRoute = async ({ locals }) => {
        WHERE activo = 1 AND UPPER(rol) = 'AGENTE'`
     );
 
+    // Quotations and sales metrics
+    const [rows4] = await pool.query<RowDataPacket[]>(
+      `SELECT 
+         COUNT(*) AS cotizaciones_total,
+         SUM(DATE(created_at) = CURDATE()) AS cotizaciones_hoy
+       FROM quotations`
+    );
+
+    const [rows5] = await pool.query<RowDataPacket[]>(
+      `SELECT 
+         COUNT(*) AS ventas_total,
+         SUM(sale_amount) AS monto_total_ventas,
+         SUM(DATE(completed_at) = CURDATE()) AS ventas_hoy
+       FROM conversation_cycles
+       WHERE sale_registered = TRUE`
+    );
+
+
     // Base stats
     const stats = {
       ...base,
       ...(rows2 as any[])[0],
       ...(rows3 as any[])[0],
+      ...(rows4 as any[])[0],
+      ...(rows5 as any[])[0],
     } as Record<string, number>;
 
     // 30-day series for conversations and messages
@@ -88,8 +108,8 @@ export const GET: APIRoute = async ({ locals }) => {
         msg_series: (msgRows as any[]).map(r => ({ day: r.d, count: Number(r.c) })),
       }
     };
-    return new Response(JSON.stringify(payload), { headers: { 'Content-Type':'application/json' } });
-  } catch (e:any) {
-    return new Response(JSON.stringify({ ok:false, error: e?.message || 'Error' }), { status: 500 });
+    return new Response(JSON.stringify(payload), { headers: { 'Content-Type': 'application/json' } });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ ok: false, error: e?.message || 'Error' }), { status: 500 });
   }
 };

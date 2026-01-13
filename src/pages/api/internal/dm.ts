@@ -75,7 +75,13 @@ export const GET: APIRoute = async ({ locals, request }) => {
 
     if (!chatId) {
       return new Response(
-        JSON.stringify({ ok: true, chat_id: null, items: [], currentUserId: user.id }),
+        JSON.stringify({
+          ok: true,
+          chat_id: null,
+          items: [],
+          readers: [],
+          currentUserId: user.id,
+        }),
         { headers: { "Content-Type": "application/json" } },
       );
     }
@@ -106,8 +112,30 @@ export const GET: APIRoute = async ({ locals, request }) => {
       );
     }
 
+    const [readRows] = await pool.query<RowDataPacket[]>(
+      `
+      SELECT user_id, last_read_message_id, last_read_at
+      FROM internal_read_status
+      WHERE dm_chat_id = ? AND user_id <> ?
+      `,
+      [chatId, user.id],
+    );
+    const readers = readRows.map((row) => ({
+      user_id: Number(row.user_id),
+      last_read_message_id: row.last_read_message_id
+        ? Number(row.last_read_message_id)
+        : null,
+      last_read_at: row.last_read_at || null,
+    }));
+
     return new Response(
-      JSON.stringify({ ok: true, chat_id: chatId, items: messages, currentUserId: user.id }),
+      JSON.stringify({
+        ok: true,
+        chat_id: chatId,
+        items: messages,
+        readers,
+        currentUserId: user.id,
+      }),
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (error) {

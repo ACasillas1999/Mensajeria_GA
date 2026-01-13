@@ -115,6 +115,22 @@ export const GET: APIRoute = async ({ locals, request }) => {
       );
     }
 
+    const [readRows] = await pool.query<RowDataPacket[]>(
+      `
+      SELECT user_id, last_read_message_id, last_read_at
+      FROM internal_read_status
+      WHERE channel_id = ? AND user_id <> ?
+      `,
+      [channelId, user.id],
+    );
+    const readers = readRows.map((row) => ({
+      user_id: Number(row.user_id),
+      last_read_message_id: row.last_read_message_id
+        ? Number(row.last_read_message_id)
+        : null,
+      last_read_at: row.last_read_at || null,
+    }));
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -122,6 +138,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
         channel_id: channelId,
         can_write: canWriteChannel(channel, isAdmin, user.id),
         items: messages,
+        readers,
         currentUserId: user.id,
       }),
       { headers: { "Content-Type": "application/json" } },

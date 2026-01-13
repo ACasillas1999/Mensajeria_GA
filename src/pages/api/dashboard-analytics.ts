@@ -77,7 +77,10 @@ export const GET: APIRoute = async ({ locals, url }) => {
         COUNT(DISTINCT c.id) AS conversations_handled,
         COUNT(DISTINCT CASE WHEN cs.is_final = TRUE THEN c.id END) AS conversations_resolved,
         COUNT(m.id) AS messages_sent,
-        COUNT(DISTINCT cc.id) AS cycles_completed
+        COUNT(DISTINCT cc.id) AS cycles_completed,
+        COUNT(DISTINCT q.id) AS quotations_sent,
+        COUNT(DISTINCT CASE WHEN cc.sale_registered = TRUE THEN cc.id END) AS sales_closed,
+        SUM(CASE WHEN cc.sale_registered = TRUE THEN cc.sale_amount ELSE 0 END) AS total_sales_amount
       FROM usuarios u
       LEFT JOIN conversaciones c ON c.asignado_a = u.id
         AND c.creado_en ${dateFilter}
@@ -87,6 +90,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
       LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
       LEFT JOIN conversation_cycles cc ON cc.assigned_to = u.id
         AND cc.completed_at ${cyclesDateFilter}
+      LEFT JOIN quotations q ON q.cycle_id = cc.id
       WHERE u.activo = 1 AND u.rol = 'AGENTE'
       GROUP BY u.id, u.nombre
       ORDER BY conversations_handled DESC`
@@ -216,8 +220,14 @@ export const GET: APIRoute = async ({ locals, url }) => {
           conversations_resolved: r.conversations_resolved,
           messages_sent: r.messages_sent,
           cycles_completed: r.cycles_completed,
+          quotations_sent: r.quotations_sent,
+          sales_closed: r.sales_closed,
+          total_sales_amount: r.total_sales_amount || 0,
           resolution_rate: r.conversations_handled > 0
             ? Math.round((r.conversations_resolved / r.conversations_handled) * 100)
+            : 0,
+          conversion_rate: r.quotations_sent > 0
+            ? Math.round((r.sales_closed / r.quotations_sent) * 100)
             : 0
         })),
 

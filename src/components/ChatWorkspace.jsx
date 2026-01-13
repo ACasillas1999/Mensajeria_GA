@@ -127,6 +127,7 @@ function InternalMessagesWorkspace({
   const [listFilter, setListFilter] = useState("all");
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState([]);
+  const [readers, setReaders] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [loadingAgents, setLoadingAgents] = useState(false);
   const [loadingChannels, setLoadingChannels] = useState(false);
@@ -608,6 +609,7 @@ function InternalMessagesWorkspace({
           const items = j.items || [];
           setMessages(items);
           setCurrentChatId(j.chat_id || null);
+          setReaders(Array.isArray(j.readers) ? j.readers : []);
           setCanWrite(true);
           const resolvedUserId = j.currentUserId || currentUserId;
           if (j.currentUserId) {
@@ -654,6 +656,7 @@ function InternalMessagesWorkspace({
         setMessages(items);
         setCurrentChatId(null);
         setCanWrite(Boolean(j.can_write));
+        setReaders(Array.isArray(j.readers) ? j.readers : []);
         const resolvedUserId = j.currentUserId || currentUserId;
         if (j.currentUserId) {
           setCurrentUserId(j.currentUserId);
@@ -699,6 +702,7 @@ function InternalMessagesWorkspace({
   useEffect(() => {
     if (!selectedId || !selectedType) {
       setMessages([]);
+      setReaders([]);
       setCurrentChatId(null);
       setCanWrite(true);
       setDraft("");
@@ -708,6 +712,7 @@ function InternalMessagesWorkspace({
 
     fetchMessages(selectedType, selectedId);
     setDraft("");
+    setReaders([]);
 
     const intervalId = setInterval(() => {
       fetchMessages(selectedType, selectedId, { silent: true });
@@ -985,6 +990,19 @@ function InternalMessagesWorkspace({
     } catch (err) {
       console.error("Error updating favorites:", err);
     }
+  };
+
+  const getDeliveryCount = (messageId) => {
+    const id = Number(messageId);
+    if (!id || Number.isNaN(id) || readers.length === 0) return 0;
+    let count = 0;
+    readers.forEach((reader) => {
+      const lastRead = Number(reader?.last_read_message_id || 0);
+      if (!Number.isNaN(lastRead) && lastRead >= id) {
+        count += 1;
+      }
+    });
+    return count;
   };
 
   const typingLabel = useMemo(() => {
@@ -1365,6 +1383,10 @@ function InternalMessagesWorkspace({
         {selectedType &&
           messages.map((msg) => {
             const isMe = currentUserId && msg.user_id === currentUserId;
+            const deliveredCount = isMe ? getDeliveryCount(msg.id) : 0;
+            const deliveryTitle = deliveredCount
+              ? "Enviado correctamente"
+              : "Enviado, sin entregar";
             return (
               <div
                 key={msg.id}
@@ -1376,8 +1398,19 @@ function InternalMessagesWorkspace({
                   </div>
                 )}
                 <div className="text-xs leading-relaxed">{msg.content}</div>
-                <div className="text-[10px] internal-muted mt-1 text-right">
-                  {formatInternalTime(msg.created_at)}
+                <div className="text-[10px] internal-muted mt-1 text-right flex items-center justify-end gap-1">
+                  <span>{formatInternalTime(msg.created_at)}</span>
+                  {isMe && (
+                    <span
+                      className={`internal-message-status ${
+                        deliveredCount ? "is-read" : "is-sent"
+                      }`}
+                      title={deliveryTitle}
+                      aria-label={deliveryTitle}
+                    >
+                      {deliveredCount ? "✓✓" : "✓"}
+                    </span>
+                  )}
                 </div>
               </div>
             );

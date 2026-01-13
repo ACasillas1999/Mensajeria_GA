@@ -880,6 +880,18 @@ input::placeholder {
   background: var(--internal-message-them);
 }
 
+.internal-message-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--internal-muted);
+}
+
+.internal-message-status.is-read {
+  color: var(--internal-accent);
+}
+
 .internal-send {
   padding: 8px 14px;
   border-radius: 999px;

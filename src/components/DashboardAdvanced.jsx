@@ -290,28 +290,40 @@ export default function DashboardAdvanced() {
 }
 
 function OverviewTab({ stats, analytics }) {
+  // Calculate conversion rate
+  const conversionRate = stats?.cotizaciones_total > 0
+    ? Math.round((stats.ventas_total / stats.cotizaciones_total) * 100)
+    : 0;
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <MetricCard
-          title="Tiempo prom. respuesta"
-          value={analytics?.response_times?.[0]?.avg_response_time_formatted || 'N/A'}
-          subtitle="Agente mas rapido"
-          icon="clock"
+          title="Cotizaciones Enviadas"
+          value={stats?.cotizaciones_total || 0}
+          subtitle={`Hoy: ${stats?.cotizaciones_hoy || 0}`}
+          icon="list"
           color="blue"
         />
         <MetricCard
-          title="Ciclos completados"
-          value={analytics?.cycle_stats?.total_cycles || 0}
-          subtitle={`Promedio: ${analytics?.cycle_stats?.avg_messages_per_cycle || 0} msgs`}
-          icon="repeat"
+          title="Ventas Cerradas"
+          value={stats?.ventas_total || 0}
+          subtitle={`Hoy: ${stats?.ventas_hoy || 0}`}
+          icon="trophy"
+          color="emerald"
+        />
+        <MetricCard
+          title="Tasa de Conversión"
+          value={`${conversionRate}%`}
+          subtitle={`${stats?.ventas_total || 0} de ${stats?.cotizaciones_total || 0} cotizaciones`}
+          icon="target"
           color="purple"
         />
         <MetricCard
-          title="Satisfaccion"
-          value={analytics?.satisfaction?.satisfaction_rate ? `${analytics.satisfaction.satisfaction_rate}%` : 'N/A'}
-          subtitle={`${analytics?.satisfaction?.positive_reactions || 0} reacciones positivas`}
-          icon="smile"
+          title="Monto Total Ventas"
+          value={`$${(stats?.monto_total_ventas || 0).toLocaleString('es-MX')}`}
+          subtitle="Últimos 30 días"
+          icon="activity"
           color="amber"
         />
       </div>
@@ -426,12 +438,12 @@ function AgentsTab({ analytics }) {
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700">
                     <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Agente</th>
-                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Tiempo 1ra resp.</th>
-                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Conversaciones</th>
-                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Resueltas</th>
-                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Mensajes</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Cotizaciones</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Ventas</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Monto Ventas</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Tasa Conversión</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Ciclos</th>
-                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Tasa resolucion</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Mensajes</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -441,22 +453,22 @@ function AgentsTab({ analytics }) {
                     return (
                       <tr key={agent.agent_id} className="border-b border-slate-200 hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-900/50">
                         <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{agent.agent_name}</td>
-                        <td className="py-3 px-4 text-right text-blue-400 font-medium">
-                          {responseTime?.avg_response_time_formatted || 'N/A'}
+                        <td className="py-3 px-4 text-right text-blue-400 font-medium">{agent.quotations_sent || 0}</td>
+                        <td className="py-3 px-4 text-right text-emerald-400 font-medium">{agent.sales_closed || 0}</td>
+                        <td className="py-3 px-4 text-right text-amber-400 font-medium">
+                          ${(agent.total_sales_amount || 0).toLocaleString('es-MX')}
                         </td>
-                        <td className="py-3 px-4 text-right text-slate-800 dark:text-slate-300">{agent.conversations_handled}</td>
-                        <td className="py-3 px-4 text-right text-emerald-400">{agent.conversations_resolved}</td>
-                        <td className="py-3 px-4 text-right text-blue-400">{agent.messages_sent}</td>
-                        <td className="py-3 px-4 text-right text-purple-400">{agent.cycles_completed}</td>
                         <td className="py-3 px-4 text-right">
                           <span className={`font-semibold ${
-                            agent.resolution_rate >= 75 ? 'text-emerald-400' :
-                            agent.resolution_rate >= 50 ? 'text-amber-400' :
-                            'text-red-400'
+                            agent.conversion_rate >= 50 ? 'text-emerald-400' :
+                            agent.conversion_rate >= 25 ? 'text-amber-400' :
+                            'text-slate-400'
                           }`}>
-                            {agent.resolution_rate}%
+                            {agent.conversion_rate || 0}%
                           </span>
                         </td>
+                        <td className="py-3 px-4 text-right text-purple-400">{agent.cycles_completed}</td>
+                        <td className="py-3 px-4 text-right text-slate-400">{agent.messages_sent}</td>
                       </tr>
                     );
                   })}
