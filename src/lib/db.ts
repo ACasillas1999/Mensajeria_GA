@@ -16,4 +16,5 @@ export const pool = mysql.createPool({
   connectTimeout: 10000, // 10 segundos timeout para conectar
   acquireTimeout: 10000, // 10 segundos timeout para adquirir conexión del pool
   timeout: 60000, // 60 segundos timeout para queries
+  // Force pool recreation after quotations table creation
 });

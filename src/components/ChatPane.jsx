@@ -1502,13 +1502,21 @@ function pickMime() {
     enabled: !!conversation && sseEnabled, // Solo habilitar después de carga inicial
   });
 
-  // Fallback: Polling cada 30s como respaldo si SSE falla
+  // Fallback: Polling cada 60s como respaldo si SSE falla
   useEffect(() => {
     if (!conversation) return;
+    
+    console.log('[ChatPane] 🔄 Iniciando polling fallback cada 60s para conversación', conversation.id);
+    
     const id = setInterval(() => {
+      console.log('[ChatPane] 🔄 Polling fallback ejecutándose (SSE debería manejar actualizaciones)');
       refreshMessages();
-    }, 30000); // cada 30 segundos (SSE maneja las actualizaciones en tiempo real)
-    return () => clearInterval(id);
+    }, 60000); // cada 60 segundos (SSE maneja las actualizaciones en tiempo real)
+    
+    return () => {
+      console.log('[ChatPane] 🛑 Deteniendo polling fallback');
+      clearInterval(id);
+    };
   }, [conversation?.id, searchQ]);
 
   // Resetear contador cuando cambia la conversación

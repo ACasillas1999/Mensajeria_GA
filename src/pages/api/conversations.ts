@@ -9,7 +9,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const estado = url.searchParams.get("estado")?.trim().toUpperCase() || ""; // NUEVA|ABIERTA|RESUELTA (legacy)
     const statusId = url.searchParams.get("status_id") || ""; // Nuevo sistema
     const sucursalId = url.searchParams.get("sucursal_id") || "";
-    const limit  = Math.min(Number(url.searchParams.get("limit") || 50), 200);
+    const limit = Math.min(Number(url.searchParams.get("limit") || 50), 200);
     const offset = Math.max(Number(url.searchParams.get("offset") || 0), 0);
 
     const params: any[] = [];
@@ -24,6 +24,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
           SELECT 1 FROM mensajes m
           WHERE m.conversacion_id = c.id
           AND m.cuerpo LIKE CONCAT('%', ?, '%')
+          AND m.creado_en >= DATE_SUB(NOW(), INTERVAL 90 DAY)
           LIMIT 1
         )
       )`;
@@ -36,7 +37,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
       params.push(statusId);
     }
     // Fallback: filtro por estado legacy
-    else if (estado && ["NUEVA","ABIERTA","RESUELTA"].includes(estado)) {
+    else if (estado && ["NUEVA", "ABIERTA", "RESUELTA"].includes(estado)) {
       where += " AND c.estado = ?";
       params.push(estado);
     }
@@ -49,9 +50,9 @@ export const GET: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    const user = (locals as any).user as { id:number, rol:string } | undefined;
+    const user = (locals as any).user as { id: number, rol: string } | undefined;
     if (!user) {
-      return new Response(JSON.stringify({ ok:false, error:'Unauthorized' }), { status: 401 });
+      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
     }
     if (String(user.rol).toLowerCase() !== 'admin') {
       where += " AND asignado_a = ?";

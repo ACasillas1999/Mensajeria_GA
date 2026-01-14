@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ReportModal from './ReportModal.jsx';
 
 const BASE = import.meta.env.BASE_URL || '';
 
@@ -133,6 +134,7 @@ export default function DashboardAdvanced() {
   const [dateRange, setDateRange] = useState('30'); // 7, 30, 90, custom
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -239,6 +241,16 @@ export default function DashboardAdvanced() {
             />
           </div>
         )}
+
+        <button
+          onClick={() => setShowReportModal(true)}
+          className="ml-auto px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Descargar Reporte
+        </button>
       </div>
 
       <div className="flex gap-2 border-b border-slate-300/70 dark:border-slate-700 overflow-x-auto pb-1">
@@ -285,6 +297,15 @@ export default function DashboardAdvanced() {
       {selectedTab === 'performance' && (
         <PerformanceTab analytics={analytics} />
       )}
+
+      {showReportModal && (
+        <ReportModal
+          dateRange={dateRange}
+          customStartDate={customStartDate}
+          customEndDate={customEndDate}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -321,8 +342,8 @@ function OverviewTab({ stats, analytics }) {
         />
         <MetricCard
           title="Monto Total Ventas"
-          value={`$${(stats?.monto_total_ventas || 0).toLocaleString('es-MX')}`}
-          subtitle="Últimos 30 días"
+          value={`$${(stats?.monto_total_ventas || 0).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
+          subtitle="De cotizaciones vendidas"
           icon="activity"
           color="amber"
         />
@@ -440,7 +461,6 @@ function AgentsTab({ analytics }) {
                     <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Agente</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Cotizaciones</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Ventas</th>
-                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Monto Ventas</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Tasa Conversión</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Ciclos</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Mensajes</th>
@@ -455,9 +475,6 @@ function AgentsTab({ analytics }) {
                         <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{agent.agent_name}</td>
                         <td className="py-3 px-4 text-right text-blue-400 font-medium">{agent.quotations_sent || 0}</td>
                         <td className="py-3 px-4 text-right text-emerald-400 font-medium">{agent.sales_closed || 0}</td>
-                        <td className="py-3 px-4 text-right text-amber-400 font-medium">
-                          ${(agent.total_sales_amount || 0).toLocaleString('es-MX')}
-                        </td>
                         <td className="py-3 px-4 text-right">
                           <span className={`font-semibold ${
                             agent.conversion_rate >= 50 ? 'text-emerald-400' :

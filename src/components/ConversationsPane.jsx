@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRealtimeChat } from "../hooks/useRealtimeChat.js";
 import { useAppData } from "../contexts/AppDataContext.jsx";
 
@@ -318,14 +318,22 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     enabled: true,
   });
 
-  // Fallback: Polling cada 15s como respaldo si SSE falla
+
+  // Fallback: Polling cada 45s como respaldo si SSE falla
   useEffect(() => {
+    console.log('[ConversationsPane] 🔄 Iniciando polling fallback cada 45s');
+    
     const id = setInterval(() => {
+      console.log('[ConversationsPane] 🔄 Polling fallback ejecutándose (SSE debería manejar actualizaciones)');
       // reutiliza el último texto de búsqueda y estado seleccionados
       refresh();
       loadUnreadCounts(); // También recargar notificaciones
-    }, 15000); // cada 15 segundos (reducido porque SSE es el principal)
-    return () => clearInterval(id);
+    }, 45000); // cada 45 segundos (reducido porque SSE es el principal)
+    
+    return () => {
+      console.log('[ConversationsPane] 🛑 Deteniendo polling fallback');
+      clearInterval(id);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, estado, sucursalFilter]);
 
@@ -347,23 +355,28 @@ export default function ConversationsPane({ onSelect, currentId = null }) {
     }
   });
 
+
   // Ordenar: favoritos primero, luego no leídos, luego por fecha
-  const sorted = [...filtered].sort((a, b) => {
-    // 1. Favoritos primero (solo en vista active)
-    if (view === 'active') {
-      const fa = a.is_favorite === true || a.is_favorite === 1;
-      const fb = b.is_favorite === true || b.is_favorite === 1;
-      if (fa !== fb) return fa ? -1 : 1;
-    }
+  // Memoizado para evitar re-cálculos innecesarios
+  const sorted = useMemo(() => {
+    console.log('[ConversationsPane] 🔄 Recalculando ordenamiento de conversaciones');
+    return [...filtered].sort((a, b) => {
+      // 1. Favoritos primero (solo en vista active)
+      if (view === 'active') {
+        const fa = a.is_favorite === true || a.is_favorite === 1;
+        const fb = b.is_favorite === true || b.is_favorite === 1;
+        if (fa !== fb) return fa ? -1 : 1;
+      }
 
-    // 2. No leídos antes que leídos
-    const ua = isUnread(a);
-    const ub = isUnread(b);
-    if (ua !== ub) return ua ? -1 : 1;
+      // 2. No leídos antes que leídos
+      const ua = isUnread(a);
+      const ub = isUnread(b);
+      if (ua !== ub) return ua ? -1 : 1;
 
-    // 3. Por fecha (más reciente primero)
-    return Number(b.last_at || 0) - Number(a.last_at || 0);
-  });
+      // 3. Por fecha (más reciente primero)
+      return Number(b.last_at || 0) - Number(a.last_at || 0);
+    });
+  }, [filtered, view, unreadCounts]);
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">

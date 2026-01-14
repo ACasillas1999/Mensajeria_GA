@@ -23,17 +23,18 @@ export const GET: APIRoute = async ({ locals }) => {
 
     const base = (rows as any[])[0] || {};
 
-    // Get status counts (dynamic, using new system)
+    // Distribución de conversaciones por estatus (usando historial de cambios como en auditoría)
     const [statusRows] = await pool.query<RowDataPacket[]>(
       `SELECT
          cs.id,
          cs.name,
          cs.color,
          cs.icon,
-         COUNT(c.id) AS total,
-         SUM(c.asignado_a = ?) AS mine
+         COUNT(csh.id) AS total,
+         SUM(CASE WHEN c.asignado_a = ? THEN 1 ELSE 0 END) AS mine
        FROM conversation_statuses cs
-       LEFT JOIN conversaciones c ON c.status_id = cs.id
+       LEFT JOIN conversation_status_history csh ON csh.new_status_id = cs.id
+       LEFT JOIN conversaciones c ON c.id = csh.conversation_id
        WHERE cs.is_active = TRUE
        GROUP BY cs.id, cs.name, cs.color, cs.icon
        ORDER BY cs.display_order`,
@@ -66,11 +67,28 @@ export const GET: APIRoute = async ({ locals }) => {
 
     const [rows5] = await pool.query<RowDataPacket[]>(
       `SELECT 
-         COUNT(*) AS ventas_total,
-         SUM(sale_amount) AS monto_total_ventas,
-         SUM(DATE(completed_at) = CURDATE()) AS ventas_hoy
-       FROM conversation_cycles
-       WHERE sale_registered = TRUE`
+         COUNT(DISTINCT cc.id) AS ventas_total,
+         SUM(DATE(cc.completed_at) = CURDATE()) AS ventas_hoy
+       FROM conversation_cycles cc
+       INNER JOIN conversation_status_history csh ON csh.conversation_id = cc.conversation_id
+         AND csh.created_at >= cc.started_at
+         AND csh.created_at <= cc.completed_at
+       INNER JOIN conversation_statuses cs ON cs.id = csh.new_status_id
+       WHERE cs.name = 'ventaa'
+         AND cc.completed_at IS NOT NULL`
+    );
+
+    // Monto total de ventas (suma de cotizaciones de ciclos vendidos)
+    const [rows6] = await pool.query<RowDataPacket[]>(
+      `SELECT COALESCE(SUM(q.amount), 0) AS monto_total_ventas
+       FROM quotations q
+       INNER JOIN conversation_cycles cc ON q.cycle_id = cc.id
+       INNER JOIN conversation_status_history csh ON csh.conversation_id = cc.conversation_id
+         AND csh.created_at >= cc.started_at
+         AND csh.created_at <= cc.completed_at
+       INNER JOIN conversation_statuses cs ON cs.id = csh.new_status_id
+       WHERE cs.name = 'ventaa'
+         AND cc.completed_at IS NOT NULL`
     );
 
 
@@ -81,6 +99,7 @@ export const GET: APIRoute = async ({ locals }) => {
       ...(rows3 as any[])[0],
       ...(rows4 as any[])[0],
       ...(rows5 as any[])[0],
+      ...(rows6 as any[])[0],
     } as Record<string, number>;
 
     // 30-day series for conversations and messages
