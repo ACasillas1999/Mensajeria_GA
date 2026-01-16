@@ -62,7 +62,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
         c.wa_profile_name
        FROM conversation_cycles cc
        LEFT JOIN conversaciones c ON c.id = cc.conversation_id
-       WHERE cc.assigned_to = ?${completedDateClause}
+       WHERE cc.assigned_to = ?
+         AND cc.completed_at IS NOT NULL${completedDateClause}
        ORDER BY cc.started_at DESC`,
       completedParams
     );
