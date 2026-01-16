@@ -31,7 +31,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
         }
 
         // Obtener el cycle_id actual de la conversación
-        const [cycleRows] = await pool.query<RowDataPacket[]>(
+        // Primero intentar obtener un ciclo activo
+        const [activeCycleRows] = await pool.query<RowDataPacket[]>(
             `SELECT id FROM conversation_cycles 
              WHERE conversation_id = ? 
              AND completed_at IS NULL 
@@ -40,7 +41,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
             [conversacion_id]
         );
 
-        const cycle_id = cycleRows.length > 0 ? cycleRows[0].id : null;
+        let cycle_id = activeCycleRows.length > 0 ? activeCycleRows[0].id : null;
+
+        // Si no hay ciclo activo, obtener el último ciclo completado
+        if (!cycle_id) {
+            const [lastCycleRows] = await pool.query<RowDataPacket[]>(
+                `SELECT id FROM conversation_cycles 
+                 WHERE conversation_id = ? 
+                 ORDER BY started_at DESC 
+                 LIMIT 1`,
+                [conversacion_id]
+            );
+            cycle_id = lastCycleRows.length > 0 ? lastCycleRows[0].id : null;
+        }
 
         // Insertar cotización en la tabla correcta 'quotations'
         const [result] = await pool.execute<ResultSetHeader>(
