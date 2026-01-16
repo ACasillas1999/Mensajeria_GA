@@ -110,7 +110,46 @@ export const GET: APIRoute = async ({ locals, url }) => {
       activeParams
     );
 
+    // Obtener montos de cotizaciones por ciclo
+    const [quotationAmounts] = await pool.query<RowDataPacket[]>(
+      `SELECT
+        cc.id AS cycle_id,
+        COALESCE(SUM(q.amount), 0) AS total_amount
+       FROM conversation_cycles cc
+       LEFT JOIN quotations q ON q.cycle_id = cc.id
+       WHERE cc.assigned_to = ?${completedDateClause}
+       GROUP BY cc.id`,
+      completedParams
+    );
+
+    // Obtener montos de cotizaciones para ciclos activos
+    const [activeQuotationAmounts] = await pool.query<RowDataPacket[]>(
+      `SELECT
+        c.id AS conversation_id,
+        COALESCE(SUM(q.amount), 0) AS total_amount
+       FROM conversaciones c
+       LEFT JOIN quotations q ON q.conversation_id = c.id
+         AND q.created_at >= c.current_cycle_started_at
+       WHERE c.asignado_a = ?
+         AND c.current_cycle_started_at IS NOT NULL${activeDateClause}
+       GROUP BY c.id`,
+      activeParams
+    );
+
     const countsByCycleId = new Map<string, Record<string, number>>();
+    const quotationAmountsByCycleId = new Map<string, number>();
+
+    // Mapear montos de cotizaciones completadas
+    for (const row of quotationAmounts) {
+      const key = String(row.cycle_id);
+      quotationAmountsByCycleId.set(key, Number(row.total_amount || 0));
+    }
+
+    // Mapear montos de cotizaciones activas
+    for (const row of activeQuotationAmounts) {
+      const key = `active-${row.conversation_id}`;
+      quotationAmountsByCycleId.set(key, Number(row.total_amount || 0));
+    }
 
     for (const row of completedCounts) {
       if (!row.new_status_id) continue;
@@ -169,6 +208,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const cyclesWithCounts = cycles.map((cycle) => ({
       ...cycle,
       counts: countsByCycleId.get(cycle.cycle_id) || {},
+      quotation_amount: quotationAmountsByCycleId.get(cycle.cycle_id) || 0,
     }));
 
     return new Response(

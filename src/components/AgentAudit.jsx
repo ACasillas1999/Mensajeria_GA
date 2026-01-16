@@ -225,6 +225,7 @@ export default function AgentAudit() {
           if (idx === 3) return { width: 10 };
           if (idx === 4) return { width: 20 };
           if (idx === 5) return { width: 20 };
+          if (idx === maxCols - 1) return { width: 18 }; // Columna de monto
           return { width: 14 };
         });
 
@@ -303,18 +304,25 @@ export default function AgentAudit() {
             'Conversaciones',
             'Ciclos',
             ...statusNames,
+            'Monto cotizaciones',
           ]);
           styleHeaderRow(summaryHeader);
 
+          const totalQuotationAmount = cycleRows.reduce((sum, c) => sum + (c.quotation_amount || 0), 0);
           const summaryRow = sheet.addRow([
             agent?.nombre || '',
             Number(statusAudit.summary.total_conversations || 0),
             Number(statusAudit.summary.total_cycles || 0),
             ...statusColumns.map((st) => Number(summaryCounts[String(st.id)] || 0)),
+            totalQuotationAmount,
           ]);
           applyBorder(summaryRow);
           summaryRow.eachCell({ includeEmpty: true }, (cell, col) => {
             cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'left' : 'center' };
+            if (col === maxCols) {
+              cell.numFmt = '$#,##0.00';
+              cell.font = { bold: true, color: { argb: 'FF059669' } };
+            }
           });
         } else {
           const emptyRow = sheet.addRow(['Sin datos de resumen']);
@@ -334,6 +342,7 @@ export default function AgentAudit() {
           'Inicio',
           'Fin',
           ...statusNames,
+          'Monto cotizaciones',
         ]);
         styleHeaderRow(detailHeader);
 
@@ -352,6 +361,7 @@ export default function AgentAudit() {
               cycle.started_at || '',
               cycle.completed_at || '',
               ...statusColumns.map((st) => Number(cycle.counts?.[String(st.id)] || 0)),
+              cycle.quotation_amount || 0,
             ]);
 
             applyBorder(row);
@@ -359,6 +369,10 @@ export default function AgentAudit() {
               cell.alignment = { vertical: 'middle', horizontal: col <= 2 ? 'left' : 'center' };
               if (index % 2 === 1) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.altRow } };
+              }
+              if (col === maxCols) {
+                cell.numFmt = '$#,##0.00';
+                cell.font = { bold: true, color: { argb: 'FF059669' } };
               }
             });
 
@@ -541,6 +555,7 @@ export default function AgentAudit() {
                             {st.name}
                           </th>
                         ))}
+                        <th className="text-center px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Monto cotizaciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -557,6 +572,9 @@ export default function AgentAudit() {
                             {summaryCounts[String(st.id)] || 0}
                           </td>
                         ))}
+                        <td className="px-4 py-3 text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                          ${cycleRows.reduce((sum, c) => sum + (c.quotation_amount || 0), 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -576,12 +594,13 @@ export default function AgentAudit() {
                             {st.name}
                           </th>
                         ))}
+                        <th className="text-center px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Monto cotizaciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                       {cycleRows.length === 0 && (
                         <tr>
-                          <td colSpan={2 + statusColumns.length} className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center">
+                          <td colSpan={3 + statusColumns.length} className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center">
                             Sin ciclos registrados.
                           </td>
                         </tr>
@@ -609,6 +628,9 @@ export default function AgentAudit() {
                               {cycle.counts?.[String(st.id)] || 0}
                             </td>
                           ))}
+                          <td className="px-4 py-3 text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                            ${(cycle.quotation_amount || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
