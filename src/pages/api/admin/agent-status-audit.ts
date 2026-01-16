@@ -200,9 +200,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
     let totalQuotationAmount = 0;
     let totalSalesAmount = 0;
 
-    // Obtener el ID del status "ventaa"
-    const ventaaStatus = statusRows.find(s => s.name === 'ventaa');
-    const ventaaStatusId = ventaaStatus ? String(ventaaStatus.id) : null;
+    // Obtener el ID del status "venta" (no "ventaa")
+    const ventaStatus = statusRows.find(s => s.name === 'venta');
+    const ventaStatusId = ventaStatus ? String(ventaStatus.id) : null;
 
     for (const cycle of cycles) {
       conversationIds.add(Number(cycle.conversation_id));
@@ -212,8 +212,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
       // Sumar al total de cotizaciones
       totalQuotationAmount += cycleQuotationAmount;
 
-      // Si el ciclo tiene status "ventaa", sumar al total de ventas
-      if (ventaaStatusId && cycleCounts[ventaaStatusId] > 0) {
+      // Si el ciclo tiene status "venta", sumar al total de ventas
+      if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
         totalSalesAmount += cycleQuotationAmount;
       }
 

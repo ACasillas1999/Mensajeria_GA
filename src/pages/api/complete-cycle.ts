@@ -134,11 +134,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
 
     // 4. Registrar historial de cambio de estado
+    // Si se especificó un estado final diferente al actual (ej: ventaa), registrarlo primero
+    if (final_status_id && final_status_id !== conv.status_id) {
+      await pool.query(
+        `INSERT INTO conversation_status_history
+         (conversation_id, old_status_id, new_status_id, changed_by, change_reason)
+         VALUES (?, ?, ?, ?, ?)`,
+        [convId, conv.status_id, final_status_id, user.id, reason || `Ciclo completado como venta. Monto: ${amount || 0}`]
+      );
+    }
+
+    // Luego registrar el reset a "nueva" (o el estado de reset configurado)
     await pool.query(
       `INSERT INTO conversation_status_history
        (conversation_id, old_status_id, new_status_id, changed_by, change_reason)
        VALUES (?, ?, ?, ?, ?)`,
-      [convId, conv.status_id, resetStatusId, user.id, reason || `Ciclo completado. Monto: ${amount || 0}`]
+      [convId, final_status_id || conv.status_id, resetStatusId, user.id, reason || `Ciclo completado. Conversación reseteada.`]
     );
 
     // 5. Registrar evento del sistema
