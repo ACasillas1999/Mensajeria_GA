@@ -196,10 +196,26 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
     const summaryCounts: Record<string, number> = {};
     const conversationIds = new Set<number>();
+    let totalQuotationAmount = 0;
+    let totalSalesAmount = 0;
+
+    // Obtener el ID del status "ventaa"
+    const ventaaStatus = statusRows.find(s => s.name === 'ventaa');
+    const ventaaStatusId = ventaaStatus ? String(ventaaStatus.id) : null;
 
     for (const cycle of cycles) {
       conversationIds.add(Number(cycle.conversation_id));
       const cycleCounts = countsByCycleId.get(cycle.cycle_id) || {};
+      const cycleQuotationAmount = quotationAmountsByCycleId.get(cycle.cycle_id) || 0;
+
+      // Sumar al total de cotizaciones
+      totalQuotationAmount += cycleQuotationAmount;
+
+      // Si el ciclo tiene status "ventaa", sumar al total de ventas
+      if (ventaaStatusId && cycleCounts[ventaaStatusId] > 0) {
+        totalSalesAmount += cycleQuotationAmount;
+      }
+
       for (const [statusId, count] of Object.entries(cycleCounts)) {
         summaryCounts[statusId] = (summaryCounts[statusId] || 0) + Number(count || 0);
       }
@@ -230,6 +246,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
           total_conversations: conversationIds.size,
           total_cycles: cycles.length,
           counts: summaryCounts,
+          total_quotation_amount: totalQuotationAmount,
+          total_sales_amount: totalSalesAmount,
         },
         cycles: cyclesWithCounts,
         filters: {

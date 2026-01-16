@@ -304,24 +304,26 @@ export default function AgentAudit() {
             'Conversaciones',
             'Ciclos',
             ...statusNames,
-            'Monto cotizaciones',
+            'Total cotizado',
+            'Total vendido',
           ]);
           styleHeaderRow(summaryHeader);
 
-          const totalQuotationAmount = cycleRows.reduce((sum, c) => sum + (c.quotation_amount || 0), 0);
           const summaryRow = sheet.addRow([
             agent?.nombre || '',
             Number(statusAudit.summary.total_conversations || 0),
             Number(statusAudit.summary.total_cycles || 0),
             ...statusColumns.map((st) => Number(summaryCounts[String(st.id)] || 0)),
-            totalQuotationAmount,
+            statusAudit.summary.total_quotation_amount || 0,
+            statusAudit.summary.total_sales_amount || 0,
           ]);
           applyBorder(summaryRow);
           summaryRow.eachCell({ includeEmpty: true }, (cell, col) => {
             cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'left' : 'center' };
-            if (col === maxCols) {
+            // Aplicar formato de moneda a las últimas dos columnas
+            if (col === maxCols - 1 || col === maxCols) {
               cell.numFmt = '$#,##0.00';
-              cell.font = { bold: true, color: { argb: 'FF059669' } };
+              cell.font = { bold: true, color: { argb: col === maxCols ? 'FF059669' : 'FF0284C7' } };
             }
           });
         } else {
@@ -555,7 +557,8 @@ export default function AgentAudit() {
                             {st.name}
                           </th>
                         ))}
-                        <th className="text-center px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Monto cotizaciones</th>
+                        <th className="text-center px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Total cotizado</th>
+                        <th className="text-center px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400">Total vendido</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -572,8 +575,11 @@ export default function AgentAudit() {
                             {summaryCounts[String(st.id)] || 0}
                           </td>
                         ))}
+                        <td className="px-4 py-3 text-center text-sm font-semibold text-sky-600 dark:text-sky-400">
+                          ${(statusAudit.summary?.total_quotation_amount || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
                         <td className="px-4 py-3 text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                          ${cycleRows.reduce((sum, c) => sum + (c.quotation_amount || 0), 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ${(statusAudit.summary?.total_sales_amount || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                       </tr>
                     </tbody>
