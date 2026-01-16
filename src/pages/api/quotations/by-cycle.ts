@@ -28,38 +28,42 @@ export const GET: APIRoute = async ({ url, locals }) => {
             });
         }
 
-        // Obtener ciclo actual de la conversación
-        const [convRows] = await pool.query<RowDataPacket[]>(
-            'SELECT ciclo_actual FROM conversaciones WHERE id = ?',
+        // Obtener el cycle_id del ciclo activo actual
+        const [cycleRows] = await pool.query<RowDataPacket[]>(
+            `SELECT id FROM conversation_cycles 
+             WHERE conversation_id = ? 
+             AND completed_at IS NULL 
+             ORDER BY started_at DESC 
+             LIMIT 1`,
             [conversacion_id]
         );
 
-        if (convRows.length === 0) {
+        if (cycleRows.length === 0) {
+            // No hay ciclo activo, retornar vacío
             return new Response(JSON.stringify({
-                ok: false,
-                error: 'Conversación no encontrada'
+                ok: true,
+                quotations: []
             }), {
-                status: 404,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
 
-        const ciclo_actual = convRows[0].ciclo_actual || 1;
+        const cycle_id = cycleRows[0].id;
 
-        // Obtener cotizaciones del ciclo actual
+        // Obtener cotizaciones del ciclo actual usando la tabla correcta 'quotations'
         const [quotations] = await pool.query<RowDataPacket[]>(
-            `SELECT q.*, u.nombre as usuario_nombre
-             FROM cotizaciones q
-             LEFT JOIN usuarios u ON q.usuario_id = u.id
-             WHERE q.conversacion_id = ? AND q.ciclo_numero = ?
+            `SELECT q.id, q.conversation_id, q.cycle_id, q.quotation_number as numero_cotizacion, 
+                    q.amount as monto, q.file_path, q.created_at, u.nombre as usuario_nombre
+             FROM quotations q
+             LEFT JOIN usuarios u ON u.id = (SELECT usuario_id FROM mensajes WHERE id = q.mensaje_id LIMIT 1)
+             WHERE q.cycle_id = ?
              ORDER BY q.created_at DESC`,
-            [conversacion_id, ciclo_actual]
+            [cycle_id]
         );
 
         return new Response(JSON.stringify({
             ok: true,
-            quotations,
-            ciclo_actual
+            quotations
         }), {
             headers: { 'Content-Type': 'application/json' }
         });
