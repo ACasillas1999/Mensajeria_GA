@@ -30,35 +30,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
             });
         }
 
-        // Obtener ciclo actual de la conversación
-        const [convRows] = await pool.query<RowDataPacket[]>(
-            'SELECT ciclo_actual FROM conversaciones WHERE id = ?',
+        // Obtener el cycle_id actual de la conversación
+        const [cycleRows] = await pool.query<RowDataPacket[]>(
+            `SELECT id FROM conversation_cycles 
+             WHERE conversation_id = ? 
+             AND completed_at IS NULL 
+             ORDER BY started_at DESC 
+             LIMIT 1`,
             [conversacion_id]
         );
 
-        if (convRows.length === 0) {
-            return new Response(JSON.stringify({
-                ok: false,
-                error: 'Conversación no encontrada'
-            }), {
-                status: 404,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
+        const cycle_id = cycleRows.length > 0 ? cycleRows[0].id : null;
 
-        const ciclo_actual = convRows[0].ciclo_actual || 1;
-
-        // Insertar cotización
+        // Insertar cotización en la tabla correcta 'quotations'
         const [result] = await pool.execute<ResultSetHeader>(
-            `INSERT INTO cotizaciones 
-             (conversacion_id, ciclo_numero, numero_cotizacion, monto, mensaje_id, archivo_url, usuario_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [conversacion_id, ciclo_actual, numero_cotizacion, monto, mensaje_id || null, archivo_url || null, user.id]
+            `INSERT INTO quotations 
+             (conversation_id, cycle_id, quotation_number, amount, mensaje_id, file_path)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [conversacion_id, cycle_id, numero_cotizacion, monto, mensaje_id || null, archivo_url || null]
         );
 
         // Obtener la cotización creada
         const [newQuotation] = await pool.query<RowDataPacket[]>(
-            'SELECT * FROM cotizaciones WHERE id = ?',
+            'SELECT * FROM quotations WHERE id = ?',
             [result.insertId]
         );
 
@@ -74,10 +68,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
                 user.id,
                 eventoTexto,
                 JSON.stringify({
-                    cotizacion_id: result.insertId,
+                    quotation_id: result.insertId,
                     numero_cotizacion: numero_cotizacion,
                     monto: monto,
-                    ciclo_numero: ciclo_actual
+                    cycle_id: cycle_id
                 })
             ]
         );
