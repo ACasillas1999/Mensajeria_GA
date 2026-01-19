@@ -610,7 +610,17 @@ function InternalMessagesWorkspace({
         const j = await r.json();
         if (j.ok) {
           const items = j.items || [];
-          setMessages(items);
+          // Si es la primera carga (no silent), reemplazar todo
+          // Si es polling (silent), solo agregar mensajes nuevos
+          if (silent) {
+            setMessages((prev) => {
+              const existingIds = new Set(prev.map(m => m.id));
+              const newMessages = items.filter(m => !existingIds.has(m.id));
+              return [...prev, ...newMessages];
+            });
+          } else {
+            setMessages(items);
+          }
           setCurrentChatId(j.chat_id || null);
           setReaders(Array.isArray(j.readers) ? j.readers : []);
           setCanWrite(true);
@@ -656,7 +666,17 @@ function InternalMessagesWorkspace({
       const j = await r.json();
       if (j.ok) {
         const items = j.items || [];
-        setMessages(items);
+        // Si es la primera carga (no silent), reemplazar todo
+        // Si es polling (silent), solo agregar mensajes nuevos
+        if (silent) {
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map(m => m.id));
+            const newMessages = items.filter(m => !existingIds.has(m.id));
+            return [...prev, ...newMessages];
+          });
+        } else {
+          setMessages(items);
+        }
         setCurrentChatId(null);
         setCanWrite(Boolean(j.can_write));
         setReaders(Array.isArray(j.readers) ? j.readers : []);
@@ -885,6 +905,7 @@ function InternalMessagesWorkspace({
       });
 
       const result = await response.json();
+      
       if (result.ok) {
         setAttachmentPreview(result.file);
       } else {
@@ -937,7 +958,7 @@ function InternalMessagesWorkspace({
           }
           setDraft("");
           setAttachmentPreview(null);
-          loadAgents();
+          // loadAgents(); // Comentado: no recargar, el mensaje ya está en el estado
         }
         return;
       }
@@ -958,7 +979,7 @@ function InternalMessagesWorkspace({
         }
         setDraft("");
         setAttachmentPreview(null);
-        loadChannels();
+        // loadChannels(); // Comentado: no recargar, el mensaje ya está en el estado
       }
     } catch (err) {
       console.error("Error sending internal message:", err);

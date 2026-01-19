@@ -134,7 +134,7 @@ export default function ReportModal({ dateRange, customStartDate, customEndDate,
     {
       id: 'agents',
       title: 'Por Agente',
-      description: 'Rendimiento individual: cotizaciones, ventas, tasa de conversión',
+      description: 'Rendimiento individual: cotizaciones, ventas, monto cotizado',
       icon: '👥',
     },
     {

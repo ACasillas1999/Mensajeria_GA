@@ -311,10 +311,8 @@ export default function DashboardAdvanced() {
 }
 
 function OverviewTab({ stats, analytics }) {
-  // Calculate conversion rate
-  const conversionRate = stats?.cotizaciones_total > 0
-    ? Math.round((stats.ventas_total / stats.cotizaciones_total) * 100)
-    : 0;
+  const totalQuotedAmount = Number(stats?.monto_total_cotizado || 0);
+  const quotedTodayAmount = Number(stats?.monto_cotizado_hoy || 0);
 
   return (
     <div className="space-y-6">
@@ -334,10 +332,10 @@ function OverviewTab({ stats, analytics }) {
           color="emerald"
         />
         <MetricCard
-          title="Tasa de Conversión"
-          value={`${conversionRate}%`}
-          subtitle={`${stats?.ventas_total || 0} de ${stats?.cotizaciones_total || 0} cotizaciones`}
-          icon="target"
+          title="Monto cotizado"
+          value={`$${totalQuotedAmount.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
+          subtitle={`Hoy: $${quotedTodayAmount.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
+          icon="tag"
           color="purple"
         />
         <MetricCard
@@ -461,7 +459,7 @@ function AgentsTab({ analytics }) {
                     <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Agente</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Cotizaciones</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Ventas</th>
-                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Tasa Conversión</th>
+                    <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Monto cotizado</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Ciclos</th>
                     <th className="text-right py-3 px-4 text-slate-600 dark:text-slate-400">Mensajes</th>
                   </tr>
@@ -475,14 +473,8 @@ function AgentsTab({ analytics }) {
                         <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{agent.agent_name}</td>
                         <td className="py-3 px-4 text-right text-blue-400 font-medium">{agent.quotations_sent || 0}</td>
                         <td className="py-3 px-4 text-right text-emerald-400 font-medium">{agent.sales_closed || 0}</td>
-                        <td className="py-3 px-4 text-right">
-                          <span className={`font-semibold ${
-                            agent.conversion_rate >= 50 ? 'text-emerald-400' :
-                            agent.conversion_rate >= 25 ? 'text-amber-400' :
-                            'text-slate-400'
-                          }`}>
-                            {agent.conversion_rate || 0}%
-                          </span>
+                        <td className="py-3 px-4 text-right text-purple-400 font-medium">
+                          ${Number(agent.quotation_amount || 0).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </td>
                         <td className="py-3 px-4 text-right text-purple-400">{agent.cycles_completed}</td>
                         <td className="py-3 px-4 text-right text-slate-400">{agent.messages_sent}</td>

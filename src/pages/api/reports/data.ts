@@ -29,13 +29,20 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
         // Generate report based on type
         if (reportType === 'agents') {
-            headers = ['Agente', 'Cotizaciones Enviadas', 'Ventas Cerradas', 'Tasa Conversión (%)', 'Ciclos Completados', 'Mensajes Enviados'];
+            headers = ['Agente', 'Cotizaciones Enviadas', 'Ventas Cerradas', 'Monto Cotizado', 'Ciclos Completados', 'Mensajes Enviados'];
 
             const [rows] = await pool.query<RowDataPacket[]>(
                 `SELECT
           u.nombre AS agent_name,
           COUNT(DISTINCT q.id) AS quotations_sent,
           COUNT(DISTINCT CASE WHEN cc.cycle_data IS NOT NULL AND JSON_EXTRACT(cc.cycle_data, '$.monto') IS NOT NULL THEN cc.id END) AS sales_closed,
+          (
+            SELECT COALESCE(SUM(q_amount.amount), 0)
+            FROM conversation_cycles cc_amount
+            LEFT JOIN quotations q_amount ON q_amount.cycle_id = cc_amount.id
+            WHERE cc_amount.assigned_to = u.id
+              AND cc_amount.completed_at ${dateFilter}
+          ) AS quotation_amount,
           COUNT(DISTINCT cc.id) AS cycles_completed,
           COUNT(m.id) AS messages_sent
         FROM usuarios u
@@ -48,20 +55,14 @@ export const GET: APIRoute = async ({ locals, url }) => {
         ORDER BY quotations_sent DESC`
             );
 
-            data = rows.map(r => {
-                const conversionRate = r.quotations_sent > 0
-                    ? Math.round((r.sales_closed / r.quotations_sent) * 100)
-                    : 0;
-
-                return [
-                    r.agent_name,
-                    r.quotations_sent,
-                    r.sales_closed,
-                    conversionRate,
-                    r.cycles_completed,
-                    r.messages_sent
-                ];
-            });
+            data = rows.map(r => ([
+                r.agent_name,
+                r.quotations_sent,
+                r.sales_closed,
+                r.quotation_amount,
+                r.cycles_completed,
+                r.messages_sent
+            ]));
         } else if (reportType === 'sales') {
             headers = ['Fecha', 'Número Cotización', 'Cliente', 'Teléfono', 'Monto', 'Agente', 'Estado'];
 

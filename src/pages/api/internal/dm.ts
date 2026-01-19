@@ -88,7 +88,9 @@ export const GET: APIRoute = async ({ locals, request }) => {
 
     const [messages] = await pool.query<RowDataPacket[]>(
       `
-      SELECT id, user_id, content, created_at, edited_at
+      SELECT id, user_id, content, created_at, edited_at,
+             attachment_type, attachment_url, attachment_name, 
+             attachment_size, attachment_mime
       FROM internal_messages
       WHERE dm_chat_id = ? AND deleted_at IS NULL
       ORDER BY created_at ASC, id ASC

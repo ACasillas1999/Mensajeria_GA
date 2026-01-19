@@ -23,6 +23,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
     let dateFilter = '';
     let messageDateFilter = '';
     let cyclesDateFilter = '';
+    let activeDateFilter = '';
     let hourlyDateFilter = '';
     let dailyDateFilter = '';
 
@@ -30,7 +31,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
       // Rango personalizado
       dateFilter = `>= '${startDate}' AND c.creado_en <= '${endDate} 23:59:59'`;
       messageDateFilter = `>= '${startDate}' AND m.creado_en <= '${endDate} 23:59:59'`;
-      cyclesDateFilter = `>= '${startDate}' AND cc.completed_at <= '${endDate} 23:59:59'`;
+      cyclesDateFilter = `BETWEEN '${startDate}' AND '${endDate} 23:59:59'`;
+      activeDateFilter = `BETWEEN '${startDate}' AND '${endDate} 23:59:59'`;
       hourlyDateFilter = `>= '${startDate}' AND COALESCE(creado_en, FROM_UNIXTIME(ts)) <= '${endDate} 23:59:59'`;
       dailyDateFilter = `>= '${startDate}' AND c.creado_en <= '${endDate} 23:59:59'`;
     } else {
@@ -39,6 +41,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
       dateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
       messageDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
       cyclesDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
+      activeDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
       hourlyDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
       dailyDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
     }
@@ -78,7 +81,38 @@ export const GET: APIRoute = async ({ locals, url }) => {
         COUNT(DISTINCT csh_final.conversation_id) AS conversations_resolved,
         COUNT(m.id) AS messages_sent,
         COUNT(DISTINCT cc.id) AS cycles_completed,
-        COUNT(DISTINCT q.id) AS quotations_sent,
+        (
+          SELECT COUNT(q_count.id)
+          FROM conversation_cycles cc_count
+          LEFT JOIN quotations q_count ON q_count.cycle_id = cc_count.id
+          WHERE cc_count.assigned_to = u.id
+            AND cc_count.completed_at ${cyclesDateFilter}
+        ) +
+        (
+          SELECT COUNT(q_active.id)
+          FROM conversaciones c_active
+          LEFT JOIN quotations q_active ON q_active.conversation_id = c_active.id
+            AND q_active.created_at >= c_active.current_cycle_started_at
+          WHERE c_active.asignado_a = u.id
+            AND c_active.current_cycle_started_at IS NOT NULL
+            AND c_active.current_cycle_started_at ${activeDateFilter}
+        ) AS quotations_sent,
+        (
+          SELECT COALESCE(SUM(q_amount.amount), 0)
+          FROM conversation_cycles cc_amount
+          LEFT JOIN quotations q_amount ON q_amount.cycle_id = cc_amount.id
+          WHERE cc_amount.assigned_to = u.id
+            AND cc_amount.completed_at ${cyclesDateFilter}
+        ) +
+        (
+          SELECT COALESCE(SUM(q_active_amount.amount), 0)
+          FROM conversaciones c_active_amount
+          LEFT JOIN quotations q_active_amount ON q_active_amount.conversation_id = c_active_amount.id
+            AND q_active_amount.created_at >= c_active_amount.current_cycle_started_at
+          WHERE c_active_amount.asignado_a = u.id
+            AND c_active_amount.current_cycle_started_at IS NOT NULL
+            AND c_active_amount.current_cycle_started_at ${activeDateFilter}
+        ) AS quotation_amount,
         (
           SELECT COUNT(DISTINCT cc_sales.id)
           FROM conversation_cycles cc_sales
@@ -88,7 +122,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
             AND csh_sales.created_at <= cc_sales.completed_at
           INNER JOIN conversation_statuses cs_sales 
             ON cs_sales.id = csh_sales.new_status_id
-          WHERE cs_sales.name = 'ventaa'
+          WHERE cs_sales.name = 'venta'
             AND cc_sales.assigned_to = u.id
             AND cc_sales.completed_at IS NOT NULL
             AND cc_sales.completed_at ${cyclesDateFilter}
@@ -239,6 +273,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
           messages_sent: r.messages_sent,
           cycles_completed: r.cycles_completed,
           quotations_sent: r.quotations_sent,
+          quotation_amount: r.quotation_amount,
           sales_closed: r.sales_closed,
           resolution_rate: r.conversations_handled > 0
             ? Math.round((r.conversations_resolved / r.conversations_handled) * 100)

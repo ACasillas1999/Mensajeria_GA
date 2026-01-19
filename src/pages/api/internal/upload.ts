@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         if (!fileInfo) {
             return new Response(JSON.stringify({
                 ok: false,
-                error: 'File type not allowed'
+                error: `File type not allowed: ${file.type}`
             }), {
                 status: 400,
                 headers: { 'Content-Type': 'application/json' }
