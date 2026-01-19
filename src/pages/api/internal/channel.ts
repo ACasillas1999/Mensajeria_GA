@@ -90,6 +90,8 @@ export const GET: APIRoute = async ({ locals, request }) => {
     const [messages] = await pool.query<RowDataPacket[]>(
       `
       SELECT im.id, im.user_id, im.content, im.created_at, im.edited_at,
+             im.attachment_type, im.attachment_url, im.attachment_name,
+             im.attachment_size, im.attachment_mime,
              u.nombre AS sender_name
       FROM internal_messages im
       JOIN usuarios u ON u.id = im.user_id
@@ -164,6 +166,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   try {
     const body = await request.json();
     const content = String(body?.content || "").trim();
+    const attachment = body?.attachment || null;
     const channelId = Number(body?.channel_id || 0);
 
     if (!channelId) {
@@ -173,7 +176,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
       );
     }
 
-    if (!content) {
+    // Validar que haya contenido o archivo adjunto
+    if (!content && !attachment) {
       return new Response(
         JSON.stringify({ ok: false, error: "Mensaje vacio" }),
         { status: 400, headers: { "Content-Type": "application/json" } },
@@ -220,15 +224,31 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
       const [msgRes] = await conn.execute<ResultSetHeader>(
         `
-        INSERT INTO internal_messages (channel_id, user_id, message_type, content)
-        VALUES (?, ?, 'text', ?)
+        INSERT INTO internal_messages (
+          channel_id, user_id, message_type, content,
+          attachment_type, attachment_url, attachment_name,
+          attachment_size, attachment_mime
+        )
+        VALUES (?, ?, 'text', ?, ?, ?, ?, ?, ?)
         `,
-        [channelId, user.id, content],
+        [
+          channelId,
+          user.id,
+          content || null,
+          attachment?.type || null,
+          attachment?.url || null,
+          attachment?.name || null,
+          attachment?.size || null,
+          attachment?.mime || null
+        ],
       );
 
       const [msgRows] = await conn.query<RowDataPacket[]>(
         `
-        SELECT im.id, im.user_id, im.content, im.created_at, u.nombre AS sender_name
+        SELECT im.id, im.user_id, im.content, im.created_at,
+               im.attachment_type, im.attachment_url, im.attachment_name,
+               im.attachment_size, im.attachment_mime,
+               u.nombre AS sender_name
         FROM internal_messages im
         JOIN usuarios u ON u.id = im.user_id
         WHERE im.id = ?

@@ -133,6 +133,8 @@ function InternalMessagesWorkspace({
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [attachmentPreview, setAttachmentPreview] = useState(null);
   const [canWrite, setCanWrite] = useState(true);
   const [notifications, setNotifications] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
@@ -143,6 +145,7 @@ function InternalMessagesWorkspace({
   const containerRef = useRef(null);
   const searchRef = useRef(null);
   const menuRef = useRef(null);
+  const fileInputRef = useRef(null);
   const lastTypingSentRef = useRef(0);
   const isAtBottomRef = useRef(true);
   const agentsSignatureRef = useRef("");
@@ -858,15 +861,69 @@ function InternalMessagesWorkspace({
     }
   }, [contextMenu]);
 
+  const handleFileSelect = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamaño
+    if (file.size > 10 * 1024 * 1024) {
+      pushNotification({
+        title: "Archivo muy grande",
+        message: "El tamaño máximo es 10MB"
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${BASE}/api/internal/upload`.replace(/\/\//g, "/"), {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      if (result.ok) {
+        setAttachmentPreview(result.file);
+      } else {
+        pushNotification({
+          title: "Error",
+          message: result.error || "No se pudo subir el archivo"
+        });
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      pushNotification({
+        title: "Error",
+        message: "Error al subir archivo"
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveAttachment = () => {
+    setAttachmentPreview(null);
+  };
+
+  const handleAttachClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleSend = async () => {
-    if (!draft.trim() || !selectedId || !selectedType || sending) return;
+    if ((!draft.trim() && !attachmentPreview) || !selectedId || !selectedType || sending) return;
     if (selectedType === "channel" && !canWrite) return;
     setSending(true);
     try {
       if (selectedType === "dm") {
         const payload = currentChatId
-          ? { chat_id: currentChatId, content: draft.trim() }
-          : { user_id: selectedId, content: draft.trim() };
+          ? { chat_id: currentChatId, content: draft.trim(), attachment: attachmentPreview }
+          : { user_id: selectedId, content: draft.trim(), attachment: attachmentPreview };
         const r = await fetch(`${BASE}/api/internal/dm`.replace(/\/\//g, "/"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -879,6 +936,7 @@ function InternalMessagesWorkspace({
             setMessages((prev) => [...prev, j.message]);
           }
           setDraft("");
+          setAttachmentPreview(null);
           loadAgents();
         }
         return;
@@ -887,7 +945,11 @@ function InternalMessagesWorkspace({
       const r = await fetch(`${BASE}/api/internal/channel`.replace(/\/\//g, "/"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel_id: selectedId, content: draft.trim() }),
+        body: JSON.stringify({ 
+          channel_id: selectedId, 
+          content: draft.trim(),
+          attachment: attachmentPreview
+        }),
       });
       const j = await r.json();
       if (j.ok) {
@@ -895,6 +957,7 @@ function InternalMessagesWorkspace({
           setMessages((prev) => [...prev, j.message]);
         }
         setDraft("");
+        setAttachmentPreview(null);
         loadChannels();
       }
     } catch (err) {
@@ -1397,7 +1460,37 @@ function InternalMessagesWorkspace({
                     {msg.sender_name}
                   </div>
                 )}
-                <div className="text-xs leading-relaxed">{msg.content}</div>
+                {msg.content && (
+                  <div className="text-xs leading-relaxed">{msg.content}</div>
+                )}
+                {msg.attachment_url && (
+                  <div className="mt-2">
+                    {msg.attachment_type === 'image' ? (
+                      <img 
+                        src={msg.attachment_url}
+                        alt={msg.attachment_name || 'Imagen'}
+                        className="max-w-xs max-h-64 rounded cursor-pointer hover:opacity-90 transition"
+                        onClick={() => window.open(msg.attachment_url, '_blank')}
+                        title="Click para ver en tamaño completo"
+                      />
+                    ) : (
+                      <a
+                        href={msg.attachment_url}
+                        download={msg.attachment_name}
+                        className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition text-xs"
+                        title="Click para descargar"
+                      >
+                        <span className="text-lg">📎</span>
+                        <span className="flex-1 truncate">{msg.attachment_name || 'Archivo'}</span>
+                        {msg.attachment_size && (
+                          <span className="text-xs text-gray-500">
+                            {(msg.attachment_size / 1024).toFixed(1)} KB
+                          </span>
+                        )}
+                      </a>
+                    )}
+                  </div>
+                )}
                 <div className="text-[10px] internal-muted mt-1 text-right flex items-center justify-end gap-1">
                   <span>{formatInternalTime(msg.created_at)}</span>
                   {isMe && (
@@ -1421,23 +1514,83 @@ function InternalMessagesWorkspace({
           </div>
         )}
       </div>
-      <div className="border-t internal-divider px-3 py-3">
-        <div className="flex items-center gap-2">
+      <div className="border-t internal-divider">
+        {attachmentPreview && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20">
+            <div className="flex-1 flex items-center gap-2">
+              {attachmentPreview.type === 'image' ? (
+                <img 
+                  src={attachmentPreview.url} 
+                  alt={attachmentPreview.name}
+                  className="w-12 h-12 object-cover rounded"
+                />
+              ) : (
+                <div className="w-12 h-12 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded text-2xl">
+                  📄
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">{attachmentPreview.name}</div>
+                <div className="text-xs text-gray-500">
+                  {(attachmentPreview.size / 1024).toFixed(1)} KB
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleRemoveAttachment}
+              className="text-red-500 hover:text-red-700 p-1"
+              title="Quitar archivo"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+        <div className="px-3 py-3">
           <input
-            value={draft}
-            onChange={handleDraftChange}
-            onKeyDown={(event) => event.key === "Enter" && handleSend()}
-            placeholder={inputPlaceholder}
-            className="flex-1 internal-input text-xs px-3 py-2 rounded-lg"
-            disabled={inputDisabled}
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt,.csv"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
           />
-          <button
-            onClick={handleSend}
-            className="internal-send"
-            disabled={sendDisabled}
-          >
-            {sending ? "Enviando..." : "Enviar"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAttachClick}
+              disabled={inputDisabled || uploading}
+              className="internal-icon-button flex-shrink-0"
+              title={uploading ? "Subiendo..." : "Adjuntar archivo"}
+            >
+              {uploading ? (
+                <span className="text-xs">⏳</span>
+              ) : (
+                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M10 3L10 17M3 10L17 10"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+            </button>
+            <input
+              value={draft}
+              onChange={handleDraftChange}
+              onKeyDown={(event) => event.key === "Enter" && handleSend()}
+              placeholder={inputPlaceholder}
+              className="flex-1 internal-input text-xs px-3 py-2 rounded-lg"
+              disabled={inputDisabled}
+            />
+            <button
+              onClick={handleSend}
+              className="internal-send"
+              disabled={sendDisabled}
+            >
+              {sending ? "Enviando..." : "Enviar"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
