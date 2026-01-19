@@ -337,6 +337,11 @@ export default function AgentAudit() {
         cell.alignment = { vertical: 'middle', horizontal: col <= 3 ? 'left' : 'center' };
         cell.font = { bold: true, color: { argb: colors.totalFg } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.totalBg } };
+        // Columnas de estatus (6 hasta maxCols-2): formato número sin decimales
+        if (col >= 6 && col <= maxCols - 2) {
+          cell.numFmt = '0';
+        }
+        // Total cotizado y Total vendido: formato dinero
         if (col === maxCols - 1 || col === maxCols) {
           cell.numFmt = '$#,##0.00';
           cell.font = { bold: true, color: { argb: col === maxCols ? 'FF059669' : 'FF0284C7' } };
@@ -382,6 +387,11 @@ export default function AgentAudit() {
             if (index % 2 === 1) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.altRow } };
             }
+            // Columnas de estatus (6 hasta maxCols-2): formato número sin decimales
+            if (col >= 6 && col <= maxCols - 2) {
+              cell.numFmt = '0';
+            }
+            // Total cotizado y Total vendido: formato dinero
             if (col === maxCols - 1 || col === maxCols) {
               cell.numFmt = '$#,##0.00';
               cell.font = { bold: true, color: { argb: col === maxCols ? 'FF059669' : 'FF0284C7' } };
