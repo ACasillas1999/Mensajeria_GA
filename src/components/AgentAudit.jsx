@@ -27,6 +27,18 @@ export default function AgentAudit() {
     endDate: '',
     weeks: '',
   });
+  const [globalFilterDraft, setGlobalFilterDraft] = useState({
+    startDate: '',
+    endDate: '',
+    weeks: '',
+  });
+  const [globalFilterApplied, setGlobalFilterApplied] = useState({
+    mode: 'all',
+    startDate: '',
+    endDate: '',
+    weeks: '',
+  });
+  const [exportingAllAgents, setExportingAllAgents] = useState(false);
 
   async function load() {
     try {
@@ -149,6 +161,252 @@ export default function AgentAudit() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  }
+
+  function buildGlobalFilterLabel(filter) {
+    if (filter.mode === 'custom' && filter.startDate && filter.endDate) {
+      return `${filter.startDate} a ${filter.endDate}`;
+    }
+    if (filter.mode === 'weeks' && filter.weeks) {
+      return `Ultimas ${filter.weeks} semanas`;
+    }
+    return 'Sin filtro';
+  }
+
+  function applyGlobalFilters() {
+    if (globalFilterDraft.weeks) {
+      setGlobalFilterApplied({
+        mode: 'weeks',
+        startDate: '',
+        endDate: '',
+        weeks: globalFilterDraft.weeks,
+      });
+      return;
+    }
+    if (globalFilterDraft.startDate && globalFilterDraft.endDate) {
+      setGlobalFilterApplied({
+        mode: 'custom',
+        startDate: globalFilterDraft.startDate,
+        endDate: globalFilterDraft.endDate,
+        weeks: '',
+      });
+      return;
+    }
+    setGlobalFilterApplied({
+      mode: 'all',
+      startDate: '',
+      endDate: '',
+      weeks: '',
+    });
+  }
+
+  function clearGlobalFilters() {
+    setGlobalFilterDraft({ startDate: '', endDate: '', weeks: '' });
+    setGlobalFilterApplied({ mode: 'all', startDate: '', endDate: '', weeks: '' });
+  }
+
+  async function exportAllAgentsReportXlsx() {
+    if (exportingAllAgents) return;
+    setExportingAllAgents(true);
+    try {
+      const query = buildAuditQuery(globalFilterApplied);
+      const r = await fetch(
+        `${BASE}/api/admin/all-agents-status-audit?${query.substring(1)}`.replace(/\/\//g, '/')
+      );
+      const j = await r.json();
+      
+      if (!j.ok) {
+        console.error('Error fetching all agents data:', j.error);
+        setExportingAllAgents(false);
+        return;
+      }
+
+      const ExcelJSImport = await import('exceljs');
+      const ExcelJS = ExcelJSImport.default ?? ExcelJSImport;
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Mensajeria';
+      workbook.created = new Date();
+
+      const sheet = workbook.addWorksheet('Todos los Agentes');
+      const statusNames = j.statuses.map((st) => st.name);
+      const maxCols = 6 + statusNames.length;
+
+      sheet.columns = Array.from({ length: maxCols }, (_, idx) => {
+        if (idx === 0) return { width: 20 }; // Nombre
+        if (idx === 1) return { width: 28 }; // Email
+        if (idx === 2) return { width: 16 }; // Sucursal
+        if (idx === 3) return { width: 14 }; // Conversaciones
+        if (idx === 4) return { width: 10 }; // Ciclos
+        if (idx === maxCols - 2) return { width: 18 }; // Total cotizado
+        if (idx === maxCols - 1) return { width: 18 }; // Total vendido
+        return { width: 14 }; // Status columns
+      });
+
+      const colors = {
+        headerBg: 'FFE2E8F0',
+        headerFg: 'FF1E293B',
+        sectionBg: 'FF0F172A',
+        sectionFg: 'FFF8FAFC',
+        metaBg: 'FFF8FAFC',
+        metaLabelFg: 'FF475569',
+        metaValueFg: 'FF0F172A',
+        altRow: 'FFF8FAFC',
+        totalBg: 'FFDBEAFE',
+        totalFg: 'FF581C87',
+        border: 'FFD6DDE6',
+      };
+
+      const thinBorder = {
+        top: { style: 'thin', color: { argb: colors.border } },
+        left: { style: 'thin', color: { argb: colors.border } },
+        bottom: { style: 'thin', color: { argb: colors.border } },
+        right: { style: 'thin', color: { argb: colors.border } },
+      };
+
+      const applyBorder = (row) => {
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          cell.border = thinBorder;
+          cell.alignment = cell.alignment || { vertical: 'middle' };
+        });
+      };
+
+      const addMetaRow = (label, value) => {
+        const row = sheet.addRow([label, value]);
+        sheet.mergeCells(row.number, 2, row.number, maxCols);
+        row.height = 18;
+        row.getCell(1).font = { bold: true, color: { argb: colors.metaLabelFg } };
+        row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.metaBg } };
+        row.getCell(2).font = { bold: true, color: { argb: colors.metaValueFg } };
+        row.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
+        applyBorder(row);
+      };
+
+      const addSectionRow = (title) => {
+        const row = sheet.addRow([title]);
+        sheet.mergeCells(row.number, 1, row.number, maxCols);
+        row.height = 20;
+        row.getCell(1).font = { bold: true, color: { argb: colors.sectionFg }, size: 11 };
+        row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.sectionBg } };
+        row.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+        applyBorder(row);
+      };
+
+      const styleHeaderRow = (row) => {
+        row.height = 18;
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          cell.font = { bold: true, color: { argb: colors.headerFg } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          cell.border = thinBorder;
+        });
+      };
+
+      const filterLabel = buildGlobalFilterLabel(globalFilterApplied);
+      addMetaRow('Reporte', 'Auditoria de todos los agentes');
+      addMetaRow('Filtro', filterLabel);
+      addMetaRow('Generado', new Date().toLocaleString('es-MX'));
+
+      sheet.addRow([]).height = 10;
+      addSectionRow('Resumen global');
+
+      // Totales globales
+      const globalHeader = sheet.addRow([
+        'Total',
+        '',
+        '',
+        'Conversaciones',
+        'Ciclos',
+        ...statusNames,
+        'Total cotizado',
+        'Total vendido',
+      ]);
+      styleHeaderRow(globalHeader);
+
+      const globalRow = sheet.addRow([
+        'TODOS LOS AGENTES',
+        '',
+        '',
+        Number(j.global_summary.total_conversations || 0),
+        Number(j.global_summary.total_cycles || 0),
+        ...j.statuses.map((st) => Number(j.global_summary.counts[String(st.id)] || 0)),
+        j.global_summary.total_quotation_amount || 0,
+        j.global_summary.total_sales_amount || 0,
+      ]);
+      applyBorder(globalRow);
+      globalRow.eachCell({ includeEmpty: true }, (cell, col) => {
+        cell.alignment = { vertical: 'middle', horizontal: col <= 3 ? 'left' : 'center' };
+        cell.font = { bold: true, color: { argb: colors.totalFg } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.totalBg } };
+        if (col === maxCols - 1 || col === maxCols) {
+          cell.numFmt = '$#,##0.00';
+          cell.font = { bold: true, color: { argb: col === maxCols ? 'FF059669' : 'FF0284C7' } };
+        }
+      });
+
+      sheet.addRow([]).height = 10;
+      addSectionRow('Detalle por agente');
+
+      const detailHeader = sheet.addRow([
+        'Agente',
+        'Email',
+        'Sucursal',
+        'Conversaciones',
+        'Ciclos',
+        ...statusNames,
+        'Total cotizado',
+        'Total vendido',
+      ]);
+      styleHeaderRow(detailHeader);
+
+      if (j.agents.length === 0) {
+        const emptyRow = sheet.addRow(['Sin agentes registrados']);
+        sheet.mergeCells(emptyRow.number, 1, emptyRow.number, maxCols);
+        emptyRow.getCell(1).font = { italic: true, color: { argb: 'FF64748B' } };
+        applyBorder(emptyRow);
+      } else {
+        j.agents.forEach((agent, index) => {
+          const row = sheet.addRow([
+            agent.nombre,
+            agent.email,
+            agent.sucursal || '-',
+            Number(agent.total_conversations || 0),
+            Number(agent.total_cycles || 0),
+            ...j.statuses.map((st) => Number(agent.status_counts[String(st.id)] || 0)),
+            agent.total_quotation_amount || 0,
+            agent.total_sales_amount || 0,
+          ]);
+
+          applyBorder(row);
+          row.eachCell({ includeEmpty: true }, (cell, col) => {
+            cell.alignment = { vertical: 'middle', horizontal: col <= 3 ? 'left' : 'center' };
+            if (index % 2 === 1) {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.altRow } };
+            }
+            if (col === maxCols - 1 || col === maxCols) {
+              cell.numFmt = '$#,##0.00';
+              cell.font = { bold: true, color: { argb: col === maxCols ? 'FF059669' : 'FF0284C7' } };
+            }
+          });
+        });
+      }
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      
+      const filterSlug = globalFilterApplied.mode === 'custom'
+        ? `${globalFilterApplied.startDate}_${globalFilterApplied.endDate}`
+        : globalFilterApplied.mode === 'weeks'
+          ? `${globalFilterApplied.weeks}w`
+          : 'all';
+      
+      downloadBlob(`all-agents-report-${filterSlug}.xlsx`, blob);
+    } catch (err) {
+      console.error('Error exporting all agents report:', err);
+    } finally {
+      setExportingAllAgents(false);
+    }
   }
 
   const activeAgents = data.agents.filter(a => a.ultima_actividad_ts && (Date.now() / 1000 - a.ultima_actividad_ts) < 300); // activos en ultimos 5min
@@ -701,8 +959,99 @@ export default function AgentAudit() {
   }
 
   // Vista general
+  const hasGlobalRangeError = (globalFilterDraft.startDate && !globalFilterDraft.endDate)
+    || (!globalFilterDraft.startDate && globalFilterDraft.endDate);
+  const globalFilterLabel = buildGlobalFilterLabel(globalFilterApplied);
+
   return (
     <div className="space-y-4">
+      {/* Filtros y exportación global */}
+      <div className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-4 py-3 border-b border-slate-300 dark:border-slate-800 font-medium flex items-center gap-2 text-slate-900 dark:text-slate-100">
+          <span>Exportar reporte completo</span>
+          <button
+            onClick={exportAllAgentsReportXlsx}
+            disabled={exportingAllAgents}
+            className={`ml-auto px-3 py-1.5 text-sm rounded border ${exportingAllAgents
+              ? 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-600'
+              : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-600/20 dark:text-emerald-300 dark:hover:bg-emerald-600/30'}`}
+          >
+            {exportingAllAgents ? 'Exportando...' : 'Exportar todos los agentes'}
+          </button>
+        </div>
+        <div className="px-4 py-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-500 dark:text-slate-400">Inicio</label>
+              <input
+                type="date"
+                value={globalFilterDraft.startDate}
+                onChange={(e) => setGlobalFilterDraft((prev) => ({
+                  ...prev,
+                  startDate: e.target.value,
+                  weeks: '',
+                }))}
+                className="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-700 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-500 dark:text-slate-400">Fin</label>
+              <input
+                type="date"
+                value={globalFilterDraft.endDate}
+                onChange={(e) => setGlobalFilterDraft((prev) => ({
+                  ...prev,
+                  endDate: e.target.value,
+                  weeks: '',
+                }))}
+                className="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-700 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-500 dark:text-slate-400">Semanas</label>
+              <select
+                value={globalFilterDraft.weeks}
+                onChange={(e) => setGlobalFilterDraft({
+                  startDate: '',
+                  endDate: '',
+                  weeks: e.target.value,
+                })}
+                className="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-700 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+              >
+                <option value="">Sin semanas</option>
+                <option value="1">Ultima semana</option>
+                <option value="2">Ultimas 2 semanas</option>
+                <option value="4">Ultimas 4 semanas</option>
+                <option value="8">Ultimas 8 semanas</option>
+              </select>
+            </div>
+            <button
+              onClick={applyGlobalFilters}
+              disabled={hasGlobalRangeError}
+              className={`px-3 py-1 text-xs rounded border ${hasGlobalRangeError
+                ? 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-600'
+                : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'}`}
+            >
+              Aplicar
+            </button>
+            <button
+              onClick={clearGlobalFilters}
+              className="px-3 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              Limpiar
+            </button>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Filtro activo: {globalFilterLabel}
+            </div>
+          </div>
+          {hasGlobalRangeError && (
+            <div className="mt-2 text-xs text-rose-600 dark:text-rose-400">
+              Selecciona inicio y fin para el rango de fechas.
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Header con stats globales */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-4 shadow-sm">
