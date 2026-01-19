@@ -229,7 +229,7 @@ export default function AgentAudit() {
 
       const sheet = workbook.addWorksheet('Todos los Agentes');
       const statusNames = j.statuses.map((st) => st.name);
-      const maxCols = 6 + statusNames.length;
+      const maxCols = 7 + statusNames.length; // 5 cols fijas + estatus + 2 totales
 
       sheet.columns = Array.from({ length: maxCols }, (_, idx) => {
         if (idx === 0) return { width: 20 }; // Nombre
