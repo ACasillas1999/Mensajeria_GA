@@ -120,10 +120,11 @@ export const GET: APIRoute = async ({ locals, url }) => {
                 activeParams
             );
 
-            // Montos de cotizaciones por ciclo completado
+            // Montos y conteo de cotizaciones por ciclo completado
             const [quotationAmounts] = await pool.query<RowDataPacket[]>(
                 `SELECT
           cc.id AS cycle_id,
+          COUNT(q.id) AS quotation_count,
           COALESCE(SUM(q.amount), 0) AS total_amount
          FROM conversation_cycles cc
          LEFT JOIN quotations q ON q.cycle_id = cc.id
@@ -132,10 +133,11 @@ export const GET: APIRoute = async ({ locals, url }) => {
                 completedParams
             );
 
-            // Montos de cotizaciones para ciclos activos
+            // Montos y conteo de cotizaciones para ciclos activos
             const [activeQuotationAmounts] = await pool.query<RowDataPacket[]>(
                 `SELECT
           c.id AS conversation_id,
+          COUNT(q.id) AS quotation_count,
           COALESCE(SUM(q.amount), 0) AS total_amount
          FROM conversaciones c
          LEFT JOIN quotations q ON q.conversation_id = c.id
@@ -149,17 +151,20 @@ export const GET: APIRoute = async ({ locals, url }) => {
             // Procesar datos del agente
             const countsByCycleId = new Map<string, Record<string, number>>();
             const quotationAmountsByCycleId = new Map<string, number>();
+            const quotationCountsByCycleId = new Map<string, number>();
 
-            // Mapear montos de cotizaciones completadas
+            // Mapear montos y conteos de cotizaciones completadas
             for (const row of quotationAmounts) {
                 const key = String(row.cycle_id);
                 quotationAmountsByCycleId.set(key, Number(row.total_amount || 0));
+                quotationCountsByCycleId.set(key, Number(row.quotation_count || 0));
             }
 
-            // Mapear montos de cotizaciones activas
+            // Mapear montos y conteos de cotizaciones activas
             for (const row of activeQuotationAmounts) {
                 const key = `active-${row.conversation_id}`;
                 quotationAmountsByCycleId.set(key, Number(row.total_amount || 0));
+                quotationCountsByCycleId.set(key, Number(row.quotation_count || 0));
             }
 
             // Mapear conteos de estados completados
@@ -197,6 +202,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
             // Calcular resumen del agente
             const summaryCounts: Record<string, number> = {};
             const conversationIds = new Set<number>();
+            let totalQuotationCount = 0;
             let totalQuotationAmount = 0;
             let totalSalesAmount = 0;
 
@@ -204,8 +210,10 @@ export const GET: APIRoute = async ({ locals, url }) => {
                 conversationIds.add(Number(cycle.conversation_id));
                 const cycleCounts = countsByCycleId.get(cycle.cycle_id) || {};
                 const cycleQuotationAmount = quotationAmountsByCycleId.get(cycle.cycle_id) || 0;
+                const cycleQuotationCount = quotationCountsByCycleId.get(cycle.cycle_id) || 0;
 
                 // Sumar al total de cotizaciones
+                totalQuotationCount += cycleQuotationCount;
                 totalQuotationAmount += cycleQuotationAmount;
 
                 // Si el ciclo tiene status "venta", sumar al total de ventas
@@ -226,6 +234,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
                 total_conversations: conversationIds.size,
                 total_cycles: cycles.length,
                 status_counts: summaryCounts,
+                total_quotation_count: totalQuotationCount,
                 total_quotation_amount: totalQuotationAmount,
                 total_sales_amount: totalSalesAmount,
             });
@@ -235,12 +244,14 @@ export const GET: APIRoute = async ({ locals, url }) => {
         const globalSummaryCounts: Record<string, number> = {};
         let globalTotalConversations = 0;
         let globalTotalCycles = 0;
+        let globalTotalQuotationCount = 0;
         let globalTotalQuotationAmount = 0;
         let globalTotalSalesAmount = 0;
 
         for (const agentSummary of agentSummaries) {
             globalTotalConversations += agentSummary.total_conversations;
             globalTotalCycles += agentSummary.total_cycles;
+            globalTotalQuotationCount += agentSummary.total_quotation_count;
             globalTotalQuotationAmount += agentSummary.total_quotation_amount;
             globalTotalSalesAmount += agentSummary.total_sales_amount;
 
@@ -264,6 +275,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
                     total_conversations: globalTotalConversations,
                     total_cycles: globalTotalCycles,
                     counts: globalSummaryCounts,
+                    total_quotation_count: globalTotalQuotationCount,
                     total_quotation_amount: globalTotalQuotationAmount,
                     total_sales_amount: globalTotalSalesAmount,
                 },

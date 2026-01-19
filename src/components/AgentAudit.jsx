@@ -229,7 +229,7 @@ export default function AgentAudit() {
 
       const sheet = workbook.addWorksheet('Todos los Agentes');
       const statusNames = j.statuses.map((st) => st.name);
-      const maxCols = 7 + statusNames.length; // 5 cols fijas + estatus + 2 totales
+      const maxCols = 8 + statusNames.length; // 5 cols fijas + estatus + 3 totales (cotizaciones, monto cotizado, monto vendido)
 
       sheet.columns = Array.from({ length: maxCols }, (_, idx) => {
         if (idx === 0) return { width: 20 }; // Nombre
@@ -237,6 +237,7 @@ export default function AgentAudit() {
         if (idx === 2) return { width: 16 }; // Sucursal
         if (idx === 3) return { width: 14 }; // Conversaciones
         if (idx === 4) return { width: 10 }; // Ciclos
+        if (idx === maxCols - 3) return { width: 16 }; // Total cotizaciones
         if (idx === maxCols - 2) return { width: 18 }; // Total cotizado
         if (idx === maxCols - 1) return { width: 18 }; // Total vendido
         return { width: 14 }; // Status columns
@@ -317,6 +318,7 @@ export default function AgentAudit() {
         'Conversaciones',
         'Ciclos',
         ...statusNames,
+        'Total cotizaciones',
         'Total cotizado',
         'Total vendido',
       ]);
@@ -329,6 +331,7 @@ export default function AgentAudit() {
         Number(j.global_summary.total_conversations || 0),
         Number(j.global_summary.total_cycles || 0),
         ...j.statuses.map((st) => Number(j.global_summary.counts[String(st.id)] || 0)),
+        Number(j.global_summary.total_quotation_count || 0),
         j.global_summary.total_quotation_amount || 0,
         j.global_summary.total_sales_amount || 0,
       ]);
@@ -337,8 +340,12 @@ export default function AgentAudit() {
         cell.alignment = { vertical: 'middle', horizontal: col <= 3 ? 'left' : 'center' };
         cell.font = { bold: true, color: { argb: colors.totalFg } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.totalBg } };
-        // Columnas de estatus (6 hasta maxCols-2): formato número sin decimales
-        if (col >= 6 && col <= maxCols - 2) {
+        // Columnas de estatus (6 hasta maxCols-3): formato número sin decimales
+        if (col >= 6 && col <= maxCols - 3) {
+          cell.numFmt = '0';
+        }
+        // Total cotizaciones: formato número sin decimales
+        if (col === maxCols - 2) {
           cell.numFmt = '0';
         }
         // Total cotizado y Total vendido: formato dinero
@@ -358,6 +365,7 @@ export default function AgentAudit() {
         'Conversaciones',
         'Ciclos',
         ...statusNames,
+        'Total cotizaciones',
         'Total cotizado',
         'Total vendido',
       ]);
@@ -377,6 +385,7 @@ export default function AgentAudit() {
             Number(agent.total_conversations || 0),
             Number(agent.total_cycles || 0),
             ...j.statuses.map((st) => Number(agent.status_counts[String(st.id)] || 0)),
+            Number(agent.total_quotation_count || 0),
             agent.total_quotation_amount || 0,
             agent.total_sales_amount || 0,
           ]);
@@ -387,8 +396,12 @@ export default function AgentAudit() {
             if (index % 2 === 1) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.altRow } };
             }
-            // Columnas de estatus (6 hasta maxCols-2): formato número sin decimales
-            if (col >= 6 && col <= maxCols - 2) {
+            // Columnas de estatus (6 hasta maxCols-3): formato número sin decimales
+            if (col >= 6 && col <= maxCols - 3) {
+              cell.numFmt = '0';
+            }
+            // Total cotizaciones: formato número sin decimales
+            if (col === maxCols - 2) {
               cell.numFmt = '0';
             }
             // Total cotizado y Total vendido: formato dinero
