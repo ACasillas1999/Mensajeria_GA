@@ -199,6 +199,10 @@ const footerLinks = [
           >
             <span class="app-mode-dot" aria-hidden="true"></span>
             <span data-mode-label>Mensajes internos</span>
+            <span class="app-mode-badges" aria-hidden="true">
+              <span class="app-mode-badge client" data-badge="client" hidden></span>
+              <span class="app-mode-badge internal" data-badge="internal" hidden></span>
+            </span>
           </button>
           {
             user && (
@@ -450,6 +454,44 @@ const footerLinks = [
           ?.querySelectorAll("a")
           .forEach((a) => a.addEventListener("click", closeMobileNav));
 
+        const modeToggle = document.getElementById("app-mode-toggle");
+        const badgeInternal = modeToggle?.querySelector('[data-badge="internal"]');
+        const badgeClient = modeToggle?.querySelector('[data-badge="client"]');
+
+        const sumUnread = (items) => {
+          if (!Array.isArray(items)) return 0;
+          return items.reduce((total, item) => {
+            const raw = Number(item?.unread_count || 0);
+            if (!Number.isFinite(raw) || raw <= 0) {
+              return total + (item?.has_unread ? 1 : 0);
+            }
+            return total + raw;
+          }, 0);
+        };
+
+        const updateBadge = (el, count, label) => {
+          if (!el) return;
+          const value = Number(count || 0);
+          if (!Number.isFinite(value) || value <= 0) {
+            el.hidden = true;
+            el.removeAttribute("data-count");
+            el.removeAttribute("title");
+            return;
+          }
+          el.hidden = false;
+          el.dataset.count = String(value);
+          if (label) {
+            el.title = `${label}: ${value}`;
+          }
+        };
+
+        const updateModeBadges = ({ internal = 0, client = 0 } = {}) => {
+          updateBadge(badgeInternal, internal, "Mensajes internos pendientes");
+          updateBadge(badgeClient, client, "Mensajes de clientes pendientes");
+        };
+
+        updateModeBadges({ internal: 0, client: 0 });
+
         const toastContainer = document.getElementById(
           "global-internal-toasts",
         );
@@ -558,20 +600,30 @@ const footerLinks = [
 
           const poll = async () => {
             try {
-              const [usersRes, channelsRes] = await Promise.all([
+              const [usersRes, channelsRes, clientRes] = await Promise.all([
                 fetch(normalize("/api/internal/users"), {
                   credentials: "same-origin",
                 }),
                 fetch(normalize("/api/internal/channels"), {
                   credentials: "same-origin",
                 }),
+                fetch(normalize("/api/notifications?leida=false&limit=1"), {
+                  credentials: "same-origin",
+                }),
               ]);
-              const [usersData, channelsData] = await Promise.all([
+              const [usersData, channelsData, clientData] = await Promise.all([
                 readJson(usersRes),
                 readJson(channelsRes),
+                readJson(clientRes),
               ]);
               if (usersData?.ok) handleUsers(usersData);
               if (channelsData?.ok) handleChannels(channelsData);
+              const internalUnread =
+                sumUnread(usersData?.items) + sumUnread(channelsData?.items);
+              const clientUnread = clientData?.ok
+                ? Number(clientData.unread_count || 0)
+                : 0;
+              updateModeBadges({ internal: internalUnread, client: clientUnread });
             } catch (err) {
               console.error("Error polling internal notifications:", err);
             }
@@ -586,7 +638,6 @@ const footerLinks = [
           });
         }
 
-        const modeToggle = document.getElementById("app-mode-toggle");
         const updateModeToggle = (mode) => {
           if (!modeToggle) return;
           const label = modeToggle.querySelector("[data-mode-label]");

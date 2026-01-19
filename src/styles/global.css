@@ -276,6 +276,34 @@ input::placeholder {
   z-index: 2;
 }
 
+.app-mode-badges {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.app-mode-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #34d399;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.app-mode-badge.internal {
+  background: var(--internal-accent, #2563eb);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+:root[data-app-mode="internal"].dark .app-mode-badge.internal {
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+}
+
 .app-mode-dot {
   width: 8px;
   height: 8px;

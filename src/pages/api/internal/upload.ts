@@ -77,22 +77,40 @@ export const POST: APIRoute = async ({ request, locals }) => {
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
 
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'internal', String(year), month);
+        // Directorios de destino: siempre public/ (fuente) y dist/client/ (producción) si existe
+        const uploadDirs = [
+            path.join(process.cwd(), 'public', 'uploads', 'internal', String(year), month)
+        ];
 
-        // Crear directorio si no existe
-        if (!existsSync(uploadDir)) {
-            await mkdir(uploadDir, { recursive: true });
+        // Verificar si estamos en producción (dist/client existe)
+        const distPath = path.join(process.cwd(), 'dist', 'client');
+        const distExists = existsSync(distPath);
+
+        console.log('[Upload] CWD:', process.cwd());
+        console.log('[Upload] Dist path:', distPath, 'Exists:', distExists);
+
+        if (distExists) {
+            uploadDirs.push(path.join(distPath, 'uploads', 'internal', String(year), month));
         }
 
-        // Generar nombre único
+        const buffer = Buffer.from(await file.arrayBuffer());
         const timestamp = Date.now();
         const random = Math.random().toString(36).substring(2, 8);
         const filename = `${timestamp}_${random}.${fileInfo.ext}`;
-        const filepath = path.join(uploadDir, filename);
 
-        // Guardar archivo
-        const buffer = Buffer.from(await file.arrayBuffer());
-        await writeFile(filepath, buffer);
+        // Guardar en todos los directorios
+        for (const dir of uploadDirs) {
+            try {
+                if (!existsSync(dir)) {
+                    await mkdir(dir, { recursive: true });
+                }
+                const fullPath = path.join(dir, filename);
+                await writeFile(fullPath, buffer);
+                console.log('[Upload] Saved to:', fullPath);
+            } catch (err) {
+                console.error('[Upload] Error saving to:', dir, err);
+            }
+        }
 
         // URL relativa para el frontend
         const url = `/uploads/internal/${year}/${month}/${filename}`;
