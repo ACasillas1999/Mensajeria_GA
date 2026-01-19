@@ -159,7 +159,10 @@ export const POST: APIRoute = async ({ locals, request }) => {
   try {
     const body = await request.json();
     const content = String(body?.content || "").trim();
-    if (!content) {
+    const attachment = body?.attachment || null;
+
+    // Validar que haya contenido o archivo adjunto
+    if (!content && !attachment) {
       return new Response(
         JSON.stringify({ ok: false, error: "Mensaje vacio" }),
         { status: 400, headers: { "Content-Type": "application/json" } },
@@ -236,14 +239,30 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
       const [msgRes] = await conn.execute<ResultSetHeader>(
         `
-        INSERT INTO internal_messages (dm_chat_id, user_id, message_type, content)
-        VALUES (?, ?, 'text', ?)
+        INSERT INTO internal_messages (
+          dm_chat_id, user_id, message_type, content,
+          attachment_type, attachment_url, attachment_name, 
+          attachment_size, attachment_mime
+        )
+        VALUES (?, ?, 'text', ?, ?, ?, ?, ?, ?)
         `,
-        [chatId, user.id, content],
+        [
+          chatId,
+          user.id,
+          content || null,
+          attachment?.type || null,
+          attachment?.url || null,
+          attachment?.name || null,
+          attachment?.size || null,
+          attachment?.mime || null
+        ],
       );
 
       const [msgRows] = await conn.query<RowDataPacket[]>(
-        "SELECT id, user_id, content, created_at FROM internal_messages WHERE id = ?",
+        `SELECT id, user_id, content, created_at,
+                attachment_type, attachment_url, attachment_name,
+                attachment_size, attachment_mime
+         FROM internal_messages WHERE id = ?`,
         [msgRes.insertId],
       );
 
