@@ -17,7 +17,11 @@ export const GET: APIRoute = async ({ locals, url }) => {
     try {
         // Obtener todos los agentes
         const [agentRows] = await pool.query<RowDataPacket[]>(
-            'SELECT id, nombre, email, sucursal FROM usuarios WHERE rol = "agente" ORDER BY nombre ASC'
+            `SELECT u.id, u.nombre, u.email, u.sucursal_id, s.nombre AS sucursal 
+             FROM usuarios u
+             LEFT JOIN sucursales s ON s.id = u.sucursal_id
+             WHERE u.rol = "agente" 
+             ORDER BY u.nombre ASC`
         );
 
         if (agentRows.length === 0) {
