@@ -94,12 +94,12 @@ const adminLinks = [
     label: "Gestion de Estados",
     mode: "client",
   },
-  {
-    href: "/admin/reportes/ventas",
-    icon: "bar-chart",
-    label: "Reporte de Ventas",
-    mode: "client",
-  },
+  /*{
+    //href: "/admin/reportes/ventas",
+    //icon: "bar-chart",
+    //label: "Reporte de Ventas",
+    //mode: "client",
+  },*/
   {
     href: "/admin/notificaciones",
     icon: "bell",
@@ -200,8 +200,10 @@ const footerLinks = [
             <span class="app-mode-dot" aria-hidden="true"></span>
             <span data-mode-label>Mensajes internos</span>
             <span class="app-mode-badges" aria-hidden="true">
-              <span class="app-mode-badge client" data-badge="client" hidden></span>
-              <span class="app-mode-badge internal" data-badge="internal" hidden></span>
+              <span class="app-mode-badge client" data-badge="client" hidden
+              ></span>
+              <span class="app-mode-badge internal" data-badge="internal" hidden
+              ></span>
             </span>
           </button>
           {
@@ -455,7 +457,9 @@ const footerLinks = [
           .forEach((a) => a.addEventListener("click", closeMobileNav));
 
         const modeToggle = document.getElementById("app-mode-toggle");
-        const badgeInternal = modeToggle?.querySelector('[data-badge="internal"]');
+        const badgeInternal = modeToggle?.querySelector(
+          '[data-badge="internal"]',
+        );
         const badgeClient = modeToggle?.querySelector('[data-badge="client"]');
 
         const sumUnread = (items) => {
@@ -623,7 +627,10 @@ const footerLinks = [
               const clientUnread = clientData?.ok
                 ? Number(clientData.unread_count || 0)
                 : 0;
-              updateModeBadges({ internal: internalUnread, client: clientUnread });
+              updateModeBadges({
+                internal: internalUnread,
+                client: clientUnread,
+              });
             } catch (err) {
               console.error("Error polling internal notifications:", err);
             }
