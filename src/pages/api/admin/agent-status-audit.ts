@@ -58,7 +58,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
         cc.cycle_number,
         cc.started_at,
         cc.completed_at,
-        cc.cycle_data,
         c.wa_user,
         c.wa_profile_name
        FROM conversation_cycles cc
@@ -169,23 +168,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
       countsByCycleId.get(key)![statusKey] = Number(row.status_count || 0);
     }
 
-    // Helper function to extract invoice number from cycle_data
-    function extractInvoiceNumber(cycleData: any): string | null {
-      if (!cycleData) return null;
-      try {
-        const data = typeof cycleData === 'string' ? JSON.parse(cycleData) : cycleData;
-        if (data.notes && typeof data.notes === 'string') {
-          const match = data.notes.match(/Factura:\s*(.+)/i);
-          if (match && match[1]) {
-            return match[1].trim();
-          }
-        }
-      } catch (e) {
-        // Ignore parse errors
-      }
-      return null;
-    }
-
     const cycles = [
       ...completedCycles.map((cycle) => ({
         cycle_id: String(cycle.cycle_id),
@@ -196,7 +178,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
         is_active: false,
         wa_user: cycle.wa_user,
         wa_profile_name: cycle.wa_profile_name,
-        cycle_data: cycle.cycle_data,
       })),
       ...activeConversations.map((conv) => ({
         cycle_id: `active-${conv.conversation_id}`,
@@ -207,7 +188,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
         is_active: true,
         wa_user: conv.wa_user,
         wa_profile_name: conv.wa_profile_name,
-        cycle_data: null,
       })),
     ].sort((a, b) => {
       const aTime = a.started_at ? new Date(a.started_at).getTime() : 0;
@@ -219,7 +199,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const conversationIds = new Set<number>();
     let totalQuotationAmount = 0;
     let totalSalesAmount = 0;
-    const invoiceNumbers: string[] = [];
 
     // Obtener el ID del status "venta" (no "ventaa")
     const ventaStatus = statusRows.find(s => s.name === 'venta');
@@ -233,13 +212,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
       // Sumar al total de cotizaciones
       totalQuotationAmount += cycleQuotationAmount;
 
-      // Si el ciclo tiene status "venta", sumar al total de ventas y extraer factura
+      // Si el ciclo tiene status "venta", sumar al total de ventas
       if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
         totalSalesAmount += cycleQuotationAmount;
-        const invoiceNumber = extractInvoiceNumber(cycle.cycle_data);
-        if (invoiceNumber) {
-          invoiceNumbers.push(invoiceNumber);
-        }
       }
 
       for (const [statusId, count] of Object.entries(cycleCounts)) {
@@ -251,7 +226,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
       ...cycle,
       counts: countsByCycleId.get(cycle.cycle_id) || {},
       quotation_amount: quotationAmountsByCycleId.get(cycle.cycle_id) || 0,
-      invoice_number: extractInvoiceNumber(cycle.cycle_data),
     }));
 
     return new Response(
@@ -275,7 +249,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
           counts: summaryCounts,
           total_quotation_amount: totalQuotationAmount,
           total_sales_amount: totalSalesAmount,
-          invoice_numbers: invoiceNumbers,
         },
         cycles: cyclesWithCounts,
         filters: {
