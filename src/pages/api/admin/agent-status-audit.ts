@@ -186,6 +186,18 @@ export const GET: APIRoute = async ({ locals, url }) => {
       return null;
     }
 
+    // Helper function to extract sale amount from cycle_data
+    function extractSaleAmount(cycleData: any): number {
+      if (!cycleData) return 0;
+      try {
+        const data = typeof cycleData === 'string' ? JSON.parse(cycleData) : cycleData;
+        return Number(data.sale_amount || 0);
+      } catch (e) {
+        // Ignore parse errors
+        return 0;
+      }
+    }
+
     const cycles = [
       ...completedCycles.map((cycle) => ({
         cycle_id: String(cycle.cycle_id),
@@ -235,7 +247,10 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
       // Si el ciclo tiene status "venta", sumar al total de ventas y extraer factura
       if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
-        totalSalesAmount += cycleQuotationAmount;
+        // Usar sale_amount del cycle_data en lugar de quotation amount
+        const saleAmount = extractSaleAmount(cycle.cycle_data);
+        totalSalesAmount += saleAmount;
+
         const invoiceNumber = extractInvoiceNumber(cycle.cycle_data);
         if (invoiceNumber) {
           invoiceNumbers.push(invoiceNumber);
@@ -247,12 +262,26 @@ export const GET: APIRoute = async ({ locals, url }) => {
       }
     }
 
-    const cyclesWithCounts = cycles.map((cycle) => ({
-      ...cycle,
-      counts: countsByCycleId.get(cycle.cycle_id) || {},
-      quotation_amount: quotationAmountsByCycleId.get(cycle.cycle_id) || 0,
-      invoice_number: extractInvoiceNumber(cycle.cycle_data),
-    }));
+    const cyclesWithCounts = cycles.map((cycle) => {
+      const cycleCounts = countsByCycleId.get(cycle.cycle_id) || {};
+      const cycleQuotationAmount = quotationAmountsByCycleId.get(cycle.cycle_id) || 0;
+
+      // Si el ciclo tiene status "venta", usar sale_amount en lugar de quotation amount
+      let displayAmount = cycleQuotationAmount;
+      if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
+        const saleAmount = extractSaleAmount(cycle.cycle_data);
+        if (saleAmount > 0) {
+          displayAmount = saleAmount;
+        }
+      }
+
+      return {
+        ...cycle,
+        counts: cycleCounts,
+        quotation_amount: displayAmount,
+        invoice_number: extractInvoiceNumber(cycle.cycle_data),
+      };
+    });
 
     return new Response(
       JSON.stringify({

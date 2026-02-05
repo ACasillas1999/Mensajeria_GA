@@ -1113,10 +1113,22 @@ function pickMime() {
         },
         didOpen: () => {
           // Hide any leftover elements from previous steps
-          const selectElement = Swal.getPopup().querySelector('.swal2-select');
+          const popup = Swal.getPopup();
+          const selectElement = popup.querySelector('.swal2-select');
+          const numberInput = popup.querySelectorAll('input[type="number"]');
+          
           if (selectElement) {
             selectElement.style.display = 'none';
+            selectElement.remove(); // Remove completely
           }
+          
+          // Remove any number inputs from previous step
+          numberInput.forEach(input => {
+            if (!input.classList.contains('swal2-input')) {
+              input.style.display = 'none';
+              input.remove();
+            }
+          });
         }
       });
 
