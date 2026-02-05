@@ -249,6 +249,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
       if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
         // Usar sale_amount del cycle_data en lugar de quotation amount
         const saleAmount = extractSaleAmount(cycle.cycle_data);
+        console.log(`[Agent Audit] Ciclo ${cycle.cycle_id}: venta detectada, sale_amount=${saleAmount}`);
         totalSalesAmount += saleAmount;
 
         const invoiceNumber = extractInvoiceNumber(cycle.cycle_data);
@@ -282,6 +283,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
         invoice_number: extractInvoiceNumber(cycle.cycle_data),
       };
     });
+
+    console.log(`[Agent Audit] Total de ventas calculado: $${totalSalesAmount}, Facturas: ${invoiceNumbers.join(', ')}`);
 
     return new Response(
       JSON.stringify({
