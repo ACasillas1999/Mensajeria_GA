@@ -246,6 +246,8 @@ function StatusFieldsModal({ status, onClose, onSubmit }) {
             onChange={(e) => updateValue(e.target.value)}
             placeholder={field.placeholder || ''}
             rows={4}
+            spellCheck="true"
+            lang="es-MX"
             className={commonClasses}
           />
         );
@@ -1088,6 +1090,38 @@ function pickMime() {
 
       if (!step2.isConfirmed) return;
       amount = step2.value;
+
+      // Paso 2.5: Solicitar número de factura
+      const stepInvoice = await Swal.fire({
+        title: 'Número de Factura',
+        html: `Ingresa el número de factura para esta venta`,
+        input: 'text',
+        inputPlaceholder: 'Ej: FAC-2026-001',
+        showCancelButton: true,
+        confirmButtonText: 'Siguiente',
+        cancelButtonText: 'Atrás',
+        confirmButtonColor: '#10b981',
+        inputValidator: (value) => {
+          if (!value || !value.trim()) return 'El número de factura es obligatorio';
+        },
+        background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+        color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
+        customClass: {
+          popup: 'rounded-xl border border-slate-700',
+          confirmButton: 'px-4 py-2 rounded-lg font-semibold',
+          cancelButton: 'px-4 py-2 rounded-lg font-semibold'
+        },
+        didOpen: () => {
+          // Hide any leftover elements from previous steps
+          const selectElement = Swal.getPopup().querySelector('.swal2-select');
+          if (selectElement) {
+            selectElement.style.display = 'none';
+          }
+        }
+      });
+
+      if (!stepInvoice.isConfirmed) return;
+      notes = `Factura: ${stepInvoice.value.trim()}`;
 
       // Paso 3: Seleccionar cotización (solo del ciclo actual)
       try {
@@ -2182,6 +2216,8 @@ function pickMime() {
             onKeyDown={onKeyDown}
             placeholder={file ? "Mensaje (opcional)..." : "Escribe un mensaje..."}
             rows={1}
+            spellCheck="true"
+            lang="es-MX"
             className="resize-none flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 outline-none focus:border-emerald-400"
           />
           <button type="button" onClick={() => recState.recording ? stopRecording() : startRecording()} className={`inline-flex items-center justify-center w-10 h-10 rounded ${recState.recording ? 'bg-red-600 hover:bg-red-500' : 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700'} transition`} title={recState.recording ? 'Detener grabación' : 'Grabar audio'}>
@@ -2274,6 +2310,8 @@ function pickMime() {
                   onChange={e => setNewComment(e.target.value)}
                   placeholder="Escribe una nota interna para tu equipo..."
                   rows={3}
+                  spellCheck="true"
+                  lang="es-MX"
                   className="resize-none flex-1 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/50 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-amber-500/50 dark:placeholder-amber-600/50 outline-none focus:border-amber-500 dark:focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
                 />
                 <button
