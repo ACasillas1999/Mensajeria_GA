@@ -271,6 +271,7 @@ export default function UsersAdmin() {
           className="px-3 py-2 rounded bg-white border border-slate-300 text-slate-800 shadow-sm w-full sm:w-auto dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
           <option value="">Todos los roles</option>
           <option value="AGENTE">AGENTE</option>
+          <option value="GERENTE">GERENTE</option>
           <option value="ADMIN">ADMIN</option>
         </select>
         <select value={filtroSuc} onChange={e=>setFiltroSuc(e.target.value)}
@@ -323,6 +324,7 @@ export default function UsersAdmin() {
                     <select value={u.rol} onChange={e=>setRol(u, e.target.value)}
                       className="bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
                       <option value="AGENTE">AGENTE</option>
+                      <option value="GERENTE">GERENTE</option>
                       <option value="ADMIN">ADMIN</option>
                     </select>
                   </td>
@@ -426,6 +428,7 @@ export default function UsersAdmin() {
                 <select className="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                   value={form.rol} onChange={e=>setForm(f=>({...f, rol:e.target.value}))}>
                   <option value="AGENTE">AGENTE</option>
+                  <option value="GERENTE">GERENTE</option>
                   <option value="ADMIN">ADMIN</option>
                 </select>
                 <select className="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-slate-800 shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"

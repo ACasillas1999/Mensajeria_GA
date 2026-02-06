@@ -177,6 +177,10 @@ export default function UserSettings() {
                 <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 border border-purple-400 dark:border-purple-700 text-purple-800 dark:text-purple-300">
                   Administrador
                 </span>
+              ) : user.rol === 'GERENTE' ? (
+                <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 border border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-300">
+                  Gerente
+                </span>
               ) : (
                 <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-400 dark:border-blue-700 text-blue-800 dark:text-blue-300">
                   Agente

@@ -8,7 +8,7 @@ const createSchema = z.object({
   email: z.string().email().max(190),
   nombre: z.string().min(2).max(190),
   password: z.string().min(8).max(100),
-  rol: z.enum(["AGENTE", "ADMIN"]),
+  rol: z.enum(["AGENTE", "ADMIN", "GERENTE"]),
   sucursal_id: z.number().int().nullable().optional(),
   telefono: z.string().max(20).nullable().optional()
 });

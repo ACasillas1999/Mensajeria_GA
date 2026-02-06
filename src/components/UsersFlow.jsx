@@ -50,7 +50,7 @@ export default function UsersFlow() {
     });
 
     // indexar agentes por sucursal
-    const agentes = users.filter(u => (onlyAgents ? u.rol === "AGENTE" : true));
+    const agentes = users.filter(u => (onlyAgents ? (u.rol === "AGENTE" || u.rol === "GERENTE") : true));
 
     // filtro por texto
     const matches = (name) => !q || String(name || "").toLowerCase().includes(q);

@@ -6,13 +6,16 @@ import { pool } from '../../lib/db';
  */
 export const GET: APIRoute = async ({ locals, url }) => {
   try {
-    const user = locals?.user;
+    const user = locals?.user as { id: number; rol?: string; sucursal_id?: number | null } | undefined;
     if (!user) {
       return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
     }
+    const role = String(user.rol || '').toLowerCase();
+    const isAdmin = role === 'admin';
+    const isManager = role === 'gerente';
 
     // Filtros opcionales
     const assignedToMe = url.searchParams.get('assigned_to_me') === '1';
@@ -57,6 +60,17 @@ export const GET: APIRoute = async ({ locals, url }) => {
     `;
 
     const params: any[] = [];
+
+    // Scope por rol
+    if (!isAdmin) {
+      if (isManager && user.sucursal_id) {
+        conversationsQuery += ' AND u.sucursal_id = ?';
+        params.push(user.sucursal_id);
+      } else {
+        conversationsQuery += ' AND c.asignado_a = ?';
+        params.push(user.id);
+      }
+    }
 
     // Filtrar por asignación
     if (assignedToMe) {

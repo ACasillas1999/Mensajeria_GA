@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 const patchSchema = z.object({
   nombre: z.string().min(2).max(190).optional(),
   email: z.string().email().max(190).optional(),
-  rol: z.enum(["AGENTE","ADMIN"]).optional(),
+  rol: z.enum(["AGENTE","ADMIN","GERENTE"]).optional(),
   activo: z.boolean().optional(),
   sucursal_id: z.number().int().nullable().optional(),
   new_password: z.string().min(8).max(100).optional()

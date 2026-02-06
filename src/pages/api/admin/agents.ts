@@ -9,8 +9,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
   }
   const url = new URL(request.url);
   const suc = url.searchParams.get("sucursal_id");
-  const params: any[] = ["AGENTE", 1];
-  let where = "WHERE u.rol=? AND u.activo=?";
+  const params: any[] = ["AGENTE", "GERENTE", 1];
+  let where = "WHERE u.rol IN (?, ?) AND u.activo=?";
   if (suc) { where += " AND u.sucursal_id=?"; params.push(Number(suc)); }
 
   const [rows] = await pool.query<RowDataPacket[]>(

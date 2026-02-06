@@ -118,7 +118,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
       LEFT JOIN internal_read_status rs
         ON rs.dm_chat_id = dm.chat_id AND rs.user_id = ?
       WHERE u.activo = 1
-        AND LOWER(u.rol) IN ('agente', 'admin')
+        AND LOWER(u.rol) IN ('agente', 'admin', 'gerente')
         AND u.id != ?
         ${searchClause}
       ORDER BY (lm.created_at IS NULL), lm.created_at DESC, u.nombre ASC

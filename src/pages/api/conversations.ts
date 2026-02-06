@@ -42,7 +42,15 @@ export const GET: APIRoute = async ({ request, locals }) => {
       params.push(estado);
     }
 
-    if (sucursalId) {
+    const user = (locals as any).user as { id: number, rol: string, sucursal_id?: number | null } | undefined;
+    if (!user) {
+      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
+    }
+    const role = String(user.rol || "").toLowerCase();
+    const isAdmin = role === "admin";
+    const isManager = role === "gerente";
+
+    if (isAdmin && sucursalId) {
       const sucIdNum = Number(sucursalId);
       if (!Number.isNaN(sucIdNum)) {
         where += " AND u.sucursal_id = ?";
@@ -50,13 +58,14 @@ export const GET: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    const user = (locals as any).user as { id: number, rol: string } | undefined;
-    if (!user) {
-      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
-    }
-    if (String(user.rol).toLowerCase() !== 'admin') {
-      where += " AND asignado_a = ?";
-      params.push(user.id);
+    if (!isAdmin) {
+      if (isManager && user.sucursal_id) {
+        where += " AND u.sucursal_id = ?";
+        params.push(user.sucursal_id);
+      } else {
+        where += " AND c.asignado_a = ?";
+        params.push(user.id);
+      }
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(

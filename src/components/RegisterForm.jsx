@@ -82,6 +82,7 @@ export default function RegisterForm() {
         <select name="rol" value={f.rol} onChange={onChange}
                 className="p-2 rounded bg-gray-900 border border-gray-700 focus:border-green-400 outline-none">
           <option value="AGENTE">AGENTE</option>
+          <option value="GERENTE">GERENTE</option>
           <option value="ADMIN">ADMIN</option>
         </select>
 

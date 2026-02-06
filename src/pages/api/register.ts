@@ -9,7 +9,7 @@ const bodySchema = z.object({
   nombre: z.string().min(2).max(190),
   password: z.string().min(8).max(100),     // 🔧 mínimo 8
   confirmar: z.string().min(8).max(100),    // 🔧 mínimo 8
-  rol: z.enum(["AGENTE", "ADMIN"]).default("AGENTE"),
+  rol: z.enum(["AGENTE", "ADMIN", "GERENTE"]).default("AGENTE"),
 }).refine((d) => d.password === d.confirmar, {
   path: ["confirmar"],
   message: "Las contraseñas no coinciden",
