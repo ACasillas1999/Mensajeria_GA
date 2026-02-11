@@ -90,11 +90,13 @@ async function sendMediaWABA({
   type,
   media_id,
   caption,
+  filename,
 }: {
   to: string;
   type: "image" | "video" | "audio" | "document";
   media_id: string;
   caption?: string;
+  filename?: string;
 }) {
   const body: any = {
     messaging_product: "whatsapp",
@@ -104,6 +106,9 @@ async function sendMediaWABA({
   };
   if (caption && (type === "image" || type === "video" || type === "document")) {
     body[type].caption = caption;
+  }
+  if (filename && type === "document") {
+    body[type].filename = filename;
   }
   const { data } = await axios.post(
     `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`,
@@ -273,6 +278,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         type: tipo,
         media_id,
         caption: text || undefined,
+        filename: tipo === "document" ? file.name : undefined,
       });
       const msgId = wabaResp?.messages?.[0]?.id || null;
 

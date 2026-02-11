@@ -2,14 +2,15 @@ import type { APIRoute } from 'astro'
 import { pool } from '../../lib/db'
 import { sendImageLink, sendDocumentLink, sendAudioLink, sendVideoLink } from '../../lib/whatsapp'
 import axios from 'axios'
+import path from 'node:path'
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const user = (locals as any).user as { id: number } | undefined;
     const usuario_id = user?.id || null;
 
-    const { conversacion_id, to, kind, url, caption='' } = await request.json()
-    const now = Math.floor(Date.now()/1000)
+    const { conversacion_id, to, kind, url, caption = '' } = await request.json()
+    const now = Math.floor(Date.now() / 1000)
 
     // Ventana 24h: último inbound
     const [rows] = await pool.query(
@@ -17,17 +18,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
       [conversacion_id]
     )
     const lastIn = (rows as any[])[0]?.last_in ?? null
-    const within24h = lastIn && (now - Number(lastIn) <= 24*3600)
+    const within24h = lastIn && (now - Number(lastIn) <= 24 * 3600)
     if (!within24h) {
-      return new Response(JSON.stringify({ ok:false, requires_template:true, error:{ message:'Fuera de 24h' } }), { status:409 })
+      return new Response(JSON.stringify({ ok: false, requires_template: true, error: { message: 'Fuera de 24h' } }), { status: 409 })
     }
 
     // Envío por tipo
-    let data:any
-    if (kind === 'image')     data = await sendImageLink({ to, link:url, caption })
-    else if (kind === 'audio')data = await sendAudioLink({ to, link:url })
-    else if (kind === 'video')data = await sendVideoLink({ to, link:url, caption })
-    else                      data = await sendDocumentLink({ to, link:url, caption })
+    let data: any
+    if (kind === 'image') data = await sendImageLink({ to, link: url, caption })
+    else if (kind === 'audio') data = await sendAudioLink({ to, link: url })
+    else if (kind === 'video') data = await sendVideoLink({ to, link: url, caption })
+    else {
+      let filename = 'documento.pdf';
+      try {
+        const urlObj = new URL(url);
+        filename = path.basename(urlObj.pathname) || 'documento.pdf';
+      } catch (e) { }
+      data = await sendDocumentLink({ to, link: url, caption, filename })
+    }
 
     const msgId = data?.messages?.[0]?.id || null
 
@@ -57,11 +65,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    return new Response(JSON.stringify({ ok:true, data }), { status:200 })
-  } catch (err:any) {
+    return new Response(JSON.stringify({ ok: true, data }), { status: 200 })
+  } catch (err: any) {
     const status = axios.isAxiosError(err) ? (err.response?.status || 500) : 500
-    const payload = axios.isAxiosError(err) ? err.response?.data?.error : { message:String(err?.message||err) }
+    const payload = axios.isAxiosError(err) ? err.response?.data?.error : { message: String(err?.message || err) }
     console.error('SEND-MEDIA ERROR:', payload)
-    return new Response(JSON.stringify({ ok:false, error: payload }), { status })
+    return new Response(JSON.stringify({ ok: false, error: payload }), { status })
   }
 }

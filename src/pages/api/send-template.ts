@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import axios from 'axios';
+import path from 'node:path';
 import { pool } from '../../lib/db';
 
 const WABA_TOKEN = process.env.WABA_TOKEN;
@@ -34,51 +35,60 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Construir componentes del template
     const components: any[] = [];
+    let currentParamIdx = 0;
 
-    // Agregar header si tiene imagen, video o documento
-    if (header_image) {
-      components.push({
-        type: 'header',
-        parameters: [
-          {
-            type: 'image',
-            image: {
-              link: header_image
-            }
-          }
-        ]
-      });
-    } else if (header_video) {
-      components.push({
-        type: 'header',
-        parameters: [
-          {
-            type: 'video',
-            video: {
-              link: header_video
-            }
-          }
-        ]
-      });
-    } else if (header_document) {
-      components.push({
-        type: 'header',
-        parameters: [
-          {
+    // Obtener la plantilla de la base de datos para saber si el header tiene variables
+    const [templateRows] = await pool.query(
+      `SELECT header_type, header_text, body_text FROM plantillas WHERE nombre = ? LIMIT 1`,
+      [template]
+    );
+    const dbTemplate = (templateRows as any[])[0];
+
+    // Agregar header
+    if (dbTemplate) {
+      if (dbTemplate.header_type === 'TEXT') {
+        const headerMatches = dbTemplate.header_text?.match(/\{\{(\d+)\}\}/g) || [];
+        if (headerMatches.length > 0 && params && params.length > 0) {
+          const headerParams = params.slice(0, headerMatches.length);
+          currentParamIdx = headerMatches.length;
+          components.push({
+            type: 'header',
+            parameters: headerParams.map((p: string) => ({ type: 'text', text: p })),
+          });
+        }
+      } else if (header_image) {
+        components.push({
+          type: 'header',
+          parameters: [{ type: 'image', image: { link: header_image } }]
+        });
+      } else if (header_video) {
+        components.push({
+          type: 'header',
+          parameters: [{ type: 'video', video: { link: header_video } }]
+        });
+      } else if (header_document) {
+        // Extraer nombre de archivo de la URL si es posible
+        const urlObj = new URL(header_document);
+        const filename = path.basename(urlObj.pathname) || 'documento.pdf';
+        components.push({
+          type: 'header',
+          parameters: [{
             type: 'document',
             document: {
-              link: header_document
+              link: header_document,
+              filename: filename
             }
-          }
-        ]
-      });
+          }]
+        });
+      }
     }
 
-    // Agregar body con parámetros de texto si existen
-    if (params && params.length > 0) {
+    // Agregar body con parámetros de texto restantes
+    if (params && params.length > currentParamIdx) {
+      const bodyParams = params.slice(currentParamIdx);
       components.push({
         type: 'body',
-        parameters: params.map((p: string) => ({ type: 'text', text: p })),
+        parameters: bodyParams.map((p: string) => ({ type: 'text', text: p })),
       });
     }
 
@@ -178,7 +188,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const errorMsg =
       err?.response?.data?.error?.message || err?.message || 'Error enviando plantilla';
 
-    return new Response(JSON.stringify({ ok: false, error: { message: errorMsg } }), {
+    return new Response(JSON.stringify({ ok: false, error: { message: errorMsg, data: err?.response?.data } }), {
       status,
       headers: { 'Content-Type': 'application/json' },
     });

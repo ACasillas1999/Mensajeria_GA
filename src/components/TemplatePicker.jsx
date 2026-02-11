@@ -44,10 +44,13 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
     console.log('[TemplatePicker] Plantilla seleccionada:', tpl)
     setSelectedTemplate(tpl)
 
-    // Extraer variables del body_text (formato {{1}}, {{2}}, etc.)
-    const matches = tpl.body_text?.match(/\{\{(\d+)\}\}/g) || []
-    const varCount = matches.length
-    console.log('[TemplatePicker] Variables detectadas:', varCount, matches)
+    // Extraer variables del header_text y body_text (formato {{1}}, {{2}}, etc.)
+    const headerMatches = tpl.header_text?.match(/\{\{(\d+)\}\}/g) || []
+    const bodyMatches = tpl.body_text?.match(/\{\{(\d+)\}\}/g) || []
+    
+    // Total de variables (asumimos que las del header van primero en la lista de parámetros enviada al API)
+    const varCount = headerMatches.length + bodyMatches.length
+    console.log('[TemplatePicker] Variables detectadas - Header:', headerMatches.length, 'Body:', bodyMatches.length)
     setVariables(new Array(varCount).fill(''))
 
     // Reset header media URL
@@ -113,16 +116,35 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
   }
 
   function renderTemplatePreview(tpl) {
+    const headerMatches = tpl.header_text?.match(/\{\{(\d+)\}\}/g) || []
+    
+    let headerPreview = tpl.header_text || ''
     let bodyPreview = tpl.body_text || ''
 
     // Reemplazar variables con valores ingresados
     variables.forEach((val, idx) => {
-      bodyPreview = bodyPreview.replace(`{{${idx + 1}}}`, val || `{{${idx + 1}}}`)
+      const placeholder = `{{${(idx < headerMatches.length ? idx : idx - headerMatches.length) + 1}}}`
+      const displayVal = val || placeholder
+      
+      if (idx < headerMatches.length) {
+        // Es variable del header
+        headerPreview = headerPreview.replace(placeholder, displayVal)
+      } else {
+        // Es variable del body
+        bodyPreview = bodyPreview.replace(placeholder, displayVal)
+      }
     })
 
     // Construir el contenido completo como se verá en WhatsApp
     let fullContent = ''
-    if (tpl.header_text) fullContent += `*${tpl.header_text}*\n\n`
+    if (headerPreview) {
+      if (tpl.header_type === 'TEXT') {
+        fullContent += `*${headerPreview}*\n\n`
+      } else {
+        fullContent += `[Header: ${tpl.header_type}]\n\n`
+      }
+    }
+    
     fullContent += bodyPreview
     if (tpl.footer_text) fullContent += `\n\n_${tpl.footer_text}_`
 
@@ -247,24 +269,30 @@ export default function TemplatePicker({ conversation, onClose, onSent }) {
                 <div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 rounded-lg p-4">
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-300 mb-3">Variables de la plantilla:</p>
                   <div className="space-y-3">
-                    {variables.map((val, idx) => (
-                      <div key={idx}>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">
-                          Variable {idx + 1} <span className="text-red-400">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={val}
-                          onChange={e => {
-                            const newVars = [...variables]
-                            newVars[idx] = e.target.value
-                            setVariables(newVars)
-                          }}
-                          placeholder={`Ingresa el valor para {{${idx + 1}}}`}
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-200 outline-none focus:border-emerald-400"
-                        />
-                      </div>
-                    ))}
+                    {variables.map((val, idx) => {
+                      const headerVarCount = selectedTemplate.header_text?.match(/\{\{(\d+)\}\}/g)?.length || 0;
+                      const isHeaderVar = idx < headerVarCount;
+                      const realIdx = isHeaderVar ? idx + 1 : idx - headerVarCount + 1;
+                      
+                      return (
+                        <div key={idx}>
+                          <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">
+                            {isHeaderVar ? `Encabezado - Variable ${realIdx}` : `Cuerpo - Variable ${realIdx}`} <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={val}
+                            onChange={e => {
+                              const newVars = [...variables]
+                              newVars[idx] = e.target.value
+                              setVariables(newVars)
+                            }}
+                            placeholder={`Ingresa el valor para {{${realIdx}}}`}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-slate-900 dark:text-slate-200 outline-none focus:border-emerald-400"
+                          />
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
