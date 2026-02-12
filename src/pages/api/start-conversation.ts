@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { pool } from '../../lib/db';
 import { z } from 'zod';
 import axios from 'axios';
+import { getFallbackConversationStatusId } from '../../lib/conversationStatus';
 
 const WABA_TOKEN = process.env.WABA_TOKEN;
 const WABA_PHONE_NUMBER_ID = process.env.WABA_PHONE_NUMBER_ID;
@@ -39,10 +40,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       conversacion_id = existing[0].id;
     } else {
       // Crear nueva conversación
+      const initialStatusId = await getFallbackConversationStatusId();
       const [result] = await pool.query(
-        `INSERT INTO conversaciones (wa_user, estado, ultimo_ts)
-         VALUES (?, 'NUEVA', UNIX_TIMESTAMP())`,
-        [cleanPhone]
+        `INSERT INTO conversaciones (wa_user, estado, status_id, ultimo_ts)
+         VALUES (?, 'NUEVA', ?, UNIX_TIMESTAMP())`,
+        [cleanPhone, initialStatusId]
       ) as any;
       conversacion_id = result.insertId;
     }

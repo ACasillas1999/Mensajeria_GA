@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { processAutoReply } from '../../lib/autoReply';
 import { broadcastToConversation } from './events';
 import type { RowDataPacket } from 'mysql2/promise';
+import { getFallbackConversationStatusId } from '../../lib/conversationStatus';
 
 /**
  * Verifica si una conversación está en estado final y resetea el ciclo si es necesario
@@ -109,24 +110,7 @@ async function checkAndResetCycle(convId: number) {
 
     // Si no hay auto_reset_to_status_id, usar el estado por defecto
     if (!resetStatusId) {
-      const [defaultStatusRows] = await pool.query<RowDataPacket[]>(
-        `SELECT id FROM conversation_statuses
-         WHERE is_default = TRUE AND is_active = TRUE
-         LIMIT 1`
-      );
-
-      if (defaultStatusRows.length === 0) {
-        // Si no hay estado default, usar el primero activo
-        const [firstStatusRows] = await pool.query<RowDataPacket[]>(
-          `SELECT id FROM conversation_statuses
-           WHERE is_active = TRUE
-           ORDER BY display_order ASC
-           LIMIT 1`
-        );
-        resetStatusId = firstStatusRows[0]?.id || conv.status_id;
-      } else {
-        resetStatusId = defaultStatusRows[0].id;
-      }
+      resetStatusId = (await getFallbackConversationStatusId()) ?? conv.status_id ?? null;
     }
 
     // 3. Resetear la conversación al nuevo ciclo
@@ -210,9 +194,10 @@ async function processCallEvent(value: any) {
     if (found.length) {
       convId = found[0].id;
     } else {
+      const initialStatusId = await getFallbackConversationStatusId();
       const [ins] = await pool.query(
-        'INSERT INTO conversaciones (wa_user, estado) VALUES (?, "ABIERTA")',
-        [from]
+        'INSERT INTO conversaciones (wa_user, estado, status_id) VALUES (?, "ABIERTA", ?)',
+        [from, initialStatusId]
       );
       convId = (ins as any).insertId;
     }
@@ -413,9 +398,10 @@ export const POST: APIRoute = async ({ request }) => {
         if ((found as any[]).length) {
           convId = (found as any[])[0].id;
         } else {
+          const initialStatusId = await getFallbackConversationStatusId();
           const [ins] = await pool.query(
-            'INSERT INTO conversaciones (wa_user, wa_profile_name, estado) VALUES (?,?, "NUEVA")',
-            [from, profileName]
+            'INSERT INTO conversaciones (wa_user, wa_profile_name, estado, status_id) VALUES (?,?, "NUEVA", ?)',
+            [from, profileName, initialStatusId]
           );
           convId = (ins as any).insertId;
         }
