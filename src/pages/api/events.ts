@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import type { RowDataPacket } from 'mysql2/promise';
 import { pool } from '../../lib/db';
 
 /**
@@ -89,7 +90,29 @@ export const GET: APIRoute = async ({ request, locals }) => {
         }
 
         try {
+          const role = (user.rol || '').toLowerCase();
+          const isAdmin = role === 'admin';
+          const isManager = role === 'gerente';
+          const sucursalId = user.sucursal_id;
+
           if (client.conversationId) {
+            // VERIFICACIÓN DE PERMISOS: Solo permitir si es admin, gerente de la sucursal o el agente asignado
+            const [accessRows] = await pool.query<RowDataPacket[]>(
+              `SELECT c.id FROM conversaciones c
+               LEFT JOIN usuarios u ON u.id = c.asignado_a
+               WHERE c.id = ? AND (
+                 ? = 'admin' OR
+                 (? = 'gerente' AND u.sucursal_id = ?) OR
+                 c.asignado_a = ?
+               ) LIMIT 1`,
+              [client.conversationId, role, role, sucursalId, user.id]
+            );
+
+            if (accessRows.length === 0) {
+              // No tiene acceso a esta conversación específica
+              return;
+            }
+
             // Verificar nuevos mensajes en la conversación
             const [rows] = await pool.query(
               `SELECT m.id, m.conversacion_id, m.from_me, m.tipo, m.cuerpo, m.wa_msg_id, m.ts, m.status,
@@ -133,17 +156,37 @@ export const GET: APIRoute = async ({ request, locals }) => {
             }
           } else {
             // Verificar nuevas conversaciones o actualizaciones
-            const [rows] = await pool.query(
+            // Aplicar los mismos filtros que en la API de conversaciones
+            let where = "WHERE c.ultimo_ts > ?";
+            const params: any[] = [client.lastCheck];
+
+            if (!isAdmin) {
+              if (isManager && sucursalId) {
+                where += " AND u.sucursal_id = ?";
+                params.push(sucursalId);
+              } else {
+                where += " AND c.asignado_a = ?";
+                params.push(user.id);
+              }
+            }
+
+            const [rows] = await pool.query<RowDataPacket[]>(
               `SELECT c.id, c.wa_user, c.wa_profile_name, c.estado, c.ultimo_msg, c.ultimo_ts,
                       c.asignado_a, u.nombre as asignado_nombre,
-                      u.sucursal_id as asignado_sucursal_id, s.nombre as asignado_sucursal
+                      u.sucursal_id as asignado_sucursal_id, s.nombre as asignado_sucursal,
+                      cs.name AS status_name, cs.color AS status_color, cs.icon AS status_icon,
+                      COALESCE(cus.is_archived, FALSE) AS is_archived,
+                      COALESCE(cus.is_favorite, FALSE) AS is_favorite,
+                      c.dentro_ventana_24h
                FROM conversaciones c
                LEFT JOIN usuarios u ON u.id = c.asignado_a
                LEFT JOIN sucursales s ON s.id = u.sucursal_id
-               WHERE c.ultimo_ts > ?
+               LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
+               LEFT JOIN conversation_user_status cus ON cus.conversacion_id = c.id AND cus.usuario_id = ?
+               ${where}
                ORDER BY c.ultimo_ts DESC
                LIMIT 20`,
-              [client.lastCheck]
+              [user.id, ...params]
             );
 
             if ((rows as any[]).length > 0) {

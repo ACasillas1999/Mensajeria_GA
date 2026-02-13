@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import type { RowDataPacket } from 'mysql2/promise';
 import axios from 'axios';
 import path from 'node:path';
 import { pool } from '../../lib/db';
@@ -9,8 +10,14 @@ const WABA_VERSION = process.env.WABA_VERSION || 'v20.0';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    const user = (locals as any).user as { id: number } | undefined;
-    const usuario_id = user?.id || null;
+    const user = (locals as any).user as { id: number, rol: string, sucursal_id?: number | null } | undefined;
+    if (!user) return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), { status: 401 });
+
+    const usuario_id = user.id;
+    const role = (user.rol || '').toLowerCase();
+    const isAdmin = role === 'admin';
+    const isManager = role === 'gerente';
+    const sucursalId = user.sucursal_id;
 
     const body = await request.json();
     const { conversacion_id, to, template, lang, params, header_image, header_video, header_document } = body;
@@ -20,6 +27,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
         JSON.stringify({ ok: false, error: 'Faltan parámetros: to y template son requeridos' }),
         { status: 400 }
       );
+    }
+
+    // --- VERIFICACIÓN DE PERMISOS ---
+    if (conversacion_id) {
+      const [accessRows] = await pool.query<RowDataPacket[]>(
+        `SELECT c.id FROM conversaciones c
+         LEFT JOIN usuarios u ON u.id = c.asignado_a
+         WHERE c.id = ? AND (
+           ? = 'admin' OR
+           (? = 'gerente' AND u.sucursal_id = ?) OR
+           c.asignado_a = ?
+         ) LIMIT 1`,
+        [conversacion_id, role, role, sucursalId, usuario_id]
+      );
+
+      if (accessRows.length === 0) {
+        return new Response(JSON.stringify({ ok: false, error: 'No tienes permiso para escribir en esta conversación' }), { status: 403 });
+      }
     }
 
     // Construir el payload para WhatsApp

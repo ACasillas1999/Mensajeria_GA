@@ -1,5 +1,6 @@
 // src/pages/api/send.ts
 import type { APIRoute } from "astro";
+import type { RowDataPacket } from "mysql2/promise";
 import axios from "axios";
 import FormData from "form-data";
 import os from "node:os";
@@ -120,8 +121,14 @@ async function sendMediaWABA({
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    const user = (locals as any).user as { id: number } | undefined;
-    const usuario_id = user?.id || null;
+    const user = (locals as any).user as { id: number, rol: string, sucursal_id?: number | null } | undefined;
+    if (!user) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
+
+    const usuario_id = user.id;
+    const role = (user.rol || '').toLowerCase();
+    const isAdmin = role === 'admin';
+    const isManager = role === 'gerente';
+    const sucursalId = user.sucursal_id;
 
     const ct = request.headers.get("content-type") || "";
 
@@ -149,6 +156,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
           }),
           { status: 409 }
         );
+      }
+
+      // --- VERIFICACIÓN DE PERMISOS ---
+      const [accessRows] = await pool.query<RowDataPacket[]>(
+        `SELECT c.id FROM conversaciones c
+           LEFT JOIN usuarios u ON u.id = c.asignado_a
+           WHERE c.id = ? AND (
+             ? = 'admin' OR
+             (? = 'gerente' AND u.sucursal_id = ?) OR
+             c.asignado_a = ?
+           ) LIMIT 1`,
+        [conversacion_id, role, role, sucursalId, usuario_id]
+      );
+
+      if (accessRows.length === 0) {
+        return new Response(JSON.stringify({ ok: false, error: 'No tienes permiso para escribir en esta conversación' }), { status: 403 });
       }
 
       // Detectar si es un mensaje de ubicación
@@ -254,6 +277,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
         }),
         { status: 409 }
       );
+    }
+
+    // --- VERIFICACIÓN DE PERMISOS ---
+    const [accessRows2] = await pool.query<RowDataPacket[]>(
+      `SELECT c.id FROM conversaciones c
+       LEFT JOIN usuarios u ON u.id = c.asignado_a
+       WHERE c.id = ? AND (
+         ? = 'admin' OR
+         (? = 'gerente' AND u.sucursal_id = ?) OR
+         c.asignado_a = ?
+       ) LIMIT 1`,
+      [conversacion_id, role, role, sucursalId, usuario_id]
+    );
+
+    if (accessRows2.length === 0) {
+      return new Response(JSON.stringify({ ok: false, error: 'No tienes permiso para escribir en esta conversación' }), { status: 403 });
     }
 
     // Si hay archivo: subir y enviar según tipo
