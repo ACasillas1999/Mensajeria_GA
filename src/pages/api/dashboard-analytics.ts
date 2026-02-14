@@ -116,16 +116,14 @@ export const GET: APIRoute = async ({ locals, url }) => {
         (
           SELECT COUNT(DISTINCT cc_sales.id)
           FROM conversation_cycles cc_sales
-          INNER JOIN conversation_status_history csh_sales 
-            ON csh_sales.conversation_id = cc_sales.conversation_id
-            AND csh_sales.created_at >= cc_sales.started_at
-            AND csh_sales.created_at <= cc_sales.completed_at
-          INNER JOIN conversation_statuses cs_sales 
-            ON cs_sales.id = csh_sales.new_status_id
-          WHERE cs_sales.name = 'venta'
-            AND cc_sales.assigned_to = u.id
+          WHERE cc_sales.assigned_to = u.id
             AND cc_sales.completed_at IS NOT NULL
             AND cc_sales.completed_at ${cyclesDateFilter}
+            AND COALESCE(
+              CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_sales.cycle_data, '$.winning_quotation_amount')), '') AS DECIMAL(12,2)),
+              CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_sales.cycle_data, '$.sale_amount')), '') AS DECIMAL(12,2)),
+              0
+            ) > 0
         ) AS sales_closed
       FROM usuarios u
       LEFT JOIN conversaciones c ON c.asignado_a = u.id

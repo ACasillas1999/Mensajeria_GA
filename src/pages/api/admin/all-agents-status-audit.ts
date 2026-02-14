@@ -35,12 +35,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
        ORDER BY display_order ASC, id ASC`
         );
 
-        // Obtener el ID del status "venta" (case-insensitive)
-        const ventaStatus = statusRows.find(
-            s => String(s.name || '').trim().toLowerCase() === 'venta'
-        );
-        const ventaStatusId = ventaStatus ? String(ventaStatus.id) : null;
-
         // Preparar cláusulas de fecha
         let completedDateClause = '';
         let activeDateClause = '';
@@ -245,9 +239,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
                 const explicitSaleAmount = saleAmountByCycleId.get(cycle.cycle_id) || 0;
                 if (explicitSaleAmount > 0) {
                     totalSalesAmount += explicitSaleAmount;
-                } else if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
-                    // Compatibilidad con ciclos historicos sin sale_amount
-                    totalSalesAmount += cycleQuotationAmount;
                 }
 
                 for (const [statusId, count] of Object.entries(cycleCounts)) {

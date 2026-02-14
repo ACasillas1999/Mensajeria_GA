@@ -35,7 +35,16 @@ export const GET: APIRoute = async ({ locals, url }) => {
                 `SELECT
           u.nombre AS agent_name,
           COUNT(DISTINCT q.id) AS quotations_sent,
-          COUNT(DISTINCT CASE WHEN cc.cycle_data IS NOT NULL AND JSON_EXTRACT(cc.cycle_data, '$.monto') IS NOT NULL THEN cc.id END) AS sales_closed,
+          COUNT(
+            DISTINCT CASE
+              WHEN COALESCE(
+                CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc.cycle_data, '$.winning_quotation_amount')), '') AS DECIMAL(12,2)),
+                CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc.cycle_data, '$.sale_amount')), '') AS DECIMAL(12,2)),
+                0
+              ) > 0
+              THEN cc.id
+            END
+          ) AS sales_closed,
           (
             SELECT COALESCE(SUM(q_amount.amount), 0)
             FROM conversation_cycles cc_amount
@@ -75,7 +84,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
           q.amount,
           u.nombre AS agente,
           CASE 
-            WHEN cc.cycle_data IS NOT NULL AND JSON_EXTRACT(cc.cycle_data, '$.monto') IS NOT NULL 
+            WHEN CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc.cycle_data, '$.winning_quotation_id')), '') AS UNSIGNED) = q.id
             THEN 'Vendida' 
             ELSE 'Pendiente' 
           END AS estado

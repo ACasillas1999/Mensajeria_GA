@@ -98,85 +98,28 @@ export const GET: APIRoute = async ({ locals }) => {
          ) AS monto_cotizado_hoy`
     );
 
-    const [ventaStatusRows] = await pool.query<RowDataPacket[]>(
-      `SELECT id FROM conversation_statuses WHERE name = 'venta' LIMIT 1`
+    const saleAmountExpr = `
+      COALESCE(
+        CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc.cycle_data, '$.winning_quotation_amount')), '') AS DECIMAL(12,2)),
+        CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc.cycle_data, '$.sale_amount')), '') AS DECIMAL(12,2)),
+        0
+      )
+    `;
+
+    const [salesRows] = await pool.query<RowDataPacket[]>(
+      `SELECT
+         COUNT(CASE WHEN ${saleAmountExpr} > 0 THEN 1 END) AS ventas_total,
+         COUNT(CASE WHEN ${saleAmountExpr} > 0 AND DATE(cc.completed_at) = CURDATE() THEN 1 END) AS ventas_hoy,
+         COALESCE(SUM(CASE WHEN ${saleAmountExpr} > 0 THEN ${saleAmountExpr} ELSE 0 END), 0) AS monto_total_ventas
+       FROM conversation_cycles cc
+       WHERE cc.completed_at IS NOT NULL`
     );
-    const ventaStatusId = ventaStatusRows[0]?.id ?? null;
 
-    let ventasStats = { ventas_total: 0, ventas_hoy: 0 };
-    let montoStats = { monto_total_ventas: 0 };
-
-    if (ventaStatusId) {
-      const [ventasRows] = await pool.query<RowDataPacket[]>(
-        `SELECT
-           COALESCE(SUM(ventas_total), 0) AS ventas_total,
-           COALESCE(SUM(ventas_hoy), 0) AS ventas_hoy
-         FROM (
-           SELECT
-             COUNT(*) AS ventas_total,
-             SUM(DATE(csh.created_at) = CURDATE()) AS ventas_hoy
-           FROM conversation_cycles cc
-           INNER JOIN conversation_status_history csh
-             ON csh.conversation_id = cc.conversation_id
-            AND csh.created_at >= cc.started_at
-            AND csh.created_at <= cc.completed_at
-           WHERE csh.new_status_id = ?
-             AND cc.completed_at IS NOT NULL
-
-           UNION ALL
-
-           SELECT
-             COUNT(*) AS ventas_total,
-             SUM(DATE(csh.created_at) = CURDATE()) AS ventas_hoy
-           FROM conversaciones c
-           INNER JOIN conversation_status_history csh
-             ON csh.conversation_id = c.id
-            AND csh.created_at >= c.current_cycle_started_at
-           WHERE csh.new_status_id = ?
-             AND c.current_cycle_started_at IS NOT NULL
-         ) AS sales_counts`,
-        [ventaStatusId, ventaStatusId]
-      );
-
-      const [montoRows] = await pool.query<RowDataPacket[]>(
-        `SELECT COALESCE(SUM(total_amount), 0) AS monto_total_ventas
-         FROM (
-           SELECT COALESCE(SUM(q.amount), 0) AS total_amount
-           FROM quotations q
-           INNER JOIN (
-             SELECT DISTINCT cc.id
-             FROM conversation_cycles cc
-             INNER JOIN conversation_status_history csh
-               ON csh.conversation_id = cc.conversation_id
-              AND csh.created_at >= cc.started_at
-              AND csh.created_at <= cc.completed_at
-             WHERE csh.new_status_id = ?
-               AND cc.completed_at IS NOT NULL
-           ) AS sales_cycles ON sales_cycles.id = q.cycle_id
-
-           UNION ALL
-
-           SELECT COALESCE(SUM(q_active.amount), 0) AS total_amount
-           FROM conversaciones c
-           INNER JOIN (
-             SELECT DISTINCT csh.conversation_id
-             FROM conversaciones c2
-             INNER JOIN conversation_status_history csh
-               ON csh.conversation_id = c2.id
-              AND csh.created_at >= c2.current_cycle_started_at
-             WHERE csh.new_status_id = ?
-               AND c2.current_cycle_started_at IS NOT NULL
-           ) AS sales_convs ON sales_convs.conversation_id = c.id
-           LEFT JOIN quotations q_active
-             ON q_active.conversation_id = c.id
-            AND q_active.created_at >= c.current_cycle_started_at
-         ) AS sales_amounts`,
-        [ventaStatusId, ventaStatusId]
-      );
-
-      ventasStats = (ventasRows as any[])[0] || ventasStats;
-      montoStats = (montoRows as any[])[0] || montoStats;
-    }
+    const salesStats = (salesRows as any[])[0] || {
+      ventas_total: 0,
+      ventas_hoy: 0,
+      monto_total_ventas: 0,
+    };
 
 
     // Base stats
@@ -185,8 +128,7 @@ export const GET: APIRoute = async ({ locals }) => {
       ...(rows2 as any[])[0],
       ...(rows3 as any[])[0],
       ...(rows4 as any[])[0],
-      ...ventasStats,
-      ...montoStats,
+      ...salesStats,
     } as Record<string, number>;
 
     // 30-day series for conversations and messages
