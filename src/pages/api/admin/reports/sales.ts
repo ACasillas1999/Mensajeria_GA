@@ -4,26 +4,24 @@ import type { RowDataPacket } from 'mysql2/promise';
 
 /**
  * GET /api/admin/reports/sales
- * Parámetros query:
+ * Query params:
  *  - startDate: YYYY-MM-DD
  *  - endDate: YYYY-MM-DD
- *  - agentId: number (opcional)
+ *  - agentId: number (optional)
  */
-export const GET: APIRoute = async ({ request, locals, url }) => {
+export const GET: APIRoute = async ({ locals, url }) => {
     const user = (locals as any).user;
     if (!user || String(user.rol || '').toLowerCase() !== 'admin') {
         return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), { status: 403 });
     }
 
     try {
-        const startDate = url.searchParams.get('startDate'); // YYYY-MM-DD
-        const endDate = url.searchParams.get('endDate');     // YYYY-MM-DD
-        const agentId = url.searchParams.get('agentId');     // optional
+        const startDate = url.searchParams.get('startDate');
+        const endDate = url.searchParams.get('endDate');
+        const agentId = url.searchParams.get('agentId');
 
-        // Query base: obtener ciclos completados en el rango
-        // cycle_data contiene el JSON con sale_amount
         let query = `
-      SELECT 
+      SELECT
         cc.cycle_number,
         cc.completed_at,
         cc.assigned_to,
@@ -60,34 +58,71 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
         const [rows] = await pool.query<RowDataPacket[]>(query, params);
 
-        // Procesar resultados para extraer ventas
-        // Estructura esperada de cycle_data: { sale_amount: 123.45, notes: "..." }
-        const items = rows.map(r => {
-            let data = {};
+        const winningQuoteIds = new Set<number>();
+        const parsedRows = rows.map((r) => {
+            let data: any = {};
             try {
-                data = typeof r.cycle_data === 'string' ? JSON.parse(r.cycle_data) : r.cycle_data;
-            } catch { }
+                data = typeof r.cycle_data === 'string' ? JSON.parse(r.cycle_data) : (r.cycle_data || {});
+            } catch {
+                data = {};
+            }
 
-            const amount = data && (data as any).sale_amount ? Number((data as any).sale_amount) : 0;
+            const winningQuoteId = data?.winning_quotation_id ? Number(data.winning_quotation_id) : null;
+            if (winningQuoteId && Number.isInteger(winningQuoteId)) {
+                winningQuoteIds.add(winningQuoteId);
+            }
 
             return {
-                agent_name: r.agent_name || 'Sin asignar',
-                completed_at: r.completed_at,
-                status_name: r.status_name,
-                cycle_number: r.cycle_number,
-                client_name: r.wa_profile_name || 'Desconocido',
-                client_phone: r.wa_user,
-                amount,
-                has_sale: amount > 0
+                row: r,
+                cycleData: data,
+                winningQuoteId,
             };
         });
 
-        // Calcular totales por agente
-        const salesByAgent: Record<string, { total: number, count: number, name: string }> = {};
+        const quotationMap = new Map<number, { id: number; quotation_number: string; amount: number }>();
+        if (winningQuoteIds.size > 0) {
+            const ids = Array.from(winningQuoteIds);
+            const placeholders = ids.map(() => '?').join(',');
+            const [quotationRows] = await pool.query<RowDataPacket[]>(
+                `SELECT id, quotation_number, amount
+                 FROM quotations
+                 WHERE id IN (${placeholders})`,
+                ids
+            );
+
+            quotationRows.forEach((q) => {
+                quotationMap.set(Number(q.id), {
+                    id: Number(q.id),
+                    quotation_number: String(q.quotation_number || ''),
+                    amount: Number(q.amount || 0),
+                });
+            });
+        }
+
+        const items = parsedRows.map(({ row, cycleData, winningQuoteId }) => {
+            const saleAmount = cycleData?.sale_amount ? Number(cycleData.sale_amount) : 0;
+            const selectedQuotation = winningQuoteId ? quotationMap.get(winningQuoteId) : null;
+            const amount = selectedQuotation ? Number(selectedQuotation.amount) : saleAmount;
+
+            return {
+                agent_name: row.agent_name || 'Sin asignar',
+                completed_at: row.completed_at,
+                status_name: row.status_name,
+                cycle_number: row.cycle_number,
+                client_name: row.wa_profile_name || 'Desconocido',
+                client_phone: row.wa_user,
+                amount,
+                has_sale: amount > 0,
+                winning_quotation_id: selectedQuotation ? selectedQuotation.id : null,
+                winning_quotation_number: selectedQuotation ? selectedQuotation.quotation_number : (cycleData?.winning_quotation_number || null),
+            };
+        });
+
+        const salesByAgent: Record<string, { total: number; count: number; name: string }> = {};
         let totalRevenue = 0;
         let totalSalesCount = 0;
 
-        items.forEach(item => {
+        items.forEach((item) => {
             if (item.has_sale) {
                 if (!salesByAgent[item.agent_name]) {
                     salesByAgent[item.agent_name] = { total: 0, count: 0, name: item.agent_name };
@@ -103,8 +138,8 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
         return new Response(JSON.stringify({
             ok: true,
-            items, // Lista detallada
-            summary, // Resumen por agente
+            items,
+            summary,
             totals: {
                 revenue: totalRevenue,
                 count: totalSalesCount

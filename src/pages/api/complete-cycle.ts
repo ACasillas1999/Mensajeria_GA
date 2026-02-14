@@ -4,7 +4,7 @@ import type { RowDataPacket } from 'mysql2/promise';
 
 /**
  * POST /api/complete-cycle
- * Permite al agente completar manualmente un ciclo de conversación
+ * Permite al agente completar manualmente un ciclo de conversacion
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
@@ -27,8 +27,38 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const convId = Number(conversacion_id);
+    const finalStatusInput = final_status_id ? Number(final_status_id) : null;
 
-    // Obtener información de la conversación actual
+    if (final_status_id && !Number.isFinite(finalStatusInput)) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'final_status_id invalido' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let parsedAmount: number | null = null;
+    if (amount !== undefined && amount !== null && String(amount).trim() !== '') {
+      parsedAmount = Number(amount);
+      if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'amount invalido' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    let parsedQuotationId: number | null = null;
+    if (quotation_id !== undefined && quotation_id !== null && String(quotation_id).trim() !== '') {
+      parsedQuotationId = Number(quotation_id);
+      if (!Number.isInteger(parsedQuotationId) || parsedQuotationId <= 0) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'quotation_id invalido' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Obtener informacion de la conversacion actual
     const [convRows] = await pool.query<RowDataPacket[]>(
       `SELECT
         c.id,
@@ -46,23 +76,64 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     if (convRows.length === 0) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Conversación no encontrada' }),
+        JSON.stringify({ ok: false, error: 'Conversacion no encontrada' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     const conv = convRows[0];
 
-    console.log(`[Complete Cycle] Agente ${user.nombre} completando ciclo de conversación ${convId}...`);
+    let selectedQuotation: RowDataPacket | null = null;
+    if (parsedQuotationId) {
+      const [quotationRows] = await pool.query<RowDataPacket[]>(
+        `SELECT id, conversation_id, quotation_number, amount
+         FROM quotations
+         WHERE id = ?
+         LIMIT 1`,
+        [parsedQuotationId]
+      );
 
-    // Prepare cycle data (merging amount/notes if provided with potential history data)
-    let cycleDataObj: any = {};
+      if (quotationRows.length === 0) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'La cotizacion seleccionada no existe' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
 
-    // Si viene información de venta/monto
-    if (amount) cycleDataObj.sale_amount = amount;
+      const quotation = quotationRows[0];
+      if (Number(quotation.conversation_id) !== convId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'La cotizacion no pertenece a esta conversacion' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      selectedQuotation = quotation;
+    }
+
+    console.log(`[Complete Cycle] Agente ${user.nombre} completando ciclo de conversacion ${convId}...`);
+
+    // Prepare cycle data
+    const cycleDataObj: any = {};
+
+    const saleAmount = selectedQuotation
+      ? Number(selectedQuotation.amount)
+      : parsedAmount;
+
+    if (saleAmount !== null && Number.isFinite(saleAmount)) {
+      cycleDataObj.sale_amount = saleAmount;
+    }
+
     if (cycle_notes) cycleDataObj.notes = cycle_notes;
-    // Si se especificó un estado final explícito, usarlo. Si no, usar el actual.
-    const finalStatusToRecord = final_status_id ? Number(final_status_id) : conv.status_id;
+
+    if (selectedQuotation) {
+      cycleDataObj.winning_quotation_id = Number(selectedQuotation.id);
+      cycleDataObj.winning_quotation_number = selectedQuotation.quotation_number;
+      cycleDataObj.winning_quotation_amount = Number(selectedQuotation.amount);
+    }
+
+    // Si se especifico un estado final explicito, usarlo. Si no, usar el actual.
+    const finalStatusToRecord = finalStatusInput || conv.status_id;
 
     // Contar mensajes del ciclo actual
     const [msgCountRows] = await pool.query<RowDataPacket[]>(
@@ -88,7 +159,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         newCycleNumber,
         conv.current_cycle_started_at || new Date(),
         completedAt,
-        null,  // initial_status_id (podríamos trackearlo si lo tuviéramos)
+        null,
         finalStatusToRecord,
         totalMessages,
         conv.asignado_a || null,
@@ -96,7 +167,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       ]
     );
 
-    console.log(`[Complete Cycle] Ciclo #${newCycleNumber} guardado. Monto: ${amount || 'N/A'}`);
+    console.log(`[Complete Cycle] Ciclo #${newCycleNumber} guardado. Monto: ${saleAmount ?? 'N/A'}`);
 
     // 2. Determinar estado de reset
     let resetStatusId = conv.auto_reset_to_status_id;
@@ -122,7 +193,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    // 3. Resetear la conversación: cambiar estado, incrementar ciclo, reiniciar fecha (MANTENER AGENTE ASIGNADO)
+    // 3. Resetear la conversacion: cambiar estado, incrementar ciclo, reiniciar fecha
     await pool.query(
       `UPDATE conversaciones
        SET status_id = ?,
@@ -134,22 +205,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
 
     // 4. Registrar historial de cambio de estado
-    // Si se especificó un estado final diferente al actual (ej: ventaa), registrarlo primero
-    if (final_status_id && final_status_id !== conv.status_id) {
+    if (finalStatusInput && finalStatusInput !== Number(conv.status_id)) {
       await pool.query(
         `INSERT INTO conversation_status_history
          (conversation_id, old_status_id, new_status_id, changed_by, change_reason)
          VALUES (?, ?, ?, ?, ?)`,
-        [convId, conv.status_id, final_status_id, user.id, reason || `Ciclo completado como venta. Monto: ${amount || 0}`]
+        [
+          convId,
+          conv.status_id,
+          finalStatusInput,
+          user.id,
+          reason || `Ciclo completado como venta. Monto: ${saleAmount || 0}`
+        ]
       );
     }
 
-    // Luego registrar el reset a "nueva" (o el estado de reset configurado)
     await pool.query(
       `INSERT INTO conversation_status_history
        (conversation_id, old_status_id, new_status_id, changed_by, change_reason)
        VALUES (?, ?, ?, ?, ?)`,
-      [convId, final_status_id || conv.status_id, resetStatusId, user.id, reason || `Ciclo completado. Conversación reseteada.`]
+      [
+        convId,
+        finalStatusInput || conv.status_id,
+        resetStatusId,
+        user.id,
+        reason || `Ciclo completado. Conversacion reseteada.`
+      ]
     );
 
     // 5. Registrar evento del sistema
@@ -159,12 +240,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
 
     const newStatusName = newStatusRows[0]?.name || 'Nuevo';
-    const newStatusIcon = newStatusRows[0]?.icon || '🔄';
+    const newStatusIcon = newStatusRows[0]?.icon || '[reset]';
 
-    // Construir texto del evento con info extra si hay venta
-    let eventText = `✅ Ciclo #${newCycleNumber} completado por ${user.nombre}`;
-    if (amount) eventText += ` (Venta: $${amount})`;
-    eventText += ` - Conversación reseteada a ${newStatusIcon} ${newStatusName} (agente asignado: ${conv.asignado_a ? 'mantenido' : 'ninguno'})`;
+    let eventText = `Ciclo #${newCycleNumber} completado por ${user.nombre}`;
+    if (saleAmount !== null && Number.isFinite(saleAmount)) {
+      eventText += ` (Venta: $${saleAmount})`;
+    }
+    if (selectedQuotation) {
+      eventText += ` usando cotizacion ${selectedQuotation.quotation_number}`;
+    }
+    eventText += ` - Conversacion reseteada a ${newStatusIcon} ${newStatusName} (agente asignado: ${conv.asignado_a ? 'mantenido' : 'ninguno'})`;
 
     await pool.query(
       `INSERT INTO conversation_events
@@ -179,20 +264,28 @@ export const POST: APIRoute = async ({ request, locals }) => {
           final_status_id: finalStatusToRecord,
           new_status_id: resetStatusId,
           completed_by: user.id,
-          amount: amount,
+          amount: saleAmount,
           notes: cycle_notes,
+          quotation_id: selectedQuotation ? Number(selectedQuotation.id) : null,
+          quotation_number: selectedQuotation ? selectedQuotation.quotation_number : null,
           agent_kept_assigned: conv.asignado_a !== null
         })
       ]
     );
-
-    // 6. Nota: El agente se mantiene asignado después de completar el ciclo
 
     return new Response(
       JSON.stringify({
         ok: true,
         message: `Ciclo #${newCycleNumber} completado exitosamente`,
         cycle_number: newCycleNumber,
+        sale_amount: saleAmount,
+        winning_quotation: selectedQuotation
+          ? {
+              id: Number(selectedQuotation.id),
+              quotation_number: selectedQuotation.quotation_number,
+              amount: Number(selectedQuotation.amount)
+            }
+          : null,
         new_status: {
           id: resetStatusId,
           name: newStatusName,

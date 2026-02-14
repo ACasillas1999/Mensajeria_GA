@@ -172,6 +172,11 @@ export default function SalesReport() {
                           {item.cycle_number > 0 && (
                             <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">Ciclo #{item.cycle_number}</span>
                           )}
+                          {item.winning_quotation_number && (
+                            <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+                              Cotizacion: {item.winning_quotation_number}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-slate-900 dark:text-slate-100">

@@ -1054,75 +1054,38 @@ function pickMime() {
     let quotation_id = null;
 
     if (isSale) {
-      const step2 = await Swal.fire({
-        title: 'Registrar Venta',
-        html: `Ingresa el monto para <strong>"${selectedStatus.name}"</strong>`,
-        input: 'number',
-        inputAttributes: {
-          min: '0',
-          step: '0.01'
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Siguiente',
-        cancelButtonText: 'Atrás',
-        confirmButtonColor: '#10b981',
-        inputValidator: (value) => {
-          if (!value) return 'El monto es obligatorio para ventas';
-          if (Number(value) < 0) return 'El monto no puede ser negativo';
-        },
-        background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
-        color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
-        customClass: {
-          popup: 'rounded-xl border border-slate-700',
-          confirmButton: 'px-4 py-2 rounded-lg font-semibold',
-          cancelButton: 'px-4 py-2 rounded-lg font-semibold'
-        },
-        didOpen: () => {
-          // Hide any leftover select element from previous step
-          const selectElement = Swal.getPopup().querySelector('.swal2-select');
-          if (selectElement) {
-            selectElement.style.display = 'none';
-          }
-        }
-      });
-
-      if (!step2.isConfirmed) return;
-      amount = step2.value;
-
-      // Paso 3: Seleccionar cotización (solo del ciclo actual)
       try {
         const quotRes = await fetch(`${BASE}/api/quotations/by-cycle?conversacion_id=${conversation.id}`.replace(/\/\//g, '/'));
         const quotData = await quotRes.json();
-        
+
         if (quotData.ok && quotData.quotations && quotData.quotations.length > 0) {
-          // Crear HTML con checkboxes para selección múltiple
           const quotationsHTML = quotData.quotations.map(q => `
             <div style="text-align: left; padding: 8px; margin: 4px 0; border: 1px solid #475569; border-radius: 6px; background: ${document.documentElement.classList.contains('dark') ? '#1e293b' : '#f8fafc'};">
               <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" value="${q.id}" style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+                <input type="radio" name="winning_quotation" value="${q.id}" style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
                 <span style="flex: 1; color: ${document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a'};">
-                  <strong>${q.numero_cotizacion}</strong> - $${Number(q.monto).toLocaleString('es-MX', {minimumFractionDigits: 2})}
+                  <strong>${q.numero_cotizacion}</strong> - $${Number(q.monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </span>
               </label>
             </div>
           `).join('');
 
-          const step3 = await Swal.fire({
-            title: 'Asociar Cotizaciones',
+          const stepQuote = await Swal.fire({
+            title: 'Cotizacion de cierre',
             html: `
               <div style="text-align: left; margin-bottom: 15px; color: ${document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569'};">
-                Selecciona las cotizaciones asociadas a esta venta (Ciclo #${quotData.ciclo_actual}):
+                Selecciona la cotizacion con la que se concreto la venta:
               </div>
               <div style="max-height: 300px; overflow-y: auto;">
                 ${quotationsHTML}
               </div>
               <div style="margin-top: 15px; padding: 10px; background: ${document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0'}; border-radius: 6px; font-size: 12px; color: ${document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b'};">
-                💡 Puedes seleccionar una o varias cotizaciones
+                Se usara para reportes de esta venta.
               </div>
             `,
             showCancelButton: true,
             confirmButtonText: 'Finalizar',
-            cancelButtonText: 'Atrás',
+            cancelButtonText: 'Atras',
             confirmButtonColor: '#10b981',
             background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
             color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
@@ -1132,16 +1095,58 @@ function pickMime() {
               cancelButton: 'px-4 py-2 rounded-lg font-semibold'
             },
             preConfirm: () => {
-              const checkboxes = Swal.getPopup().querySelectorAll('input[type="checkbox"]:checked');
-              return Array.from(checkboxes).map(cb => Number(cb.value));
+              const selected = Swal.getPopup().querySelector('input[name="winning_quotation"]:checked');
+              if (!selected) {
+                Swal.showValidationMessage('Debes seleccionar la cotizacion de cierre');
+                return null;
+              }
+              return Number(selected.value);
             }
           });
 
-          if (!step3.isConfirmed) return;
-          quotation_id = step3.value && step3.value.length > 0 ? step3.value : null;
+          if (!stepQuote.isConfirmed) return;
+          quotation_id = stepQuote.value ? Number(stepQuote.value) : null;
+          const selectedQuotation = quotData.quotations.find(q => Number(q.id) === Number(quotation_id));
+          amount = selectedQuotation ? Number(selectedQuotation.monto) : null;
         }
       } catch (err) {
         console.error('Error cargando cotizaciones:', err);
+      }
+
+      if (!quotation_id) {
+        const stepAmount = await Swal.fire({
+          title: 'Registrar Venta',
+          html: `Ingresa el monto para <strong>"${selectedStatus.name}"</strong>`,
+          input: 'number',
+          inputAttributes: {
+            min: '0',
+            step: '0.01'
+          },
+          showCancelButton: true,
+          confirmButtonText: 'Finalizar',
+          cancelButtonText: 'Atras',
+          confirmButtonColor: '#10b981',
+          inputValidator: (value) => {
+            if (!value) return 'El monto es obligatorio para ventas';
+            if (Number(value) < 0) return 'El monto no puede ser negativo';
+          },
+          background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+          color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#0f172a',
+          customClass: {
+            popup: 'rounded-xl border border-slate-700',
+            confirmButton: 'px-4 py-2 rounded-lg font-semibold',
+            cancelButton: 'px-4 py-2 rounded-lg font-semibold'
+          },
+          didOpen: () => {
+            const selectElement = Swal.getPopup().querySelector('.swal2-select');
+            if (selectElement) {
+              selectElement.style.display = 'none';
+            }
+          }
+        });
+
+        if (!stepAmount.isConfirmed) return;
+        amount = stepAmount.value;
       }
     }
 
@@ -1165,6 +1170,7 @@ function pickMime() {
           conversacion_id: conversation.id,
           final_status_id: final_status_id,
           amount: amount,
+          quotation_id: quotation_id,
           cycle_notes: cycle_notes,
           reason: 'Completado manualmente por el agente' // Keep original reason for now
         })
