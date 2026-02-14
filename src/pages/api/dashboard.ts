@@ -79,16 +79,48 @@ export const GET: APIRoute = async ({ locals }) => {
            WHERE DATE(q3.created_at) = CURDATE()
          ) AS cotizaciones_hoy,
          (
-           SELECT COALESCE(SUM(q4.amount), 0)
+           SELECT COALESCE(SUM(
+             CASE
+               WHEN COALESCE(
+                 CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc2.cycle_data, '$.winning_quotation_amount')), '') AS DECIMAL(12,2)),
+                 CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc2.cycle_data, '$.sale_amount')), '') AS DECIMAL(12,2)),
+                 0
+               ) > 0
+               THEN COALESCE(
+                 CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc2.cycle_data, '$.winning_quotation_amount')), '') AS DECIMAL(12,2)),
+                 CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc2.cycle_data, '$.sale_amount')), '') AS DECIMAL(12,2)),
+                 0
+               )
+               ELSE COALESCE(
+                 (
+                   SELECT q4.amount
+                   FROM quotations q4
+                   WHERE q4.cycle_id = cc2.id
+                   ORDER BY q4.created_at DESC, q4.id DESC
+                   LIMIT 1
+                 ),
+                 0
+               )
+             END
+           ), 0)
            FROM conversation_cycles cc2
-           LEFT JOIN quotations q4 ON q4.cycle_id = cc2.id
            WHERE cc2.completed_at IS NOT NULL
          ) +
          (
-           SELECT COALESCE(SUM(q5.amount), 0)
+           SELECT COALESCE(SUM(
+             COALESCE(
+               (
+                 SELECT q5.amount
+                 FROM quotations q5
+                 WHERE q5.conversation_id = c2.id
+                   AND q5.created_at >= c2.current_cycle_started_at
+                 ORDER BY q5.created_at DESC, q5.id DESC
+                 LIMIT 1
+               ),
+               0
+             )
+           ), 0)
            FROM conversaciones c2
-           LEFT JOIN quotations q5 ON q5.conversation_id = c2.id
-             AND q5.created_at >= c2.current_cycle_started_at
            WHERE c2.current_cycle_started_at IS NOT NULL
          ) AS monto_total_cotizado,
          (

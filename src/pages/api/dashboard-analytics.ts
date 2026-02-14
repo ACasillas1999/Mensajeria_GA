@@ -98,17 +98,49 @@ export const GET: APIRoute = async ({ locals, url }) => {
             AND c_active.current_cycle_started_at ${activeDateFilter}
         ) AS quotations_sent,
         (
-          SELECT COALESCE(SUM(q_amount.amount), 0)
+          SELECT COALESCE(SUM(
+            CASE
+              WHEN COALESCE(
+                CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_amount.cycle_data, '$.winning_quotation_amount')), '') AS DECIMAL(12,2)),
+                CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_amount.cycle_data, '$.sale_amount')), '') AS DECIMAL(12,2)),
+                0
+              ) > 0
+              THEN COALESCE(
+                CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_amount.cycle_data, '$.winning_quotation_amount')), '') AS DECIMAL(12,2)),
+                CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_amount.cycle_data, '$.sale_amount')), '') AS DECIMAL(12,2)),
+                0
+              )
+              ELSE COALESCE(
+                (
+                  SELECT q_amount.amount
+                  FROM quotations q_amount
+                  WHERE q_amount.cycle_id = cc_amount.id
+                  ORDER BY q_amount.created_at DESC, q_amount.id DESC
+                  LIMIT 1
+                ),
+                0
+              )
+            END
+          ), 0)
           FROM conversation_cycles cc_amount
-          LEFT JOIN quotations q_amount ON q_amount.cycle_id = cc_amount.id
           WHERE cc_amount.assigned_to = u.id
             AND cc_amount.completed_at ${cyclesDateFilter}
         ) +
         (
-          SELECT COALESCE(SUM(q_active_amount.amount), 0)
+          SELECT COALESCE(SUM(
+            COALESCE(
+              (
+                SELECT q_active_amount.amount
+                FROM quotations q_active_amount
+                WHERE q_active_amount.conversation_id = c_active_amount.id
+                  AND q_active_amount.created_at >= c_active_amount.current_cycle_started_at
+                ORDER BY q_active_amount.created_at DESC, q_active_amount.id DESC
+                LIMIT 1
+              ),
+              0
+            )
+          ), 0)
           FROM conversaciones c_active_amount
-          LEFT JOIN quotations q_active_amount ON q_active_amount.conversation_id = c_active_amount.id
-            AND q_active_amount.created_at >= c_active_amount.current_cycle_started_at
           WHERE c_active_amount.asignado_a = u.id
             AND c_active_amount.current_cycle_started_at IS NOT NULL
             AND c_active_amount.current_cycle_started_at ${activeDateFilter}

@@ -87,7 +87,8 @@ async function checkAndResetCycle(convId: number) {
     // 1. Guardar el ciclo completado en conversation_cycles
     const newCycleNumber = (conv.cycle_count || 0) + 1;
 
-    await pool.query(
+    const cycleStartedAt = conv.current_cycle_started_at || new Date();
+    const [cycleInsert] = await pool.query(
       `INSERT INTO conversation_cycles
        (conversation_id, cycle_number, started_at, completed_at,
         initial_status_id, final_status_id, total_messages, assigned_to, cycle_data)
@@ -95,13 +96,27 @@ async function checkAndResetCycle(convId: number) {
       [
         convId,
         newCycleNumber,
-        conv.current_cycle_started_at || new Date(),
+        cycleStartedAt,
         conv.status_id,
         totalMessages,
         conv.asignado_a || null,
         cycleData
       ]
     );
+
+    const completedCycleId = Number((cycleInsert as any)?.insertId || 0);
+    if (completedCycleId > 0) {
+      // Amarrar cotizaciones del ciclo cerrado automaticamente.
+      await pool.query(
+        `UPDATE quotations
+         SET cycle_id = ?
+         WHERE conversation_id = ?
+           AND created_at >= ?
+           AND created_at <= NOW()
+           AND (cycle_id IS NULL OR cycle_id <> ?)`,
+        [completedCycleId, convId, cycleStartedAt, completedCycleId]
+      );
+    }
 
     console.log(`[Cycle Reset] Ciclo #${newCycleNumber} guardado con ${totalMessages} mensajes`);
 

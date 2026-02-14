@@ -46,9 +46,31 @@ export const GET: APIRoute = async ({ locals, url }) => {
             END
           ) AS sales_closed,
           (
-            SELECT COALESCE(SUM(q_amount.amount), 0)
+            SELECT COALESCE(SUM(
+              CASE
+                WHEN COALESCE(
+                  CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_amount.cycle_data, '$.winning_quotation_amount')), '') AS DECIMAL(12,2)),
+                  CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_amount.cycle_data, '$.sale_amount')), '') AS DECIMAL(12,2)),
+                  0
+                ) > 0
+                THEN COALESCE(
+                  CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_amount.cycle_data, '$.winning_quotation_amount')), '') AS DECIMAL(12,2)),
+                  CAST(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cc_amount.cycle_data, '$.sale_amount')), '') AS DECIMAL(12,2)),
+                  0
+                )
+                ELSE COALESCE(
+                  (
+                    SELECT q_amount.amount
+                    FROM quotations q_amount
+                    WHERE q_amount.cycle_id = cc_amount.id
+                    ORDER BY q_amount.created_at DESC, q_amount.id DESC
+                    LIMIT 1
+                  ),
+                  0
+                )
+              END
+            ), 0)
             FROM conversation_cycles cc_amount
-            LEFT JOIN quotations q_amount ON q_amount.cycle_id = cc_amount.id
             WHERE cc_amount.assigned_to = u.id
               AND cc_amount.completed_at ${dateFilter}
           ) AS quotation_amount,

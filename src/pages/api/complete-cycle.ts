@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { pool } from '../../lib/db';
-import type { RowDataPacket } from 'mysql2/promise';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 
 /**
  * POST /api/complete-cycle
@@ -150,14 +150,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const newCycleNumber = (conv.cycle_count || 0) + 1;
     const completedAt = new Date();
 
-    await pool.query(
+    const cycleStartedAt = conv.current_cycle_started_at || new Date();
+    const [cycleInsert] = await pool.query<ResultSetHeader>(
       `INSERT INTO conversation_cycles
        (conversation_id, cycle_number, started_at, completed_at, initial_status_id, final_status_id, total_messages, assigned_to, cycle_data)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         convId,
         newCycleNumber,
-        conv.current_cycle_started_at || new Date(),
+        cycleStartedAt,
         completedAt,
         null,
         finalStatusToRecord,
@@ -166,6 +167,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
         JSON.stringify(cycleDataObj)
       ]
     );
+
+    const completedCycleId = Number(cycleInsert.insertId || 0);
+    if (completedCycleId > 0) {
+      // Amarrar cotizaciones del ciclo que se esta cerrando al cycle_id real.
+      await pool.query(
+        `UPDATE quotations
+         SET cycle_id = ?
+         WHERE conversation_id = ?
+           AND created_at >= ?
+           AND created_at <= ?
+           AND (cycle_id IS NULL OR cycle_id <> ?)`,
+        [completedCycleId, convId, cycleStartedAt, completedAt, completedCycleId]
+      );
+    }
 
     console.log(`[Complete Cycle] Ciclo #${newCycleNumber} guardado. Monto: ${saleAmount ?? 'N/A'}`);
 
