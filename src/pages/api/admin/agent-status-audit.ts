@@ -2,6 +2,77 @@ import type { APIRoute } from 'astro';
 import type { RowDataPacket } from 'mysql2/promise';
 import { pool } from '../../../lib/db';
 
+type QuotationAggregationMode = 'sum_all' | 'latest_by_number' | 'latest_overall';
+
+function aggregateQuotationRows(rows: RowDataPacket[], mode: QuotationAggregationMode) {
+  const toAmount = (value: any) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+  };
+
+  const toTime = (value: any) => {
+    const ts = new Date(value).getTime();
+    return Number.isFinite(ts) ? ts : 0;
+  };
+
+  if (mode === 'sum_all') {
+    return {
+      count: rows.length,
+      amount: rows.reduce((sum, row) => sum + toAmount(row.amount), 0),
+    };
+  }
+
+  if (mode === 'latest_overall') {
+    let latestRow: RowDataPacket | null = null;
+    for (const row of rows) {
+      if (!latestRow) {
+        latestRow = row;
+        continue;
+      }
+      const currentTime = toTime(row.created_at);
+      const latestTime = toTime(latestRow.created_at);
+      if (
+        currentTime > latestTime ||
+        (currentTime === latestTime && Number(row.quotation_id || 0) > Number(latestRow.quotation_id || 0))
+      ) {
+        latestRow = row;
+      }
+    }
+
+    if (!latestRow) {
+      return { count: 0, amount: 0 };
+    }
+
+    return { count: 1, amount: toAmount(latestRow.amount) };
+  }
+
+  const latestByNumber = new Map<string, RowDataPacket>();
+  for (const row of rows) {
+    const quotationNumber = String(row.quotation_number || '').trim();
+    const key = quotationNumber || `__id_${row.quotation_id}`;
+    const previous = latestByNumber.get(key);
+    if (!previous) {
+      latestByNumber.set(key, row);
+      continue;
+    }
+
+    const currentTime = toTime(row.created_at);
+    const previousTime = toTime(previous.created_at);
+    if (
+      currentTime > previousTime ||
+      (currentTime === previousTime && Number(row.quotation_id || 0) > Number(previous.quotation_id || 0))
+    ) {
+      latestByNumber.set(key, row);
+    }
+  }
+
+  const dedupedRows = Array.from(latestByNumber.values());
+  return {
+    count: dedupedRows.length,
+    amount: dedupedRows.reduce((sum, row) => sum + toAmount(row.amount), 0),
+  };
+}
+
 export const GET: APIRoute = async ({ locals, url }) => {
   const user = (locals as any).user as { rol: string } | undefined;
   if (!user || String(user.rol).toLowerCase() !== 'admin') {
@@ -112,45 +183,70 @@ export const GET: APIRoute = async ({ locals, url }) => {
       activeParams
     );
 
-    // Obtener montos de cotizaciones por ciclo
-    const [quotationAmounts] = await pool.query<RowDataPacket[]>(
+    // Obtener detalle de cotizaciones por ciclo completado
+    const [completedQuotationRows] = await pool.query<RowDataPacket[]>(
       `SELECT
         cc.id AS cycle_id,
-        COALESCE(SUM(q.amount), 0) AS total_amount
+        cc.conversation_id,
+        q.id AS quotation_id,
+        q.quotation_number,
+        q.amount,
+        q.created_at
        FROM conversation_cycles cc
-       LEFT JOIN quotations q ON q.cycle_id = cc.id
-       WHERE cc.assigned_to = ?${completedDateClause}
-       GROUP BY cc.id`,
+       JOIN quotations q ON q.cycle_id = cc.id
+       WHERE cc.assigned_to = ?${completedDateClause}`,
       completedParams
     );
 
-    // Obtener montos de cotizaciones para ciclos activos
-    const [activeQuotationAmounts] = await pool.query<RowDataPacket[]>(
+    // Obtener detalle de cotizaciones para ciclos activos
+    const [activeQuotationRows] = await pool.query<RowDataPacket[]>(
       `SELECT
         c.id AS conversation_id,
-        COALESCE(SUM(q.amount), 0) AS total_amount
+        q.id AS quotation_id,
+        q.quotation_number,
+        q.amount,
+        q.created_at
        FROM conversaciones c
-       LEFT JOIN quotations q ON q.conversation_id = c.id
+       JOIN quotations q ON q.conversation_id = c.id
          AND q.created_at >= c.current_cycle_started_at
        WHERE c.asignado_a = ?
-         AND c.current_cycle_started_at IS NOT NULL${activeDateClause}
-       GROUP BY c.id`,
+         AND c.current_cycle_started_at IS NOT NULL${activeDateClause}`,
       activeParams
     );
 
     const countsByCycleId = new Map<string, Record<string, number>>();
+    const quotationRowsByCycleId = new Map<string, RowDataPacket[]>();
     const quotationAmountsByCycleId = new Map<string, number>();
 
-    // Mapear montos de cotizaciones completadas
-    for (const row of quotationAmounts) {
-      const key = String(row.cycle_id);
-      quotationAmountsByCycleId.set(key, Number(row.total_amount || 0));
+    const activeStartByConversation = new Map<number, number>();
+    for (const conv of activeConversations) {
+      const startedAt = new Date(conv.current_cycle_started_at).getTime();
+      activeStartByConversation.set(
+        Number(conv.conversation_id),
+        Number.isFinite(startedAt) ? startedAt : 0
+      );
     }
 
-    // Mapear montos de cotizaciones activas
-    for (const row of activeQuotationAmounts) {
+    const completedQuotationIds = new Set<number>();
+    for (const row of completedQuotationRows) {
+      const activeStartedAt = activeStartByConversation.get(Number(row.conversation_id));
+      const quotationTime = new Date(row.created_at).getTime();
+      if (activeStartedAt && Number.isFinite(quotationTime) && quotationTime >= activeStartedAt) {
+        // Cotizacion historicamente mal asociada al ciclo anterior; se tratara como activa.
+        continue;
+      }
+
+      const key = String(row.cycle_id);
+      completedQuotationIds.add(Number(row.quotation_id));
+      if (!quotationRowsByCycleId.has(key)) quotationRowsByCycleId.set(key, []);
+      quotationRowsByCycleId.get(key)!.push(row);
+    }
+
+    for (const row of activeQuotationRows) {
+      if (completedQuotationIds.has(Number(row.quotation_id))) continue;
       const key = `active-${row.conversation_id}`;
-      quotationAmountsByCycleId.set(key, Number(row.total_amount || 0));
+      if (!quotationRowsByCycleId.has(key)) quotationRowsByCycleId.set(key, []);
+      quotationRowsByCycleId.get(key)!.push(row);
     }
 
     for (const row of completedCounts) {
@@ -218,6 +314,23 @@ export const GET: APIRoute = async ({ locals, url }) => {
         0
       );
       saleAmountByCycleId.set(String(cycle.cycle_id), Number.isFinite(explicitSale) ? explicitSale : 0);
+    }
+
+    // Calcular monto cotizado por ciclo aplicando regla:
+    // - Ciclos activos o no vendidos: deduplicar por quotation_number y tomar solo la mas reciente
+    // - Ciclos con venta: sumar todas las cotizaciones del ciclo
+    for (const cycle of cycles) {
+      const rows = quotationRowsByCycleId.get(cycle.cycle_id) || [];
+      const explicitSaleAmount = saleAmountByCycleId.get(cycle.cycle_id) || 0;
+      if (explicitSaleAmount > 0) {
+        // Si el ciclo ya se vendio, monto cotizado efectivo = monto vendido.
+        quotationAmountsByCycleId.set(cycle.cycle_id, explicitSaleAmount);
+        continue;
+      }
+
+      const mode: QuotationAggregationMode = cycle.is_active ? 'latest_by_number' : 'latest_overall';
+      const aggregated = aggregateQuotationRows(rows, mode);
+      quotationAmountsByCycleId.set(cycle.cycle_id, aggregated.amount);
     }
 
     for (const cycle of cycles) {
