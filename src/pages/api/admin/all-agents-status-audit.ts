@@ -35,8 +35,10 @@ export const GET: APIRoute = async ({ locals, url }) => {
        ORDER BY display_order ASC, id ASC`
         );
 
-        // Obtener el ID del status "venta"
-        const ventaStatus = statusRows.find(s => s.name === 'venta');
+        // Obtener el ID del status "venta" (case-insensitive)
+        const ventaStatus = statusRows.find(
+            s => String(s.name || '').trim().toLowerCase() === 'venta'
+        );
         const ventaStatusId = ventaStatus ? String(ventaStatus.id) : null;
 
         // Preparar cláusulas de fecha
@@ -68,7 +70,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
           cc.conversation_id,
           cc.cycle_number,
           cc.started_at,
-          cc.completed_at
+          cc.completed_at,
+          cc.cycle_data
          FROM conversation_cycles cc
          WHERE cc.assigned_to = ?
            AND cc.completed_at IS NOT NULL${completedDateClause}
@@ -152,6 +155,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
             const countsByCycleId = new Map<string, Record<string, number>>();
             const quotationAmountsByCycleId = new Map<string, number>();
             const quotationCountsByCycleId = new Map<string, number>();
+            const saleAmountByCycleId = new Map<string, number>();
 
             // Mapear montos y conteos de cotizaciones completadas
             for (const row of quotationAmounts) {
@@ -165,6 +169,28 @@ export const GET: APIRoute = async ({ locals, url }) => {
                 const key = `active-${row.conversation_id}`;
                 quotationAmountsByCycleId.set(key, Number(row.total_amount || 0));
                 quotationCountsByCycleId.set(key, Number(row.quotation_count || 0));
+            }
+
+            // Mapear monto vendido explicito por ciclo (si existe en cycle_data)
+            for (const cycle of completedCycles) {
+                let cycleData: any = null;
+                try {
+                    cycleData = typeof cycle.cycle_data === 'string'
+                        ? JSON.parse(cycle.cycle_data)
+                        : cycle.cycle_data;
+                } catch {
+                    cycleData = null;
+                }
+
+                const explicitSale = Number(
+                    cycleData?.winning_quotation_amount ??
+                    cycleData?.sale_amount ??
+                    0
+                );
+                saleAmountByCycleId.set(
+                    String(cycle.cycle_id),
+                    Number.isFinite(explicitSale) ? explicitSale : 0
+                );
             }
 
             // Mapear conteos de estados completados
@@ -216,8 +242,11 @@ export const GET: APIRoute = async ({ locals, url }) => {
                 totalQuotationCount += cycleQuotationCount;
                 totalQuotationAmount += cycleQuotationAmount;
 
-                // Si el ciclo tiene status "venta", sumar al total de ventas
-                if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
+                const explicitSaleAmount = saleAmountByCycleId.get(cycle.cycle_id) || 0;
+                if (explicitSaleAmount > 0) {
+                    totalSalesAmount += explicitSaleAmount;
+                } else if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
+                    // Compatibilidad con ciclos historicos sin sale_amount
                     totalSalesAmount += cycleQuotationAmount;
                 }
 

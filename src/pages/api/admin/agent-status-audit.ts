@@ -58,6 +58,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
         cc.cycle_number,
         cc.started_at,
         cc.completed_at,
+        cc.cycle_data,
         c.wa_user,
         c.wa_profile_name
        FROM conversation_cycles cc
@@ -200,9 +201,30 @@ export const GET: APIRoute = async ({ locals, url }) => {
     let totalQuotationAmount = 0;
     let totalSalesAmount = 0;
 
-    // Obtener el ID del status "venta" (no "ventaa")
-    const ventaStatus = statusRows.find(s => s.name === 'venta');
+    // Obtener el ID del status "venta" (case-insensitive)
+    const ventaStatus = statusRows.find(
+      s => String(s.name || '').trim().toLowerCase() === 'venta'
+    );
     const ventaStatusId = ventaStatus ? String(ventaStatus.id) : null;
+
+    const saleAmountByCycleId = new Map<string, number>();
+    for (const cycle of completedCycles) {
+      let cycleData: any = null;
+      try {
+        cycleData = typeof cycle.cycle_data === 'string'
+          ? JSON.parse(cycle.cycle_data)
+          : cycle.cycle_data;
+      } catch {
+        cycleData = null;
+      }
+
+      const explicitSale = Number(
+        cycleData?.winning_quotation_amount ??
+        cycleData?.sale_amount ??
+        0
+      );
+      saleAmountByCycleId.set(String(cycle.cycle_id), Number.isFinite(explicitSale) ? explicitSale : 0);
+    }
 
     for (const cycle of cycles) {
       conversationIds.add(Number(cycle.conversation_id));
@@ -212,8 +234,11 @@ export const GET: APIRoute = async ({ locals, url }) => {
       // Sumar al total de cotizaciones
       totalQuotationAmount += cycleQuotationAmount;
 
-      // Si el ciclo tiene status "venta", sumar al total de ventas
-      if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
+      const explicitSaleAmount = saleAmountByCycleId.get(cycle.cycle_id) || 0;
+      if (explicitSaleAmount > 0) {
+        totalSalesAmount += explicitSaleAmount;
+      } else if (ventaStatusId && cycleCounts[ventaStatusId] > 0) {
+        // Compatibilidad con ciclos historicos sin sale_amount guardado
         totalSalesAmount += cycleQuotationAmount;
       }
 
