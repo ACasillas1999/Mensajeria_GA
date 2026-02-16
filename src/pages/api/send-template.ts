@@ -117,10 +117,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // Asignar componentes al template
+    // Asignar componentes al template SOLO si hay componentes
+    // WhatsApp rechaza templates con components: [] (array vacío)
     if (components.length > 0) {
       payload.template.components = components;
     }
+    // Si no hay componentes, NO incluir la propiedad components en el payload
 
     // DEBUG: Log del payload completo
     console.log('=== ENVIANDO TEMPLATE A WHATSAPP ===');
