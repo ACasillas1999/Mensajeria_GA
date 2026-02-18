@@ -25,18 +25,21 @@ export const POST: APIRoute = async ({ request }) => {
     );
 
     if (!rows.length) {
-      return new Response(JSON.stringify({ ok:false, error:"Credenciales inválidas" }), { status: 401 });
+      return new Response(JSON.stringify({ ok: false, error: "Credenciales inválidas" }), { status: 401 });
     }
 
     const u = rows[0];
     if (!u.activo) {
-      return new Response(JSON.stringify({ ok:false, error:"Usuario inactivo" }), { status: 403 });
+      return new Response(JSON.stringify({ ok: false, error: "Usuario inactivo" }), { status: 403 });
     }
 
     const ok = await bcrypt.compare(password, u.pass_hash);
     if (!ok) {
-      return new Response(JSON.stringify({ ok:false, error:"Credenciales inválidas" }), { status: 401 });
+      return new Response(JSON.stringify({ ok: false, error: "Credenciales inválidas" }), { status: 401 });
     }
+
+    // Registrar fecha y hora del último inicio de sesión
+    await pool.query(`UPDATE usuarios SET ultimo_login = NOW() WHERE id = ?`, [u.id]);
 
     const token = jwt.sign(
       { sub: u.id, rol: u.rol, nombre: u.nombre, sucursal_id: u.sucursal_id ?? null, sucursal: u.sucursal ?? null },
@@ -69,8 +72,8 @@ export const POST: APIRoute = async ({ request }) => {
   } catch (err: any) {
     // Si el error es de Zod, devuelve mensajes legibles
     if (err?.issues) {
-      return new Response(JSON.stringify({ ok:false, error: err.issues.map((i:any)=>i.message).join(" | ") }), { status: 400 });
+      return new Response(JSON.stringify({ ok: false, error: err.issues.map((i: any) => i.message).join(" | ") }), { status: 400 });
     }
-    return new Response(JSON.stringify({ ok:false, error: err?.message || "Error" }), { status: 500 });
+    return new Response(JSON.stringify({ ok: false, error: err?.message || "Error" }), { status: 500 });
   }
 };
