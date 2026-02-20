@@ -51,7 +51,8 @@ export const POST: APIRoute = async ({ request }) => {
       `auth=${token}`,
       "HttpOnly",
       "Path=/",
-      "SameSite=Lax",
+      "SameSite=None",
+      "Secure",
       // 8h
       "Max-Age=28800",
     ].join("; ");

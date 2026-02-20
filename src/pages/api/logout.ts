@@ -8,7 +8,8 @@ export const POST: APIRoute = async () => {
       "auth=",
       "HttpOnly",
       "Path=/",
-      "SameSite=Lax",
+      "SameSite=None",
+      "Secure",
       "Max-Age=0",
     ].join("; "),
   });

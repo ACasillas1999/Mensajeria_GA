@@ -4,7 +4,7 @@ export const GET: APIRoute = async ({ url }) => {
   const headers = new Headers();
   headers.append(
     "Set-Cookie",
-    ["auth=", "HttpOnly", "Path=/", "SameSite=Lax", "Max-Age=0"].join("; ")
+    ["auth=", "HttpOnly", "Path=/", "SameSite=None", "Secure", "Max-Age=0"].join("; ")
   );
 
   const base = import.meta.env.BASE_URL || "/";
