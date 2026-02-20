@@ -66,7 +66,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
         GROUP BY conversacion_id
       ) AS first_response ON first_response.conversacion_id = c.id
       WHERE u.activo = 1
-        AND u.rol = 'AGENTE'
+        AND u.rol IN ('AGENTE', 'ADMIN')
         AND c.creado_en ${dateFilter}
       GROUP BY u.id, u.nombre
       ORDER BY avg_response_time_seconds ASC`
@@ -173,7 +173,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
         WHERE cs.is_final = TRUE
           AND csh.created_at ${dateFilter}
       ) csh_final ON csh_final.conversation_id = c.id
-      WHERE u.activo = 1 AND u.rol = 'AGENTE'
+      WHERE u.activo = 1 AND u.rol IN ('AGENTE', 'ADMIN')
       GROUP BY u.id, u.nombre
       ORDER BY conversations_handled DESC`
     );
@@ -188,7 +188,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
       FROM usuarios u
       LEFT JOIN conversaciones c ON c.asignado_a = u.id
       LEFT JOIN conversation_statuses cs ON c.status_id = cs.id
-      WHERE u.activo = 1 AND u.rol = 'AGENTE'
+      WHERE u.activo = 1 AND u.rol IN ('AGENTE', 'ADMIN')
       GROUP BY u.id, u.nombre
       ORDER BY active_conversations DESC`
     );

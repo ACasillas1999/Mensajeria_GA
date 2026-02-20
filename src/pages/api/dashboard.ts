@@ -54,7 +54,7 @@ export const GET: APIRoute = async ({ locals }) => {
     const [rows3] = await pool.query<RowDataPacket[]>(
       `SELECT COUNT(*) AS agentes_activos 
        FROM usuarios 
-       WHERE activo = 1 AND UPPER(rol) = 'AGENTE'`
+       WHERE activo = 1 AND UPPER(rol) IN ('AGENTE', 'ADMIN')`
     );
 
     // Quotations and sales metrics (alineados con la auditoria)
