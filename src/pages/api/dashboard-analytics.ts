@@ -58,12 +58,16 @@ export const GET: APIRoute = async ({ locals, url }) => {
       FROM usuarios u
       INNER JOIN (
         SELECT 
-          m1.conversacion_id, 
-          m1.usuario_id, 
-          MIN(COALESCE(m1.creado_en, FROM_UNIXTIME(m1.ts))) AS ts
-        FROM mensajes m1
-        WHERE m1.from_me = 1 AND m1.is_auto_reply = 0
-        GROUP BY m1.conversacion_id
+          m2.conversacion_id, 
+          m2.usuario_id, 
+          COALESCE(m2.creado_en, FROM_UNIXTIME(m2.ts)) AS ts
+        FROM mensajes m2
+        INNER JOIN (
+          SELECT MIN(id) AS first_id
+          FROM mensajes
+          WHERE from_me = 1 AND is_auto_reply = 0
+          GROUP BY conversacion_id
+        ) AS m_first ON m2.id = m_first.first_id
       ) AS first_response ON 1=1
       INNER JOIN conversaciones c ON c.id = first_response.conversacion_id
       WHERE u.activo = 1
