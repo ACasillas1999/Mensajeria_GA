@@ -56,17 +56,25 @@ export const GET: APIRoute = async ({ locals, url }) => {
         MIN(TIMESTAMPDIFF(SECOND, c.creado_en, first_response.ts)) AS min_response_time_seconds,
         MAX(TIMESTAMPDIFF(SECOND, c.creado_en, first_response.ts)) AS max_response_time_seconds
       FROM usuarios u
-      INNER JOIN conversaciones c ON c.asignado_a = u.id
       INNER JOIN (
-        SELECT
-          conversacion_id,
-          MIN(COALESCE(creado_en, FROM_UNIXTIME(ts))) AS ts
-        FROM mensajes
-        WHERE from_me = 1
-        GROUP BY conversacion_id
-      ) AS first_response ON first_response.conversacion_id = c.id
+        SELECT 
+          m1.conversacion_id, 
+          m1.usuario_id, 
+          MIN(COALESCE(m1.creado_en, FROM_UNIXTIME(m1.ts))) AS ts
+        FROM mensajes m1
+        WHERE m1.from_me = 1 AND m1.is_auto_reply = 0
+        GROUP BY m1.conversacion_id
+      ) AS first_response ON 1=1
+      INNER JOIN conversaciones c ON c.id = first_response.conversacion_id
       WHERE u.activo = 1
-        AND u.rol IN ('AGENTE', 'ADMIN')
+        AND (
+          (u.rol = 'AGENTE' AND c.asignado_a = u.id)
+          OR
+          (u.rol = 'ADMIN' AND first_response.usuario_id = u.id AND (
+            c.asignado_a IS NULL OR 
+            NOT EXISTS (SELECT 1 FROM usuarios u_sub WHERE u_sub.id = c.asignado_a AND u_sub.rol = 'AGENTE')
+          ))
+        )
         AND c.creado_en ${dateFilter}
       GROUP BY u.id, u.nombre
       ORDER BY avg_response_time_seconds ASC`
