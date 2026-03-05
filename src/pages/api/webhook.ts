@@ -343,6 +343,13 @@ export const POST: APIRoute = async ({ request }) => {
     for (const e of entries) {
       const changes = e?.changes ?? [];
       for (const c of changes) {
+        // Ignorar eventos del número secundario (5213326194820)
+        const phoneNumberId = c?.value?.metadata?.phone_number_id;
+        if (phoneNumberId === '335894526282507') {
+          console.log(`[Webhook DEBUG] Ignorando evento del número secundario: ${phoneNumberId}`);
+          continue;
+        }
+
         // Procesar eventos de llamadas
         const calls = c?.value?.calls;
         if (Array.isArray(calls) && calls.length > 0) {
