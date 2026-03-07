@@ -131,7 +131,7 @@ export default function DashboardAdvanced() {
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('overview'); // overview, agents, performance
 
-  const [dateRange, setDateRange] = useState('30'); // 7, 30, 90, custom
+  const [dateRange, setDateRange] = useState('7'); // 7, 30, 90, custom
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
