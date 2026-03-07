@@ -143,16 +143,24 @@ export default function DashboardAdvanced() {
   async function loadData() {
     setLoading(true);
     try {
-      let analyticsUrl = `${BASE}/api/dashboard-analytics`.replace(/\/\//g, '/');
-
-      if (dateRange === 'custom' && customStartDate && customEndDate) {
-        analyticsUrl += `?start_date=${customStartDate}&end_date=${customEndDate}`;
+      const params = new URLSearchParams();
+      if (dateRange === 'custom') {
+        if (!customStartDate || !customEndDate) {
+          setLoading(false);
+          return;
+        }
+        params.set('start_date', customStartDate);
+        params.set('end_date', customEndDate);
       } else {
-        analyticsUrl += `?days=${dateRange}`;
+        params.set('days', dateRange);
       }
+      const query = params.toString();
+
+      const dashboardUrl = `${BASE}/api/dashboard${query ? `?${query}` : ''}`.replace(/\/\//g, '/');
+      const analyticsUrl = `${BASE}/api/dashboard-analytics${query ? `?${query}` : ''}`.replace(/\/\//g, '/');
 
       const [statsRes, analyticsRes] = await Promise.all([
-        fetch(`${BASE}/api/dashboard`.replace(/\/\//g, '/')),
+        fetch(dashboardUrl),
         fetch(analyticsUrl)
       ]);
 

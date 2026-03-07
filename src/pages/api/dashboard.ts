@@ -2,28 +2,74 @@ import type { APIRoute } from "astro";
 import type { RowDataPacket } from "mysql2/promise";
 import { pool } from "../../lib/db";
 
-export const GET: APIRoute = async ({ locals }) => {
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+type DateFilter = {
+  clause: string;
+  params: Array<string | number>;
+};
+
+export const GET: APIRoute = async ({ locals, url }) => {
   try {
     const user = (locals as any).user as { id: number, rol: string } | undefined;
-    if (!user) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
+    if (!user) return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), { status: 401 });
 
-    // Counts scoped to user (mine) and global if admin
     const myId = user.id;
+    const daysParam = url.searchParams.get("days");
+    const startDate = url.searchParams.get("start_date");
+    const endDate = url.searchParams.get("end_date");
 
-    // Get basic stats
+    const hasCustomRange = Boolean(
+      startDate &&
+      endDate &&
+      ISO_DATE_RE.test(startDate) &&
+      ISO_DATE_RE.test(endDate)
+    );
+
+    const parsedDays = Number.parseInt(daysParam ?? "30", 10);
+    const safeDays = Number.isFinite(parsedDays) && parsedDays > 0
+      ? Math.min(parsedDays, 365)
+      : 30;
+
+    const startDateTime = hasCustomRange ? `${startDate} 00:00:00` : "";
+    const endDateTime = hasCustomRange ? `${endDate} 23:59:59` : "";
+
+    const buildDateFilter = (column: string): DateFilter => {
+      if (hasCustomRange) {
+        return {
+          clause: `${column} BETWEEN ? AND ?`,
+          params: [startDateTime, endDateTime]
+        };
+      }
+      return {
+        clause: `${column} >= DATE_SUB(CURDATE(), INTERVAL ? DAY)`,
+        params: [safeDays]
+      };
+    };
+
+    const conversationFilter = buildDateFilter("creado_en");
+    const statusHistoryFilter = buildDateFilter("csh.created_at");
+    const messageFilter = buildDateFilter("COALESCE(creado_en, FROM_UNIXTIME(ts))");
+    const completedCyclesFilter = buildDateFilter("cc.completed_at");
+    const activeCyclesFilter = buildDateFilter("c.current_cycle_started_at");
+    const completedCyclesFilter2 = buildDateFilter("cc2.completed_at");
+    const activeCyclesFilter2 = buildDateFilter("c2.current_cycle_started_at");
+    const seriesConversationFilter = buildDateFilter("creado_en");
+    const seriesMessageFilter = buildDateFilter("COALESCE(creado_en, FROM_UNIXTIME(ts))");
+
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT
          COUNT(*)                                     AS total_conversaciones,
          SUM(asignado_a IS NULL)                      AS sin_asignar,
          SUM(asignado_a = ?)                          AS mine_total,
          SUM(DATE(creado_en) = CURDATE())             AS conversaciones_hoy
-       FROM conversaciones`,
-      [myId]
+       FROM conversaciones
+       WHERE ${conversationFilter.clause}`,
+      [myId, ...conversationFilter.params]
     );
 
     const base = (rows as any[])[0] || {};
 
-    // Distribución de conversaciones por estatus (usando historial de cambios como en auditoría)
     const [statusRows] = await pool.query<RowDataPacket[]>(
       `SELECT
          cs.id,
@@ -34,30 +80,31 @@ export const GET: APIRoute = async ({ locals }) => {
          SUM(CASE WHEN c.asignado_a = ? THEN 1 ELSE 0 END) AS mine
        FROM conversation_statuses cs
        LEFT JOIN conversation_status_history csh ON csh.new_status_id = cs.id
+         AND ${statusHistoryFilter.clause}
        LEFT JOIN conversaciones c ON c.id = csh.conversation_id
        WHERE cs.is_active = TRUE
        GROUP BY cs.id, cs.name, cs.color, cs.icon
        ORDER BY cs.display_order`,
-      [myId]
+      [myId, ...statusHistoryFilter.params]
     );
 
     base.statuses = statusRows;
 
-    // Extra global metrics from other tables
     const [rows2] = await pool.query<RowDataPacket[]>(
-      `SELECT 
-         COUNT(*)                                       AS mensajes_total,
+      `SELECT
+         COUNT(*) AS mensajes_total,
          SUM(DATE(COALESCE(creado_en, FROM_UNIXTIME(ts))) = CURDATE()) AS mensajes_hoy
-       FROM mensajes`
+       FROM mensajes
+       WHERE ${messageFilter.clause}`,
+      [...messageFilter.params]
     );
 
     const [rows3] = await pool.query<RowDataPacket[]>(
-      `SELECT COUNT(*) AS agentes_activos 
-       FROM usuarios 
+      `SELECT COUNT(*) AS agentes_activos
+       FROM usuarios
        WHERE activo = 1 AND UPPER(rol) IN ('AGENTE', 'ADMIN')`
     );
 
-    // Quotations and sales metrics (alineados con la auditoria)
     const [rows4] = await pool.query<RowDataPacket[]>(
       `SELECT
          (
@@ -65,6 +112,7 @@ export const GET: APIRoute = async ({ locals }) => {
            FROM conversation_cycles cc
            LEFT JOIN quotations q ON q.cycle_id = cc.id
            WHERE cc.completed_at IS NOT NULL
+             AND ${completedCyclesFilter.clause}
          ) +
          (
            SELECT COUNT(q2.id)
@@ -72,6 +120,7 @@ export const GET: APIRoute = async ({ locals }) => {
            LEFT JOIN quotations q2 ON q2.conversation_id = c.id
              AND q2.created_at >= c.current_cycle_started_at
            WHERE c.current_cycle_started_at IS NOT NULL
+             AND ${activeCyclesFilter.clause}
          ) AS cotizaciones_total,
          (
            SELECT COUNT(q3.id)
@@ -105,6 +154,7 @@ export const GET: APIRoute = async ({ locals }) => {
            ), 0)
            FROM conversation_cycles cc2
            WHERE cc2.completed_at IS NOT NULL
+             AND ${completedCyclesFilter2.clause}
          ) +
          (
            SELECT COALESCE(SUM(
@@ -122,12 +172,19 @@ export const GET: APIRoute = async ({ locals }) => {
            ), 0)
            FROM conversaciones c2
            WHERE c2.current_cycle_started_at IS NOT NULL
+             AND ${activeCyclesFilter2.clause}
          ) AS monto_total_cotizado,
          (
            SELECT COALESCE(SUM(q6.amount), 0)
            FROM quotations q6
            WHERE DATE(q6.created_at) = CURDATE()
-         ) AS monto_cotizado_hoy`
+         ) AS monto_cotizado_hoy`,
+      [
+        ...completedCyclesFilter.params,
+        ...activeCyclesFilter.params,
+        ...completedCyclesFilter2.params,
+        ...activeCyclesFilter2.params,
+      ]
     );
 
     const saleAmountExpr = `
@@ -144,7 +201,9 @@ export const GET: APIRoute = async ({ locals }) => {
          COUNT(CASE WHEN ${saleAmountExpr} > 0 AND DATE(cc.completed_at) = CURDATE() THEN 1 END) AS ventas_hoy,
          COALESCE(SUM(CASE WHEN ${saleAmountExpr} > 0 THEN ${saleAmountExpr} ELSE 0 END), 0) AS monto_total_ventas
        FROM conversation_cycles cc
-       WHERE cc.completed_at IS NOT NULL`
+       WHERE cc.completed_at IS NOT NULL
+         AND ${completedCyclesFilter.clause}`,
+      [...completedCyclesFilter.params]
     );
 
     const salesStats = (salesRows as any[])[0] || {
@@ -153,8 +212,6 @@ export const GET: APIRoute = async ({ locals }) => {
       monto_total_ventas: 0,
     };
 
-
-    // Base stats
     const stats = {
       ...base,
       ...(rows2 as any[])[0],
@@ -163,21 +220,22 @@ export const GET: APIRoute = async ({ locals }) => {
       ...salesStats,
     } as Record<string, number>;
 
-    // 30-day series for conversations and messages
     const [convRows] = await pool.query<RowDataPacket[]>(
       `SELECT DATE(creado_en) AS d, COUNT(*) AS c
        FROM conversaciones
-       WHERE creado_en >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+       WHERE ${seriesConversationFilter.clause}
        GROUP BY d
-       ORDER BY d`
+       ORDER BY d`,
+      [...seriesConversationFilter.params]
     );
 
     const [msgRows] = await pool.query<RowDataPacket[]>(
       `SELECT DATE(COALESCE(creado_en, FROM_UNIXTIME(ts))) AS d, COUNT(*) AS c
        FROM mensajes
-       WHERE COALESCE(creado_en, FROM_UNIXTIME(ts)) >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+       WHERE ${seriesMessageFilter.clause}
        GROUP BY d
-       ORDER BY d`
+       ORDER BY d`,
+      [...seriesMessageFilter.params]
     );
 
     const payload = {
@@ -188,8 +246,9 @@ export const GET: APIRoute = async ({ locals }) => {
         msg_series: (msgRows as any[]).map(r => ({ day: r.d, count: Number(r.c) })),
       }
     };
-    return new Response(JSON.stringify(payload), { headers: { 'Content-Type': 'application/json' } });
+
+    return new Response(JSON.stringify(payload), { headers: { "Content-Type": "application/json" } });
   } catch (e: any) {
-    return new Response(JSON.stringify({ ok: false, error: e?.message || 'Error' }), { status: 500 });
+    return new Response(JSON.stringify({ ok: false, error: e?.message || "Error" }), { status: 500 });
   }
 };

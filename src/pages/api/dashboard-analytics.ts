@@ -12,12 +12,21 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const user = (locals as any).user as { id: number, rol: string } | undefined;
     if (!user) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
 
-    const isAdmin = String(user.rol).toLowerCase() === 'admin';
-
     // Obtener parámetros de fecha del query string
     const days = url.searchParams.get('days');
     const startDate = url.searchParams.get('start_date');
     const endDate = url.searchParams.get('end_date');
+    const validDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const hasCustomRange = Boolean(
+      startDate &&
+      endDate &&
+      validDate(startDate) &&
+      validDate(endDate)
+    );
+    const parsedDays = Number.parseInt(days || '30', 10);
+    const safeDays = Number.isFinite(parsedDays) && parsedDays > 0
+      ? Math.min(parsedDays, 365)
+      : 30;
 
     // Construir condición de fecha dinámica
     let dateFilter = '';
@@ -27,7 +36,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
     let hourlyDateFilter = '';
     let dailyDateFilter = '';
 
-    if (startDate && endDate) {
+    if (hasCustomRange) {
       // Rango personalizado
       dateFilter = `>= '${startDate}' AND c.creado_en <= '${endDate} 23:59:59'`;
       messageDateFilter = `>= '${startDate}' AND m.creado_en <= '${endDate} 23:59:59'`;
@@ -37,13 +46,12 @@ export const GET: APIRoute = async ({ locals, url }) => {
       dailyDateFilter = `>= '${startDate}' AND c.creado_en <= '${endDate} 23:59:59'`;
     } else {
       // Usar días (por defecto 30)
-      const numDays = days || '30';
-      dateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
-      messageDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
-      cyclesDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
-      activeDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
-      hourlyDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
-      dailyDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${numDays} DAY)`;
+      dateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${safeDays} DAY)`;
+      messageDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${safeDays} DAY)`;
+      cyclesDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${safeDays} DAY)`;
+      activeDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${safeDays} DAY)`;
+      hourlyDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${safeDays} DAY)`;
+      dailyDateFilter = `>= DATE_SUB(CURDATE(), INTERVAL ${safeDays} DAY)`;
     }
 
     // 1. Tiempo promedio de primera respuesta por agente
